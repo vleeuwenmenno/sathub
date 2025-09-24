@@ -1,0 +1,32 @@
+/* Reset default styles and ensure full viewport coverage */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Make page background follow Joy theme (fixes white frame in dark mode) */
+  background-color: var(--joy-palette-background-body, #0B0D0E);
+  color-scheme: light dark;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove any default styling that might create borders or gaps */
+body {
+  /* Ensure body also inherits themed background (in case html isn't applied yet) */
+  background-color: var(--joy-palette-background-body, #0B0D0E);
+  overflow-x: hidden;
+}
