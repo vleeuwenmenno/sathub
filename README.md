@@ -8,17 +8,21 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 
 ### Current Features
 
-- [x] User authentication and registration
-- [x] Station management (create, edit, delete ground stations)
-- [x] Public and private station visibility
-- [x] Satellite data post management
-- [x] Posts upload using API keys per station
-- [x] Global station and user directories
 - [x] Responsive web interface
 - [x] Docker-based development environment
-- [x] Database seeding for testing
-- [x] 2FA Support
-- [x] User password reset flow
+- [x] Database using GORM with SQLite (easily switchable to MariaDB or Postgres)
+  - [x] Database seeding for development and testing
+- [x] Station management (create, edit, delete ground stations)
+  - [x] Public and private station visibility
+  - [x] Satellite data post management
+  - [x] Posts upload using API keys per station
+  - [x] Global station and user directories
+- [x] User authentication and registration
+  - [x] JWT-based session management with refresh tokens
+  - [x] Password hashing and security best practices
+  - [x] Email confirmation for new registrations
+  - [x] Password reset via email
+  - [x] 2FA Support (TOTP and recovery codes)
 
 ### Planned Features
 
