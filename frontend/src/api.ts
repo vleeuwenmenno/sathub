@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage } from "./types";
 
 const API_BASE = "/api";
 
@@ -96,6 +96,14 @@ export const login = async (
     refresh_token: authData.refresh_token,
     user: authData.user,
   };
+};
+
+export const confirmEmail = async (token: string): Promise<void> => {
+  await api.post("/auth/confirm-email", { token });
+};
+
+export const resendConfirmationEmail = async (email: string): Promise<void> => {
+  await api.post("/auth/resend-confirmation", { email });
 };
 
 export const logout = async (): Promise<void> => {
@@ -355,4 +363,8 @@ export const getGlobalUsers = async (
   }
   const res = await api.get(`/users/global?${params}`);
   return res.data.data;
+};
+
+export const confirmEmailChange = async (token: string): Promise<void> => {
+  await api.post("/auth/confirm-email-change", { token });
 };

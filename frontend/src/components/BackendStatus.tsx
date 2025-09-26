@@ -45,8 +45,7 @@ const BackendStatus: React.FC = () => {
     return (
       <Box sx={{ p: 2 }}>
         <Alert color="danger" variant="soft">
-          Backend is not available. Please ensure the backend service is
-          running.
+          Backend is not available (yet?), please wait until it's up or check the logs with <code>docker-compose logs -f backend</code>
         </Alert>
       </Box>
     );

@@ -77,6 +77,9 @@ func main() {
 			auth.POST("/logout", handlers.Logout)
 			auth.POST("/forgot-password", handlers.ForgotPassword)
 			auth.POST("/reset-password", handlers.ResetPassword)
+			auth.POST("/confirm-email", handlers.ConfirmEmail)
+			auth.POST("/resend-confirmation", handlers.ResendConfirmationEmail)
+			auth.POST("/confirm-email-change", handlers.ConfirmEmailChange)
 
 			// Protected auth routes
 			protected := auth.Group("")

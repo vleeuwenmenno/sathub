@@ -97,8 +97,9 @@ func Database() error {
 	var users []models.User
 	for _, userData := range testUsers {
 		user := models.User{
-			Username: userData.username,
-			Role:     userData.role,
+			Username:       userData.username,
+			EmailConfirmed: true, // Seed users are pre-confirmed
+			Role:           userData.role,
 		}
 
 		if userData.email != "" {

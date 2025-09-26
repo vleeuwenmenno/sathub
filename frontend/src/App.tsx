@@ -7,6 +7,8 @@ import Overview from "./components/Overview";
 import Detail from "./components/Detail";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ConfirmEmail from "./components/ConfirmEmail";
+import ConfirmEmailChange from "./components/ConfirmEmailChange";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import StationsList from "./components/StationsList";
@@ -45,6 +47,11 @@ function App() {
                 <Route path="/post/:id" element={<Detail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/confirm-email" element={<ConfirmEmail />} />
+                <Route
+                  path="/confirm-email-change"
+                  element={<ConfirmEmailChange />}
+                />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/stations" element={<StationsList />} />

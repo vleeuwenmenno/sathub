@@ -41,6 +41,8 @@ func InitDatabase() {
 		&models.Post{},
 		&models.PostImage{},
 		&models.PasswordResetToken{},
+		&models.EmailConfirmationToken{},
+		&models.EmailChangeToken{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)

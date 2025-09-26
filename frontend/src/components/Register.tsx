@@ -37,8 +37,8 @@ const Register: React.FC = () => {
 
     try {
       await apiRegister(email, username, password);
-      setSuccess('Registration successful! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      setSuccess('Registration successful! Please check your email to confirm your account before logging in.');
+      setTimeout(() => navigate('/login'), 5000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed');
     } finally {

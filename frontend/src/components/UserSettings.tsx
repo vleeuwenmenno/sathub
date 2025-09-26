@@ -31,13 +31,22 @@ const UserSettings: React.FC = () => {
       return;
     }
 
+    if (email.trim() === user?.email) {
+      setError("New email is the same as current email");
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       await updateProfile({ email: email.trim() });
-      setSuccess("Email updated successfully");
-    } catch (err) {
-      setError("Failed to update email");
+      setSuccess(
+        "Email change confirmation sent. Please check your new email address to confirm the change."
+      );
+      // Clear the email field to show it's not updated yet
+      setEmail(user?.email || "");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to request email change");
       console.error(err);
     } finally {
       setLoading(false);

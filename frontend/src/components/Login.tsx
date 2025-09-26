@@ -21,27 +21,53 @@ import {
   SatelliteAlt as SatelliteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { resendConfirmationEmail } from '../api';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setResendMessage('');
+    setShowResendConfirmation(false);
     setLoading(true);
 
     try {
       await login(username, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      const errorMessage = err.response?.data?.error || 'Login failed';
+      setError(errorMessage);
+      
+      // Check if the error is about unconfirmed email
+      if (errorMessage.includes('confirm your email')) {
+        setShowResendConfirmation(true);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    setResendMessage('');
+    setResendLoading(true);
+
+    try {
+      await resendConfirmationEmail(username);
+      setResendMessage('Confirmation email sent successfully! Please check your email.');
+    } catch (err: any) {
+      setResendMessage(err.response?.data?.error || 'Failed to send confirmation email');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -148,6 +174,31 @@ const Login: React.FC = () => {
             {error && (
               <Alert color="danger" variant="soft" sx={{ borderRadius: 'lg' }}>
                 {error}
+              </Alert>
+            )}
+
+            {/* Resend Confirmation Button */}
+            {showResendConfirmation && (
+              <Button
+                onClick={handleResendConfirmation}
+                loading={resendLoading}
+                variant="outlined"
+                fullWidth
+                size="sm"
+                sx={{ borderRadius: 'lg', mt: 1 }}
+              >
+                {resendLoading ? 'Sending...' : 'Resend Confirmation Email'}
+              </Button>
+            )}
+
+            {/* Resend Confirmation Message */}
+            {resendMessage && (
+              <Alert
+                color={resendMessage.includes('successfully') ? 'success' : 'danger'}
+                variant="soft"
+                sx={{ borderRadius: 'lg', mt: 2 }}
+              >
+                {resendMessage}
               </Alert>
             )}
 

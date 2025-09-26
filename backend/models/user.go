@@ -10,13 +10,14 @@ import (
 )
 
 type User struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	Username  string         `gorm:"uniqueIndex;not null" json:"username"`
-	Email     sql.NullString `gorm:"unique" json:"email,omitempty"`
-	Password  string         `gorm:"not null" json:"-"`
-	Role      string         `gorm:"default:user" json:"role"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID             uint           `gorm:"primaryKey" json:"id"`
+	Username       string         `gorm:"uniqueIndex;not null" json:"username"`
+	Email          sql.NullString `gorm:"unique" json:"email,omitempty"`
+	EmailConfirmed bool           `gorm:"default:false" json:"email_confirmed"`
+	Password       string         `gorm:"not null" json:"-"`
+	Role           string         `gorm:"default:user" json:"role"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
 // HashPassword hashes the user's password using bcrypt

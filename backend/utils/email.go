@@ -65,3 +65,40 @@ func SendPasswordResetEmail(toEmail, username, resetToken string) error {
 
 	return SendEmail(data)
 }
+
+// SendEmailConfirmationEmail sends an email confirmation email
+func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
+	confirmURL := fmt.Sprintf("http://localhost:5173/confirm-email?token=%s", confirmToken)
+
+	data := EmailData{
+		Subject:  "Confirm Your SatDump Account",
+		To:       toEmail,
+		Template: "email_confirmation",
+		Data: map[string]interface{}{
+			"Username":     username,
+			"ConfirmURL":   confirmURL,
+			"ConfirmToken": confirmToken,
+		},
+	}
+
+	return SendEmail(data)
+}
+
+// SendEmailChangeConfirmationEmail sends an email change confirmation email
+func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken string) error {
+	confirmURL := fmt.Sprintf("http://localhost:5173/confirm-email-change?token=%s", confirmToken)
+
+	data := EmailData{
+		Subject:  "Confirm Your Email Change",
+		To:       toEmail,
+		Template: "email_change_confirmation",
+		Data: map[string]interface{}{
+			"Username":     username,
+			"NewEmail":     newEmail,
+			"ConfirmURL":   confirmURL,
+			"ConfirmToken": confirmToken,
+		},
+	}
+
+	return SendEmail(data)
+}
