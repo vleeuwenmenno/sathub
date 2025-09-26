@@ -78,10 +78,11 @@ export const getStationPictureBlob = async (
 };
 
 export const register = async (
+  email: string,
   username: string,
   password: string,
 ): Promise<void> => {
-  await api.post("/auth/register", { username, password });
+  await api.post("/auth/register", { email, username, password });
 };
 
 export const login = async (

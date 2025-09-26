@@ -14,6 +14,7 @@ import {
 import { register as apiRegister } from '../api';
 
 const Register: React.FC = () => {
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,7 +36,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await apiRegister(username, password);
+      await apiRegister(email, username, password);
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
@@ -72,6 +73,17 @@ const Register: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
+            <FormControl>
+              <FormLabel>Email</FormLabel>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                required
+                fullWidth
+              />
+            </FormControl>
+
             <FormControl>
               <FormLabel>Username</FormLabel>
               <Input

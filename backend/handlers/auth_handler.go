@@ -17,8 +17,8 @@ import (
 
 // RegisterRequest represents the request body for user registration
 type RegisterRequest struct {
+	Email    string `json:"email" binding:"required,email"`
 	Username string `json:"username" binding:"required,min=3,max=50"`
-	Email    string `json:"email" binding:"omitempty,email"`
 	Password string `json:"password" binding:"required,min=6"`
 	Role     string `json:"role" binding:"omitempty"`
 }
@@ -66,12 +66,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Check if email already exists (if provided)
-	if req.Email != "" {
-		if err := db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-			utils.ValidationErrorResponse(c, "Email already exists")
-			return
-		}
+	// Check if email already exists
+	if err := db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		utils.ValidationErrorResponse(c, "Email already exists")
+		return
 	}
 
 	// Validate and set role
@@ -87,14 +85,8 @@ func Register(c *gin.Context) {
 	// Create new user
 	user := models.User{
 		Username: req.Username,
+		Email:    sql.NullString{String: req.Email, Valid: true},
 		Role:     role,
-	}
-
-	// Set email if provided
-	if req.Email != "" {
-		user.Email = sql.NullString{String: req.Email, Valid: true}
-	} else {
-		user.Email = sql.NullString{Valid: false}
 	}
 
 	// Hash password
@@ -111,7 +103,7 @@ func Register(c *gin.Context) {
 
 	// Generate tokens
 	accessToken, err := utils.GenerateAccessToken(user.ID, user.Username, user.Role)
-	if err != nil {
+		if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate access token")
 		return
 	}
