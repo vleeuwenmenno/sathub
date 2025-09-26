@@ -86,7 +86,7 @@ For local development without Docker:
 
 4. Open your browser to `http://localhost:5173`
 
-5. Seed the database with test data:
+5. Seed the database with test data: (If you have the backend running, it will automatically restart due to the database file being changed, so no need to stop/start the backend manually)
    ```bash
    rm backend/satdump.db  
    docker compose exec backend go run main.go --seed
