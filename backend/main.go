@@ -75,6 +75,7 @@ func main() {
 			protected.Use(middleware.AuthRequired())
 			{
 				protected.GET("/profile", handlers.GetProfile)
+				protected.PUT("/profile", handlers.UpdateProfile)
 			}
 		}
 
@@ -92,13 +93,26 @@ func main() {
 			stations.POST("/:id/upload-picture", handlers.UploadStationPicture)
 		}
 
+		// Protected global station routes (authentication required)
+		protectedGlobalStations := api.Group("/stations")
+		protectedGlobalStations.Use(middleware.AuthRequired())
+		{
+			protectedGlobalStations.GET("/global", handlers.GetGlobalStations)
+		}
+
 		// Public station routes (no authentication required)
 		publicStations := api.Group("/stations")
 		{
-			publicStations.GET("/global", handlers.GetGlobalStations)
 			publicStations.GET("/user/:userId", handlers.GetUserStations)
-			publicStations.GET("/:id/details", handlers.GetStationDetails)
+			publicStations.GET("/:id/details", middleware.OptionalAuth(), handlers.GetStationDetails)
 			publicStations.GET("/:id/picture", middleware.OptionalAuth(), handlers.GetStationPicture)
+		}
+
+		// Protected global user routes (authentication required)
+		protectedGlobalUsers := api.Group("/users")
+		protectedGlobalUsers.Use(middleware.AuthRequired())
+		{
+			protectedGlobalUsers.GET("/global", handlers.GetGlobalUsers)
 		}
 
 		// Public post routes (no authentication required)

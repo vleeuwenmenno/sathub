@@ -490,7 +490,56 @@ func GetGlobalStations(c *gin.Context) {
 	db := config.GetDB()
 	var stations []models.Station
 
-	if err := db.Joins("User").Where("is_public = ?", true).Find(&stations).Error; err != nil {
+	// Parse pagination parameters
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 || limit > 100 {
+		limit = 10 // default and max 100
+	}
+
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page <= 0 {
+		page = 1
+	}
+
+	offset := (page - 1) * limit
+
+	// Parse sort parameter
+	sort := c.DefaultQuery("sort", "created_at") // default sort by created_at
+	order := c.DefaultQuery("order", "desc")     // default descending
+
+	// Parse search parameter
+	search := strings.TrimSpace(c.Query("search"))
+
+	// Validate sort field
+	validSorts := map[string]string{
+		"created_at": "stations.created_at",
+		"username":   "User.username",
+		"name":       "stations.name",
+	}
+
+	sortField, valid := validSorts[sort]
+	if !valid {
+		sortField = "stations.created_at"
+	}
+
+	// Validate order
+	if order != "asc" && order != "desc" {
+		order = "desc"
+	}
+
+	// Build query with sorting and pagination
+	query := db.Joins("User").Where("is_public = ?", true)
+
+	// Add search filter if provided
+	if search != "" {
+		query = query.Where("stations.name LIKE ?", "%"+search+"%")
+	}
+
+	query = query.Order(sortField + " " + order).Limit(limit).Offset(offset)
+
+	if err := query.Find(&stations).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch stations")
 		return
 	}
@@ -587,11 +636,10 @@ func GetStationDetails(c *gin.Context) {
 	query := db.Joins("User")
 	if isAuthenticated {
 		// Authenticated users can view stations they own or public stations
-		query = query.Where("(stations.id = ? AND stations.user_id = ?) OR (stations.id = ? AND is_public = ?)",
-			stationID, userID, stationID, true)
+		query = query.Where("stations.id = ? AND (is_public = ? OR user_id = ?)", stationID, true, userID)
 	} else {
 		// Unauthenticated users can only view public stations
-		query = query.Where("stations.id = ? AND stations.is_public = ?", stationID, true)
+		query = query.Where("stations.id = ? AND is_public = ?", stationID, true)
 	}
 
 	if err := query.First(&station).Error; err != nil {

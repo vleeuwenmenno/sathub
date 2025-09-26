@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"regexp"
 	"strings"
 )
 
@@ -34,4 +35,10 @@ func IsImageContentType(contentType string) bool {
 		}
 	}
 	return false
+}
+
+// IsValidEmail checks if the email format is valid
+func IsValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
 }

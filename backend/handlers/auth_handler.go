@@ -326,6 +326,81 @@ func Logout(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Logged out successfully", nil)
 }
 
+// UpdateProfileRequest represents the request body for updating user profile
+type UpdateProfileRequest struct {
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+// UpdateProfile handles updating current user profile
+func UpdateProfile(c *gin.Context) {
+	userID, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	// Validate email if provided
+	if req.Email != "" {
+		if !utils.IsValidEmail(req.Email) {
+			utils.ValidationErrorResponse(c, "Invalid email format")
+			return
+		}
+	}
+
+	// Validate password if provided
+	if req.Password != "" && len(req.Password) < 6 {
+		utils.ValidationErrorResponse(c, "Password must be at least 6 characters long")
+		return
+	}
+
+	db := config.GetDB()
+
+	var user models.User
+	if err := db.First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "User not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Database error")
+		return
+	}
+
+	// Update email if provided
+	if req.Email != "" {
+		user.Email = sql.NullString{String: req.Email, Valid: true}
+	}
+
+	// Update password if provided
+	if req.Password != "" {
+		if err := user.HashPassword(req.Password); err != nil {
+			utils.InternalErrorResponse(c, "Failed to process password")
+			return
+		}
+	}
+
+	// Save changes
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update profile")
+		return
+	}
+
+	userInfo := UserInfo{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email.String,
+		Role:     user.Role,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Profile updated successfully", userInfo)
+}
+
 // GetProfile handles getting current user profile
 func GetProfile(c *gin.Context) {
 	userID, exists := middleware.GetCurrentUserID(c)

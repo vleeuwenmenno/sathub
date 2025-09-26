@@ -14,26 +14,19 @@ import {
   FormLabel,
   Input,
   IconButton,
+  Avatar,
 } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
-import type { Station } from "../api";
-import {
-  getGlobalStations,
-  getUserStations,
-  getStationPictureBlob,
-  getStationDetails,
-} from "../api";
+import PersonIcon from "@mui/icons-material/Person";
+import type { UserSummary } from "../api";
+import { getGlobalUsers } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 
-const GlobalStations: React.FC = () => {
+const GlobalUsers: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [stations, setStations] = useState<Station[]>([]);
-  const [stationDetails, setStationDetails] = useState<Record<number, Station>>(
-    {},
-  );
-  const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
+  const [users, setUsers] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState(10);
@@ -59,30 +52,14 @@ const GlobalStations: React.FC = () => {
     return null;
   }
 
-  const loadStations = async () => {
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const data = await getGlobalStations(limit, page, sort, order, search);
-      setStations(data);
-
-      // Fetch detailed information for each station to get owner info
-      const details: Record<number, Station> = {};
-      for (const station of data) {
-        try {
-          const stationDetail = await getStationDetails(station.id);
-          details[station.id] = stationDetail;
-        } catch (err) {
-          console.error(
-            `Failed to load details for station ${station.id}`,
-            err,
-          );
-        }
-      }
-      setStationDetails(details);
-
+      const data = await getGlobalUsers(limit, page, sort, order, search);
+      setUsers(data);
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to load stations");
+      setError(err.response?.data?.error || "Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -94,46 +71,19 @@ const GlobalStations: React.FC = () => {
   };
 
   useEffect(() => {
-    loadStations();
+    loadUsers();
   }, [limit, page, sort, order, search]);
 
-  useEffect(() => {
-    const loadImages = async () => {
-      if (!stations.length) return;
-
-      const newImageBlobs: Record<string, string> = {};
-
-      for (const station of stations) {
-        if (station.has_picture && station.picture_url) {
-          try {
-            const blobUrl = await getStationPictureBlob(station.picture_url);
-            newImageBlobs[`${station.id}-picture`] = blobUrl;
-          } catch (error) {
-            console.error(
-              "Failed to load image for station",
-              station.id,
-              error,
-            );
-          }
-        }
-      }
-
-      setImageBlobs(newImageBlobs);
-    };
-
-    loadImages();
-  }, [stations]);
-
-  if (loading) return <Typography>Loading stations...</Typography>;
+  if (loading) return <Typography>Loading users...</Typography>;
   if (error) return <Typography color="danger">Error: {error}</Typography>;
 
   return (
     <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', mb: 3, gap: 2, flexWrap: 'wrap' }}>
         <FormControl size="sm">
-          <FormLabel>Search stations</FormLabel>
+          <FormLabel>Search users</FormLabel>
           <Input
-            placeholder="Enter station name..."
+            placeholder="Enter username..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -159,7 +109,6 @@ const GlobalStations: React.FC = () => {
             >
               <Option value="created_at">Created Date</Option>
               <Option value="username">Username</Option>
-              <Option value="name">Station Name</Option>
             </Select>
           </FormControl>
           <FormControl size="sm">
@@ -176,29 +125,29 @@ const GlobalStations: React.FC = () => {
         </Box>
       </Box>
 
-      {stations.length >= limit && (
+      {users.length >= limit && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
           page={page}
           setPage={setPage}
-          hasMore={stations.length >= limit}
+          hasMore={users.length >= limit}
           loading={loading}
         />
       )}
 
-      {stations.length === 0 ? (
+      {users.length === 0 ? (
         <Card>
           <CardContent>
             <Typography level="body-lg" sx={{ textAlign: "center", py: 4 }}>
-              No stations found.
+              No users found.
             </Typography>
           </CardContent>
         </Card>
       ) : (
         <Grid container spacing={3}>
-          {stations.map((station) => (
-            <Grid key={station.id} xs={12} sm={6} lg={4}>
+          {users.map((user) => (
+            <Grid key={user.id} xs={12} sm={6} lg={4}>
               <Card
                 sx={{
                   height: "100%",
@@ -211,70 +160,45 @@ const GlobalStations: React.FC = () => {
                     cursor: "pointer",
                   },
                 }}
-                onClick={() => navigate(`/station/${station.id}`)}
+                onClick={() => navigate(`/user/${user.id}`)}
               >
-                {imageBlobs[`${station.id}-picture`] && (
-                  <Box
-                    sx={{
-                      position: "relative",
-                      height: 200,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={imageBlobs[`${station.id}-picture`]}
-                      alt={station.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </Box>
-                )}
                 <CardContent
-                  sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                  sx={{ flex: 1, display: "flex", flexDirection: "column", textAlign: "center" }}
                 >
-                  <Typography level="h4" sx={{ mb: 1 }}>
-                    {station.name}
-                  </Typography>
-                  <Stack spacing={0.5} sx={{ mb: 2, flex: 1 }}>
+                  <Box sx={{ mb: 2 }}>
+                    <Avatar
+                      sx={{ width: 80, height: 80, mx: "auto", mb: 1 }}
+                    >
+                      <PersonIcon sx={{ fontSize: 40 }} />
+                    </Avatar>
+                    <Typography level="h4" sx={{ mb: 1 }}>
+                      @{user.username}
+                    </Typography>
+                    <Chip size="sm" variant="soft" color={user.role === 'admin' ? 'danger' : user.role === 'moderator' ? 'warning' : 'primary'}>
+                      {user.role}
+                    </Chip>
+                  </Box>
+
+                  <Stack spacing={1} sx={{ mb: 2, flex: 1 }}>
                     <Typography
                       level="body-sm"
-                      startDecorator={<span>📍</span>}
+                      startDecorator={<span>📡</span>}
                     >
-                      {station.location}
+                      {user.public_stations} Public Station{user.public_stations !== 1 ? 's' : ''}
                     </Typography>
-                    {station.equipment && (
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>🔧</span>}
-                      >
-                        {station.equipment.length > 50
-                          ? `${station.equipment.substring(0, 50)}...`
-                          : station.equipment}
-                      </Typography>
-                    )}
+                    <Typography
+                      level="body-sm"
+                      startDecorator={<span>📊</span>}
+                    >
+                      {user.public_posts} Public Post{user.public_posts !== 1 ? 's' : ''}
+                    </Typography>
                     <Typography
                       level="body-sm"
                       startDecorator={<span>📅</span>}
                     >
-                      Created{" "}
-                      {new Date(station.created_at).toLocaleDateString()}
+                      Joined {new Date(user.created_at).toLocaleDateString()}
                     </Typography>
                   </Stack>
-                  <Box sx={{ mt: "auto" }}>
-                    <Stack spacing={0.5}>
-                      <Chip size="sm" variant="soft" color="primary">
-                        Station {station.id.substring(0, 8)}
-                      </Chip>
-                      {stationDetails[station.id]?.user && (
-                        <Chip size="sm" variant="soft" color="info">
-                          @{stationDetails[station.id].user.username}
-                        </Chip>
-                      )}
-                    </Stack>
-                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -282,13 +206,13 @@ const GlobalStations: React.FC = () => {
         </Grid>
       )}
 
-      {stations.length > 0 && (
+      {users.length > 0 && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
           page={page}
           setPage={setPage}
-          hasMore={stations.length >= limit}
+          hasMore={users.length >= limit}
           loading={loading}
         />
       )}
@@ -296,4 +220,4 @@ const GlobalStations: React.FC = () => {
   );
 };
 
-export default GlobalStations;
+export default GlobalUsers;

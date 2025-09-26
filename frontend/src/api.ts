@@ -117,6 +117,14 @@ export const getProfile = async (): Promise<User> => {
   return res.data.data; // Extract from the nested data structure
 };
 
+export const updateProfile = async (data: {
+  email?: string;
+  password?: string;
+}): Promise<User> => {
+  const res = await api.put("/auth/profile", data);
+  return res.data.data; // Extract from the nested data structure
+};
+
 // Station types
 export interface Station {
   id: string;
@@ -197,9 +205,24 @@ export const uploadStationPicture = async (
   return res.data.data;
 };
 
-// Public station API calls (no authentication required)
-export const getGlobalStations = async (): Promise<Station[]> => {
-  const res = await axios.get(`${API_BASE}/stations/global`);
+// Global station API calls (authentication required)
+export const getGlobalStations = async (
+  limit: number = 10,
+  page: number = 1,
+  sort: string = "created_at",
+  order: string = "desc",
+  search: string = ""
+): Promise<Station[]> => {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    page: page.toString(),
+    sort,
+    order,
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  const res = await api.get(`/stations/global?${params}`);
   return res.data.data;
 };
 
@@ -273,9 +296,51 @@ export const getPostImageUrl = (postId: number, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };
 
+export const getPostImageBlob = async (
+  postId: number,
+  imageId: number,
+): Promise<string> => {
+  const res = await api.get(`/posts/${postId}/images/${imageId}`, {
+    responseType: "blob",
+  });
+  return URL.createObjectURL(res.data);
+};
+
 export const getStationDetails = async (
   stationId: string,
 ): Promise<Station> => {
-  const res = await axios.get(`${API_BASE}/stations/${stationId}/details`);
+  const res = await api.get(`/stations/${stationId}/details`);
+  return res.data.data;
+};
+
+// User types
+export interface UserSummary {
+  id: number;
+  username: string;
+  email?: string;
+  role: string;
+  public_stations: number;
+  public_posts: number;
+  created_at: string;
+}
+
+// Global user API calls (authentication required)
+export const getGlobalUsers = async (
+  limit: number = 10,
+  page: number = 1,
+  sort: string = "created_at",
+  order: string = "desc",
+  search: string = ""
+): Promise<UserSummary[]> => {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    page: page.toString(),
+    sort,
+    order,
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  const res = await api.get(`/users/global?${params}`);
   return res.data.data;
 };

@@ -11,6 +11,9 @@ import StationsList from "./components/StationsList";
 import StationForm from "./components/StationForm";
 import GlobalStations from "./components/GlobalStations";
 import StationPosts from "./components/StationPosts";
+import UserOverview from "./components/UserOverview";
+import UserSettings from "./components/UserSettings";
+import GlobalUsers from "./components/GlobalUsers";
 import BackendStatus from "./components/BackendStatus";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -48,6 +51,9 @@ function App() {
                 />
                 <Route path="/stations/global" element={<GlobalStations />} />
                 <Route path="/station/:stationId" element={<StationPosts />} />
+                <Route path="/users/global" element={<GlobalUsers />} />
+                <Route path="/user/:id" element={<UserOverview />} />
+                <Route path="/user/settings" element={<UserSettings />} />
               </Routes>
             </Box>
           </Box>

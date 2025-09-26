@@ -1,12 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Box, Typography, Button, IconButton, useColorScheme } from "@mui/joy";
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  useColorScheme,
+  Menu,
+  MenuItem,
+  MenuButton,
+  Dropdown,
+  Sheet,
+  Avatar,
+} from "@mui/joy";
 import {
   DarkMode,
   LightMode,
   Satellite,
   ArrowBack,
   Logout,
+  Settings,
+  Person,
+  Home,
+  Router,
+  Group,
+  Build,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -26,113 +44,227 @@ const Navbar: React.FC = () => {
     navigate("/");
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <Box
+    <Sheet
       sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        p: 2,
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.surface",
         position: "sticky",
         top: 0,
         zIndex: 1000,
+        background: `linear-gradient(135deg, ${mode === "dark" ? "#0f0f23" : "#f8fafc"} 0%, ${mode === "dark" ? "#1a1a2e" : "#ffffff"} 100%)`,
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        boxShadow: "sm",
       }}
     >
-      {/* Left side - Logo and title */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {isDetailPage && (
-          <IconButton
-            variant="outlined"
-            size="sm"
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: { xs: 2, md: 4 },
+          py: 2,
+          maxWidth: "1400px",
+          mx: "auto",
+        }}
+      >
+        {/* Left side - Logo and Navigation */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          {/* Logo */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              "&:hover": {
+                "& .logo-text": { color: "primary.main" },
+                transform: "scale(1.02)",
+              },
+              transition: "all 0.2s ease",
+            }}
             onClick={() => navigate("/")}
-            sx={{ mr: 1 }}
           >
-            <ArrowBack />
-          </IconButton>
-        )}
-        <Satellite sx={{ fontSize: "1.5rem", color: "primary.main" }} />
-        <Typography
-          level="h3"
-          sx={{
-            fontWeight: "bold",
-            cursor: "pointer",
-            "&:hover": { color: "primary.main" },
-          }}
-          onClick={() => navigate("/")}
-        >
-          SatHub
-        </Typography>
-      </Box>
-
-      {/* Right side - Auth and theme toggle */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Button
-          variant="plain"
-          size="sm"
-          onClick={() => navigate("/")}
-          sx={{ mr: 1 }}
-        >
-          Home
-        </Button>
-        <Button
-          variant="plain"
-          size="sm"
-          onClick={() => navigate("/stations/global")}
-          sx={{ mr: 1 }}
-        >
-          Stations
-        </Button>
-        {isAuthenticated ? (
-          <>
-            <Button
-              variant="plain"
-              size="sm"
-              onClick={() => navigate("/stations")}
-              sx={{ mr: 1 }}
-            >
-              My Stations
-            </Button>
-            <Typography level="body-sm">Welcome, {user?.username}</Typography>
-            <IconButton
-              variant="outlined"
-              size="sm"
-              onClick={handleLogout}
+            {isDetailPage && (
+              <IconButton
+                variant="soft"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/");
+                }}
+                sx={{ mr: 1 }}
+              >
+                <ArrowBack />
+              </IconButton>
+            )}
+            <Satellite sx={{ fontSize: "1.8rem", color: "primary.main" }} />
+            <Typography
+              level="h4"
+              className="logo-text"
               sx={{
+                fontWeight: "bold",
+                transition: "color 0.2s ease",
+              }}
+            >
+              SatHub
+            </Typography>
+          </Box>
+
+          {/* Navigation */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Button
+              variant={isActive("/") ? "solid" : "plain"}
+              size="sm"
+              onClick={() => navigate("/")}
+              startDecorator={<Home />}
+              sx={{
+                borderRadius: "lg",
+                transition: "all 0.2s ease",
                 "&:hover": {
-                  bgcolor: mode === "dark" ? "neutral.800" : "neutral.100",
+                  transform: "translateY(-1px)",
+                  boxShadow: "sm",
                 },
               }}
             >
-              <Logout />
-            </IconButton>
-          </>
-        ) : (
-          <Button
-            variant="outlined"
-            size="sm"
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </Button>
-        )}
+              Home
+            </Button>
 
-        <IconButton
-          variant="outlined"
-          size="sm"
-          onClick={toggleColorScheme}
-          sx={{
-            "&:hover": {
-              bgcolor: mode === "dark" ? "neutral.800" : "neutral.100",
-            },
-          }}
-        >
-          {mode === "dark" ? <LightMode /> : <DarkMode />}
-        </IconButton>
+            {isAuthenticated && (
+              <>
+                <Button
+                  variant={isActive("/stations/global") ? "solid" : "plain"}
+                  size="sm"
+                  onClick={() => navigate("/stations/global")}
+                  startDecorator={<Router />}
+                  sx={{
+                    borderRadius: "lg",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: "sm",
+                    },
+                  }}
+                >
+                  Stations
+                </Button>
+
+                <Button
+                  variant={isActive("/users/global") ? "solid" : "plain"}
+                  size="sm"
+                  onClick={() => navigate("/users/global")}
+                  startDecorator={<Group />}
+                  sx={{
+                    borderRadius: "lg",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: "sm",
+                    },
+                  }}
+                >
+                  Users
+                </Button>
+
+                <Button
+                  variant={isActive("/stations") ? "solid" : "plain"}
+                  size="sm"
+                  onClick={() => navigate("/stations")}
+                  startDecorator={<Build />}
+                  sx={{
+                    borderRadius: "lg",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: "sm",
+                    },
+                  }}
+                >
+                  My Stations
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+
+        {/* Right side - Theme and Account */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconButton
+            variant="soft"
+            size="sm"
+            onClick={toggleColorScheme}
+            sx={{
+              borderRadius: "50%",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "rotate(180deg) scale(1.1)",
+                boxShadow: "md",
+              },
+            }}
+          >
+            {mode === "dark" ? <LightMode /> : <DarkMode />}
+          </IconButton>
+
+          {isAuthenticated ? (
+            <Dropdown>
+              <MenuButton
+                variant="soft"
+                size="sm"
+                sx={{
+                  borderRadius: "lg",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: "sm",
+                  },
+                }}
+              >
+                <Avatar
+                  size="sm"
+                  sx={{ mr: 1 }}
+                >
+                  {user?.username?.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography level="body-sm" sx={{ fontWeight: "medium" }}>
+                  {user?.username}
+                </Typography>
+              </MenuButton>
+              <Menu sx={{ minWidth: 180 }}>
+                <MenuItem onClick={() => navigate(`/user/${user?.id}`)}>
+                  <Person sx={{ mr: 1 }} />
+                  Overview
+                </MenuItem>
+                <MenuItem onClick={() => navigate("/user/settings")}>
+                  <Settings sx={{ mr: 1 }} />
+                  Settings
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Logout sx={{ mr: 1 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </Dropdown>
+          ) : (
+            <Button
+              variant="solid"
+              size="sm"
+              onClick={() => navigate("/login")}
+              sx={{
+                borderRadius: "lg",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  boxShadow: "md",
+                },
+              }}
+            >
+              Login
+            </Button>
+          )}
+        </Box>
       </Box>
-    </Box>
+    </Sheet>
   );
 };
 

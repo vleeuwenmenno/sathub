@@ -61,7 +61,7 @@ func GetUserPosts(c *gin.Context) {
 	var posts []models.Post
 
 	// Get posts where station belongs to user and station is public
-	if err := db.Preload("Station").Joins("Station").Where("stations.user_id = ? AND is_public = ?", uint(userID), true).Find(&posts).Error; err != nil {
+	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ?", uint(userID), true).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -300,7 +300,7 @@ func DeletePost(c *gin.Context) {
 
 	// Find post and verify ownership through station
 	var post models.Post
-	if err := db.Joins("Station").Where("posts.id = ? AND stations.user_id = ?", uint(postID), userID).First(&post).Error; err != nil {
+	if err := db.Joins("Station").Where("posts.id = ? AND user_id = ?", uint(postID), userID).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not owned by user")
 			return

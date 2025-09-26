@@ -10,9 +10,10 @@ import {
   Stack,
   CircularProgress,
   Alert,
+  Skeleton,
 } from "@mui/joy";
 import type { Post } from "../types";
-import { getStationPosts, getPostImageUrl, getStation } from "../api";
+import { getStationPosts, getPostImageUrl, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
 
 const StationPosts: React.FC = () => {
@@ -20,6 +21,9 @@ const StationPosts: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [station, setStation] = useState<Station | null>(null);
+  const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,11 +35,11 @@ const StationPosts: React.FC = () => {
         setLoading(true);
         setError(null);
         const [stationData, stationPosts] = await Promise.all([
-          getStation(stationId),
+          getStationDetails(stationId),
           getStationPosts(stationId, 1, 50),
         ]);
         setStation(stationData);
-        setPosts(stationPosts.posts || stationPosts);
+        setPosts(stationPosts);
       } catch (err) {
         setError("Failed to load station or posts");
         console.error("Error loading data:", err);
@@ -46,6 +50,51 @@ const StationPosts: React.FC = () => {
 
     loadData();
   }, [stationId]);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      if (!posts.length) return;
+
+      const newImageBlobs: Record<string, string> = {};
+      const newLoadingImages: Record<string, boolean> = {};
+
+      // Set loading state for all images
+      for (const post of posts) {
+        if (post.images.length > 0) {
+          newLoadingImages[`${post.id}-image`] = true;
+        }
+      }
+      setLoadingImages(newLoadingImages);
+
+      // Load images
+      for (const post of posts) {
+        if (post.images.length > 0) {
+          try {
+            const blobUrl = await getPostImageBlob(post.id, post.images[0].id);
+            newImageBlobs[`${post.id}-image`] = blobUrl;
+            // Keep loading state until image actually loads in the DOM
+          } catch (error) {
+            console.error(
+              "Failed to load image for post",
+              post.id,
+              error,
+            );
+            // Mark as not loading if failed
+            setLoadingImages(prev => ({
+              ...prev,
+              [`${post.id}-image`]: false
+            }));
+          }
+        }
+      }
+
+      setImageBlobs(newImageBlobs);
+
+      setImageBlobs(newImageBlobs);
+    };
+
+    loadImages();
+  }, [posts]);
 
   if (loading) {
     return (
@@ -140,22 +189,44 @@ const StationPosts: React.FC = () => {
                         overflow: "hidden",
                       }}
                     >
-                      <img
-                        src={getPostImageUrl(post.id, post.images[0].id)}
-                        alt={post.satellite_name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          transition: "transform 0.3s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.transform = "scale(1.05)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.transform = "scale(1)")
-                        }
-                      />
+                      <Skeleton loading={!loadedImages[`${post.id}-image`]}>
+                        <img
+                          src={imageBlobs[`${post.id}-image`] || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}
+                          alt={post.satellite_name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            transition: "transform 0.3s",
+                          }}
+                          onLoad={() => {
+                            setLoadedImages(prev => ({
+                              ...prev,
+                              [`${post.id}-image`]: true
+                            }));
+                            setLoadingImages(prev => ({
+                              ...prev,
+                              [`${post.id}-image`]: false
+                            }));
+                          }}
+                          onError={() => {
+                            setLoadedImages(prev => ({
+                              ...prev,
+                              [`${post.id}-image`]: true
+                            }));
+                            setLoadingImages(prev => ({
+                              ...prev,
+                              [`${post.id}-image`]: false
+                            }));
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.transform = "scale(1.05)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.transform = "scale(1)")
+                          }
+                        />
+                      </Skeleton>
                     </Box>
                   )}
                   <CardContent
