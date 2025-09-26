@@ -17,13 +17,13 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [x] Responsive web interface
 - [x] Docker-based development environment
 - [x] Database seeding for testing
+- [x] 2FA Support
+- [x] User password reset flow
 
 ### Planned Features
 
 - [ ] Docker-based production environment
 - [ ] GitHub Workfows that publish and compile docker images for prod
-- [ ] User password reset flow
-- [ ] 2FA Support
 - [ ] API rate limiting
 - [ ] Station health monitoring
 - [ ] Data export functionality
@@ -31,6 +31,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 ## Tech Stack
 
 ### Backend
+
 - **Language**: Go 1.21+
 - **Framework**: Gin web framework
 - **Database**: SQLite with GORM ORM (Allows switching to MariaDB or Postgres)
@@ -38,6 +39,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - **API**: RESTful JSON API
 
 ### Frontend
+
 - **Language**: TypeScript
 - **Framework**: React 19 with Vite
 - **UI Library**: Material-UI (MUI) with Joy design system
@@ -45,6 +47,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - **HTTP Client**: Axios
 
 ### Development & Deployment
+
 - **Containerization**: Docker & Docker Compose
 - **Hot Reloading**: Configured for both frontend and backend
 - **Linting**: ESLint for frontend, Go standard tools for backend

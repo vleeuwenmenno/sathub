@@ -5,14 +5,12 @@ import {
   Typography,
   Button,
   Alert,
-  Card,
-  CardContent,
   Stack,
   FormControl,
   FormLabel,
   Input,
+  Sheet,
 } from '@mui/joy';
-import { Lock as LockIcon, SatelliteAlt as SatelliteIcon } from '@mui/icons-material';
 import { resetPassword } from '../api';
 
 const ResetPassword: React.FC = () => {
