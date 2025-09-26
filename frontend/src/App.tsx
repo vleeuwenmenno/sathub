@@ -15,6 +15,7 @@ import UserOverview from "./components/UserOverview";
 import UserSettings from "./components/UserSettings";
 import GlobalUsers from "./components/GlobalUsers";
 import BackendStatus from "./components/BackendStatus";
+import Footer from "./components/Footer";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -30,11 +31,13 @@ function App() {
               margin: 0,
               padding: 0,
               boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <Navbar />
             <BackendStatus />
-            <Box sx={{ px: { xs: 2, md: 4 } }}>
+            <Box sx={{ px: { xs: 2, md: 4 }, flex: 1 }}>
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/post/:id" element={<Detail />} />
@@ -56,6 +59,7 @@ function App() {
                 <Route path="/user/settings" element={<UserSettings />} />
               </Routes>
             </Box>
+            <Footer />
           </Box>
         </Router>
       </AuthProvider>
