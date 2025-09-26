@@ -15,7 +15,9 @@
     "@mui/icons-material": "^7.3.2",
     "@mui/joy": "^5.0.0-beta.52",
     "@mui/material": "^7.3.2",
+    "@types/qrcode": "^1.5.5",
     "axios": "^1.12.2",
+    "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.2"

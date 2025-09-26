@@ -18,6 +18,7 @@ type User struct {
 	Role             string         `gorm:"default:user" json:"role"`
 	TwoFactorEnabled bool           `gorm:"default:false" json:"two_factor_enabled"`
 	TwoFactorSecret  string         `gorm:"size:32" json:"-"` // Store encrypted
+	RecoveryCodes    string         `gorm:"type:text" json:"-"` // Store encrypted JSON array of recovery codes
 	CreatedAt        time.Time      `json:"created_at"`
 	UpdatedAt        time.Time      `json:"updated_at"`
 }

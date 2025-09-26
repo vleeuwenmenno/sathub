@@ -10,6 +10,7 @@ import {
   ModalDialog,
   Input,
 } from '@mui/joy';
+import QRCode from 'qrcode';
 import { enableTwoFactor, verifyTwoFactorSetup } from '../api';
 
 interface TwoFactorSetupProps {
@@ -27,19 +28,42 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
     issuer: string;
     accountName: string;
   } | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+
+  const generateQRCode = async (otpauthUrl: string) => {
+    try {
+      const dataUrl = await QRCode.toDataURL(otpauthUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+      });
+      setQrCodeDataUrl(dataUrl);
+    } catch (err) {
+      console.error('Failed to generate QR code:', err);
+      setError('Failed to generate QR code');
+    }
+  };
 
   const handleEnable = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await enableTwoFactor();
-      setSetupData({
+      const setupInfo = {
         secret: data.secret,
         qrCodeUrl: data.qr_code_url,
         issuer: data.issuer,
         accountName: data.account_name,
-      });
+      };
+      setSetupData(setupInfo);
+      
+      // Generate QR code client-side for security
+      await generateQRCode(setupInfo.qrCodeUrl);
+      
       setStep('verify');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to enable 2FA');
@@ -102,11 +126,27 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
               <Card sx={{ mb: 2 }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.qrCodeUrl)}`}
-                      alt="QR Code"
-                      style={{ width: 200, height: 200 }}
-                    />
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="QR Code for Two-Factor Authentication"
+                        style={{ width: 200, height: 200 }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 200,
+                          height: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: 'neutral.100',
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography level="body-sm">Generating QR code...</Typography>
+                      </Box>
+                    )}
                   </Box>
                   <Typography level="body-sm" sx={{ mb: 1 }}>
                     <strong>Secret Key:</strong> {setupData.secret}
