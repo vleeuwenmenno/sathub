@@ -9,10 +9,12 @@ import {
   Box,
   Stack,
   CircularProgress,
+  Alert,
 } from "@mui/joy";
 import type { Post } from "../types";
 import { getLatestPosts, getPostImageUrl } from "../api";
 import PaginationControls from "./PaginationControls";
+import { useAuth } from "../contexts/AuthContext";
 
 const Overview: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -20,6 +22,7 @@ const Overview: React.FC = () => {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -35,7 +38,7 @@ const Overview: React.FC = () => {
         Recent Posts
       </Typography>
 
-      {!loading && posts.length > 0 && (
+      {!loading && posts.length > 0 && isAuthenticated && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
@@ -113,14 +116,16 @@ const Overview: React.FC = () => {
                       {post.images.length !== 1 ? "s" : ""}
                     </Typography>
                   </Stack>
-                  <Button
-                    variant="solid"
-                    fullWidth
-                    onClick={() => navigate(`/station/${post.station_id}`)}
-                    sx={{ mt: "auto" }}
-                  >
-                    View Station
-                  </Button>
+                  {isAuthenticated && (
+                    <Button
+                      variant="solid"
+                      fullWidth
+                      onClick={() => navigate(`/station/${post.station_id}`)}
+                      sx={{ mt: "auto" }}
+                    >
+                      View Station
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
@@ -128,7 +133,7 @@ const Overview: React.FC = () => {
         </Grid>
       )}
 
-      {!loading && posts.length > 0 && (
+      {!loading && posts.length > 0 && isAuthenticated && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
@@ -137,6 +142,14 @@ const Overview: React.FC = () => {
           hasMore={posts.length >= limit}
           loading={loading}
         />
+      )}
+
+      {!loading && posts.length > 0 && !isAuthenticated && (
+        <Box sx={{ mt: 3, textAlign: "center" }}>
+          <Alert color="info" variant="soft">
+            Please login to browse further.
+          </Alert>
+        </Box>
       )}
     </Box>
   );

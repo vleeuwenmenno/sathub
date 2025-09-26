@@ -85,10 +85,10 @@ export const register = async (
 };
 
 export const login = async (
-  username: string,
+  usernameOrEmail: string,
   password: string,
 ): Promise<{ token: string; refresh_token: string; user: User }> => {
-  const res = await api.post("/auth/login", { username, password });
+  const res = await api.post("/auth/login", { username: usernameOrEmail, password });
   const authData = res.data.data; // Extract from the nested data structure
   return {
     token: authData.access_token, // Map access_token to token
@@ -123,6 +123,17 @@ export const updateProfile = async (data: {
 }): Promise<User> => {
   const res = await api.put("/auth/profile", data);
   return res.data.data; // Extract from the nested data structure
+};
+
+export const forgotPassword = async (email: string): Promise<void> => {
+  await axios.post(`${API_BASE}/auth/forgot-password`, { email });
+};
+
+export const resetPassword = async (
+  token: string,
+  password: string,
+): Promise<void> => {
+  await axios.post(`${API_BASE}/auth/reset-password`, { token, password });
 };
 
 // Station types

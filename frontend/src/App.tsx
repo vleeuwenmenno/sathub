@@ -7,6 +7,8 @@ import Overview from "./components/Overview";
 import Detail from "./components/Detail";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import StationsList from "./components/StationsList";
 import StationForm from "./components/StationForm";
 import GlobalStations from "./components/GlobalStations";
@@ -43,6 +45,8 @@ function App() {
                 <Route path="/post/:id" element={<Detail />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/stations" element={<StationsList />} />
                 <Route
                   path="/stations/new"

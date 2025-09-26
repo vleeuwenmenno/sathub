@@ -124,6 +124,9 @@ func GetLatestPosts(c *gin.Context) {
 	db := config.GetDB()
 	var posts []models.Post
 
+	// Check if user is authenticated
+	_, isAuthenticated := middleware.GetCurrentUserID(c)
+
 	// Parse limit from query, default to 10
 	limitStr := c.DefaultQuery("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
@@ -135,6 +138,12 @@ func GetLatestPosts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
+		page = 1
+	}
+
+	// For unauthenticated users, force limit to 10 and page to 1
+	if !isAuthenticated {
+		limit = 10
 		page = 1
 	}
 

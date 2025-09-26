@@ -25,8 +25,8 @@ type RegisterRequest struct {
 
 // LoginRequest represents the request body for user login
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	UsernameOrEmail string `json:"username" binding:"required"`
+	Password        string `json:"password" binding:"required"`
 }
 
 // RefreshRequest represents the request body for token refresh
@@ -161,15 +161,23 @@ func Login(c *gin.Context) {
 
 	db := config.GetDB()
 
-	// Find user by username
+	// Find user by username or email
 	var user models.User
-	if err := db.Where("username = ?", req.Username).First(&user).Error; err != nil {
+	if err := db.Where("username = ?", req.UsernameOrEmail).First(&user).Error; err != nil {
+		// If not found by username, try by email
 		if err == gorm.ErrRecordNotFound {
-			utils.UnauthorizedResponse(c, "Invalid credentials")
+			if err := db.Where("email = ?", req.UsernameOrEmail).First(&user).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					utils.UnauthorizedResponse(c, "Invalid credentials")
+					return
+				}
+				utils.InternalErrorResponse(c, "Database error")
+				return
+			}
+		} else {
+			utils.InternalErrorResponse(c, "Database error")
 			return
 		}
-		utils.InternalErrorResponse(c, "Database error")
-		return
 	}
 
 	// Check password
@@ -429,4 +437,127 @@ func GetProfile(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)
+}
+
+// ForgotPasswordRequest represents the request body for forgot password
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordRequest represents the request body for reset password
+type ResetPasswordRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+// ForgotPassword handles password reset request
+func ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find user by email
+	var user models.User
+	if err := db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Don't reveal if email exists or not for security
+			utils.SuccessResponse(c, http.StatusOK, "If an account with that email exists, a password reset link has been sent.", nil)
+			return
+		}
+		utils.InternalErrorResponse(c, "Database error")
+		return
+	}
+
+	// Check if user has email set
+	if !user.Email.Valid || user.Email.String == "" {
+		// Don't reveal if email exists or not for security
+		utils.SuccessResponse(c, http.StatusOK, "If an account with that email exists, a password reset link has been sent.", nil)
+		return
+	}
+
+	// Invalidate any existing reset tokens for this user
+	db.Where("user_id = ? AND used = ?", user.ID, false).Delete(&models.PasswordResetToken{})
+
+	// Generate reset token
+	resetToken := utils.GenerateRandomString(32)
+
+	// Create password reset token record
+	resetTokenRecord := models.PasswordResetToken{
+		UserID:    user.ID,
+		Token:     resetToken,
+		ExpiresAt: time.Now().Add(time.Hour), // 1 hour expiry
+	}
+
+	if err := db.Create(&resetTokenRecord).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to create reset token")
+		return
+	}
+
+	// Send password reset email
+	if err := utils.SendPasswordResetEmail(user.Email.String, user.Username, resetToken); err != nil {
+		// Log error but don't fail the request
+		// In production, you might want to retry or alert admins
+		utils.InternalErrorResponse(c, "Failed to send reset email")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "If an account with that email exists, a password reset link has been sent.", nil)
+}
+
+// ResetPassword handles password reset with token
+func ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find reset token
+	var resetTokenRecord models.PasswordResetToken
+	if err := db.Where("token = ? AND used = ?", req.Token, false).First(&resetTokenRecord).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.ValidationErrorResponse(c, "Invalid or expired reset token")
+			return
+		}
+		utils.InternalErrorResponse(c, "Database error")
+		return
+	}
+
+	// Check if token is expired
+	if resetTokenRecord.IsExpired() {
+		db.Delete(&resetTokenRecord)
+		utils.ValidationErrorResponse(c, "Reset token has expired")
+		return
+	}
+
+	// Get user
+	var user models.User
+	if err := db.First(&user, resetTokenRecord.UserID).Error; err != nil {
+		utils.InternalErrorResponse(c, "User not found")
+		return
+	}
+
+	// Hash new password
+	if err := user.HashPassword(req.Password); err != nil {
+		utils.InternalErrorResponse(c, "Failed to process password")
+		return
+	}
+
+	// Update user password
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update password")
+		return
+	}
+
+	// Mark token as used and clean up
+	resetTokenRecord.Used = true
+	db.Save(&resetTokenRecord)
+
+	utils.SuccessResponse(c, http.StatusOK, "Password reset successfully", nil)
 }

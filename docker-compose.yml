@@ -21,3 +21,14 @@ services:
       - NODE_ENV=development
     depends_on:
       - backend
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    volumes:
+      - mailpit_data:/data
+
+volumes:
+  mailpit_data:

@@ -39,7 +39,7 @@ const Login: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '50vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -64,12 +64,13 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <FormControl>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Username or Email</FormLabel>
               <Input
                 value={username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required
                 fullWidth
+                placeholder="Enter your username or email"
               />
             </FormControl>
 
@@ -100,6 +101,12 @@ const Login: React.FC = () => {
             </Button>
           </Stack>
         </form>
+
+        <Typography textAlign="center">
+          <Link to="/forgot-password" style={{ color: 'var(--joy-palette-primary-main)' }}>
+            Forgot Password?
+          </Link>
+        </Typography>
 
         <Typography textAlign="center">
           Don't have an account?{' '}

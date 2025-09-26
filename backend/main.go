@@ -12,12 +12,18 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Parse command line flags
 	seedFlag := flag.Bool("seed", false, "Run database seeding")
 	flag.Parse()
+
+	// Load environment variables
+	if err := godotenv.Load(".env.development"); err != nil {
+		log.Println("Warning: .env.development file not found, using system environment variables")
+	}
 
 	// Initialize database
 	config.InitDatabase()
@@ -69,6 +75,8 @@ func main() {
 			auth.POST("/login", handlers.Login)
 			auth.POST("/refresh", handlers.RefreshTokens)
 			auth.POST("/logout", handlers.Logout)
+			auth.POST("/forgot-password", handlers.ForgotPassword)
+			auth.POST("/reset-password", handlers.ResetPassword)
 
 			// Protected auth routes
 			protected := auth.Group("")
@@ -104,9 +112,11 @@ func main() {
 		publicStations := api.Group("/stations")
 		{
 			publicStations.GET("/user/:userId", handlers.GetUserStations)
-			publicStations.GET("/:id/details", middleware.OptionalAuth(), handlers.GetStationDetails)
 			publicStations.GET("/:id/picture", middleware.OptionalAuth(), handlers.GetStationPicture)
 		}
+
+		// Station details (authentication required)
+		api.GET("/stations/:id/details", middleware.AuthRequired(), handlers.GetStationDetails)
 
 		// Protected global user routes (authentication required)
 		protectedGlobalUsers := api.Group("/users")
