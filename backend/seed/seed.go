@@ -75,7 +75,7 @@ func createTestImageData() []byte {
 	selectedFile := imageFiles[rand.Intn(len(imageFiles))]
 
 	// Construct the full path relative to the project root
-	imagePath := filepath.Join("..", "data", "53bbbeba399e47f59b7a0f8403b1ab00", "upload_data", "MSU-MR", selectedFile)
+	imagePath := filepath.Join("..", "data", "images", selectedFile)
 
 	// Read the image file
 	imageData, err := os.ReadFile(imagePath)

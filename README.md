@@ -1,17 +1,197 @@
 # SatHub
 
+A web-based platform for managing satellite ground stations and their captured data.
 
-## Run
+## Features
 
-To run this in development:
+SatHub provides a comprehensive solution for satellite enthusiasts and operators to manage their ground stations and share satellite data.
+
+### Current Features
+
+- [x] User authentication and registration
+- [x] Station management (create, edit, delete ground stations)
+- [x] Public and private station visibility
+- [x] Satellite data post management
+- [x] Posts upload using API keys per station
+- [x] Global station and user directories
+- [x] Responsive web interface
+- [x] Docker-based development environment
+- [x] Database seeding for testing
+
+### Planned Features
+
+- [ ] Docker-based production environment
+- [ ] GitHub Workfows that publish and compile docker images for prod
+- [ ] User password reset flow
+- [ ] 2FA Support
+- [ ] API rate limiting
+- [ ] Station health monitoring
+- [ ] Data export functionality
+
+## Tech Stack
+
+### Backend
+- **Language**: Go 1.21+
+- **Framework**: Gin web framework
+- **Database**: SQLite with GORM ORM (Allows switching to MariaDB or Postgres)
+- **Authentication**: JWT tokens with refresh tokens
+- **API**: RESTful JSON API
+
+### Frontend
+- **Language**: TypeScript
+- **Framework**: React 19 with Vite
+- **UI Library**: Material-UI (MUI) with Joy design system
+- **Routing**: React Router
+- **HTTP Client**: Axios
+
+### Development & Deployment
+- **Containerization**: Docker & Docker Compose
+- **Hot Reloading**: Configured for both frontend and backend
+- **Linting**: ESLint for frontend, Go standard tools for backend
+
+## Architecture
+
+```mermaid
+graph TD
+    A[Web Browser] --> B[Frontend React App<br/>Port 5173]
+    B --> C[Backend Go API<br/>Port 4001]
+    C --> D[(SQLite Database<br/>satdump.db)]
+    E[Satellite Stations] -->|HTTP POST<br/>with Station Token| C
+    C -->|JWT Auth| B
 ```
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Git
+
+For local development without Docker:
+- Go 1.21+ (for backend)
+- Node.js 18+ and npm (for frontend)
+
+## Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd sathub
+   ```
+
+2. Start the development environment:
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. Wait for the backend to compile (first run takes longer).
+
+4. Open your browser to `http://localhost:5173`
+
+5. Seed the database with test data:
+   ```bash
+   rm backend/satdump.db  
+   docker compose exec backend go run main.go --seed
+   ```
+
+## Development Setup
+
+### Using Docker (Recommended)
+
+The project includes Docker Compose configuration for easy development:
+
+```bash
+# Start all services
 docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
 ```
 
-This will run the backend and frontend in docker!
-Please ensure you wait a little bit for the backend to get compiled the first time when the containers start!
+### Local Development
 
-## Development
+#### Backend Setup
 
-The containers are set-up to automatically restart when backend or frontend files are changed they will auto-restart for you!
-on `http://localhost:5173/` you can view the web application.
+```bash
+cd backend
+go mod download
+go run main.go
+```
+
+The backend will start on `http://localhost:4001`
+
+#### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will start on `http://localhost:5173`
+
+### Database Seeding
+
+To populate the database with test data:
+
+```bash
+cd backend && go run main.go --seed
+```
+
+*Make sure you don't already have a database file, otherwise the seeding will likely fail!*
+
+This creates:
+- 3 test users (alice_skywatcher, bob_satellite, charlie_space)
+- 6 stations (mix of public/private)
+- 15-40 posts with sample satellite data
+- Placeholder images (assuming you have some stored in the root folder data/)
+
+Login with any user using password: `password123`
+
+## API Overview
+
+The backend provides a REST API with the following main endpoints:
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/refresh` - Refresh access tokens
+
+### Stations
+- `GET /api/stations` - List user's stations
+- `POST /api/stations` - Create new station
+- `GET /api/stations/:id` - Get station details
+- `PUT /api/stations/:id` - Update station
+- `DELETE /api/stations/:id` - Delete station
+- `GET /api/stations/global` - Global station directory
+
+### Posts
+- `GET /api/posts` - List posts (authenticated)
+- `GET /api/posts/latest` - Latest posts (public)
+- `POST /api/posts` - Create post (station token auth)
+- `GET /api/posts/:id` - Get post details
+
+### Users
+- `GET /api/users/global` - Global user directory
+
+All endpoints return JSON responses. See `backend/main.go` for complete route definitions.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+### Development Guidelines
+
+- Follow Go and TypeScript best practices
+- Use meaningful commit messages
+- Update documentation for API changes
+- Test your changes thoroughly
+
+## License
+
+[Add license information here]
