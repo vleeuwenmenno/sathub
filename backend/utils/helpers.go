@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"strings"
 )
 
 // GenerateRandomString generates a random string of the specified length
@@ -13,4 +14,24 @@ func GenerateRandomString(length int) string {
 		return "fallback"
 	}
 	return hex.EncodeToString(bytes)[:length]
+}
+
+// IsImageContentType checks if the content type is a valid image type
+func IsImageContentType(contentType string) bool {
+	validTypes := []string{
+		"image/jpeg",
+		"image/jpg",
+		"image/png",
+		"image/gif",
+		"image/webp",
+		"image/bmp",
+		"image/tiff",
+	}
+	contentType = strings.ToLower(contentType)
+	for _, validType := range validTypes {
+		if contentType == validType {
+			return true
+		}
+	}
+	return false
 }

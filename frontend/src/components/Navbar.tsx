@@ -1,78 +1,86 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Box, Typography, Button, IconButton, useColorScheme } from "@mui/joy";
 import {
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  useColorScheme,
-} from '@mui/joy';
-import { DarkMode, LightMode, Satellite, ArrowBack, Logout } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+  DarkMode,
+  LightMode,
+  Satellite,
+  ArrowBack,
+  Logout,
+} from "@mui/icons-material";
+import { useAuth } from "../contexts/AuthContext";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { mode, setMode } = useColorScheme();
   const { isAuthenticated, user, logout } = useAuth();
-  const isDetailPage = location.pathname.includes('/post/');
+  const isDetailPage = location.pathname.includes("/post/");
 
   const toggleColorScheme = () => {
-    setMode(mode === 'dark' ? 'light' : 'dark');
+    setMode(mode === "dark" ? "light" : "dark");
   };
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
         p: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.surface',
-        position: 'sticky',
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.surface",
+        position: "sticky",
         top: 0,
         zIndex: 1000,
       }}
     >
       {/* Left side - Logo and title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {isDetailPage && (
           <IconButton
             variant="outlined"
             size="sm"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             sx={{ mr: 1 }}
           >
             <ArrowBack />
           </IconButton>
         )}
-        <Satellite sx={{ fontSize: '1.5rem', color: 'primary.main' }} />
+        <Satellite sx={{ fontSize: "1.5rem", color: "primary.main" }} />
         <Typography
           level="h3"
           sx={{
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            '&:hover': { color: 'primary.main' }
+            fontWeight: "bold",
+            cursor: "pointer",
+            "&:hover": { color: "primary.main" },
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
         >
           SatHub
         </Typography>
       </Box>
 
       {/* Right side - Auth and theme toggle */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Button
           variant="plain"
           size="sm"
-          onClick={() => navigate('/stations/global')}
+          onClick={() => navigate("/")}
+          sx={{ mr: 1 }}
+        >
+          Home
+        </Button>
+        <Button
+          variant="plain"
+          size="sm"
+          onClick={() => navigate("/stations/global")}
           sx={{ mr: 1 }}
         >
           Stations
@@ -82,22 +90,20 @@ const Navbar: React.FC = () => {
             <Button
               variant="plain"
               size="sm"
-              onClick={() => navigate('/stations')}
+              onClick={() => navigate("/stations")}
               sx={{ mr: 1 }}
             >
               My Stations
             </Button>
-            <Typography level="body-sm">
-              Welcome, {user?.username}
-            </Typography>
+            <Typography level="body-sm">Welcome, {user?.username}</Typography>
             <IconButton
               variant="outlined"
               size="sm"
               onClick={handleLogout}
               sx={{
-                '&:hover': {
-                  bgcolor: mode === 'dark' ? 'neutral.800' : 'neutral.100'
-                }
+                "&:hover": {
+                  bgcolor: mode === "dark" ? "neutral.800" : "neutral.100",
+                },
               }}
             >
               <Logout />
@@ -107,7 +113,7 @@ const Navbar: React.FC = () => {
           <Button
             variant="outlined"
             size="sm"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate("/login")}
           >
             Login
           </Button>
@@ -118,12 +124,12 @@ const Navbar: React.FC = () => {
           size="sm"
           onClick={toggleColorScheme}
           sx={{
-            '&:hover': {
-              bgcolor: mode === 'dark' ? 'neutral.800' : 'neutral.100'
-            }
+            "&:hover": {
+              bgcolor: mode === "dark" ? "neutral.800" : "neutral.100",
+            },
           }}
         >
-          {mode === 'dark' ? <LightMode /> : <DarkMode />}
+          {mode === "dark" ? <LightMode /> : <DarkMode />}
         </IconButton>
       </Box>
     </Box>

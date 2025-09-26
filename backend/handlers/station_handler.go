@@ -16,11 +16,11 @@ import (
 )
 
 // generatePictureURL creates a URL for accessing station pictures
-func generatePictureURL(stationID uint, updatedAt string) string {
-	if stationID == 0 {
+func generatePictureURL(stationID string, updatedAt string) string {
+	if stationID == "" {
 		return ""
 	}
-	return fmt.Sprintf("/stations/%d/picture?t=%s", stationID, updatedAt)
+	return fmt.Sprintf("/stations/%s/picture?t=%s", stationID, updatedAt)
 }
 
 // StationRequest represents the request body for creating/updating a station
@@ -31,18 +31,26 @@ type StationRequest struct {
 	IsPublic  *bool  `json:"is_public,omitempty"` // Optional, defaults to true
 }
 
+// UserResponse represents user data in responses
+type UserResponse struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+}
+
 // StationResponse represents the station data in responses
 type StationResponse struct {
-	ID         uint   `json:"id"`
-	Name       string `json:"name"`
-	Location   string `json:"location"`
-	Picture    string `json:"picture_url"` // URL to access the picture
-	HasPicture bool   `json:"has_picture"`
-	Equipment  string `json:"equipment"`
-	IsPublic   bool   `json:"is_public"`
-	Token      string `json:"token,omitempty"` // Only included when explicitly requested
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID         string        `json:"id"`
+	UserID     uint          `json:"user_id,omitempty"`
+	User       *UserResponse `json:"user,omitempty"`
+	Name       string        `json:"name"`
+	Location   string        `json:"location"`
+	Picture    string        `json:"picture_url"` // URL to access the picture
+	HasPicture bool          `json:"has_picture"`
+	Equipment  string        `json:"equipment"`
+	IsPublic   bool          `json:"is_public"`
+	Token      string        `json:"token,omitempty"` // Only included when explicitly requested
+	CreatedAt  string        `json:"created_at"`
+	UpdatedAt  string        `json:"updated_at"`
 }
 
 // GetStations handles listing all stations for the authenticated user
@@ -87,8 +95,8 @@ func GetStation(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -96,7 +104,7 @@ func GetStation(c *gin.Context) {
 	db := config.GetDB()
 	var station models.Station
 
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -175,8 +183,8 @@ func UpdateStation(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -191,7 +199,7 @@ func UpdateStation(c *gin.Context) {
 	var station models.Station
 
 	// Find and update station
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -236,8 +244,8 @@ func DeleteStation(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -246,7 +254,7 @@ func DeleteStation(c *gin.Context) {
 
 	// Find station first to ensure it exists and belongs to user
 	var station models.Station
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -272,8 +280,8 @@ func GetStationToken(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -281,7 +289,7 @@ func GetStationToken(c *gin.Context) {
 	db := config.GetDB()
 	var station models.Station
 
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -305,8 +313,8 @@ func RegenerateStationToken(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -314,7 +322,7 @@ func RegenerateStationToken(c *gin.Context) {
 	db := config.GetDB()
 	var station models.Station
 
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -349,8 +357,8 @@ func UploadStationPicture(c *gin.Context) {
 		return
 	}
 
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -358,7 +366,7 @@ func UploadStationPicture(c *gin.Context) {
 	db := config.GetDB()
 	var station models.Station
 
-	if err := db.Where("id = ? AND user_id = ?", uint(stationID), userID).First(&station).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", stationID, userID).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -421,8 +429,8 @@ func UploadStationPicture(c *gin.Context) {
 
 // GetStationPicture serves station pictures from database BLOB
 func GetStationPicture(c *gin.Context) {
-	stationID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
+	stationID := c.Param("id")
+	if stationID == "" {
 		utils.ValidationErrorResponse(c, "Invalid station ID")
 		return
 	}
@@ -437,10 +445,10 @@ func GetStationPicture(c *gin.Context) {
 	var query *gorm.DB
 	if isAuthenticated {
 		// Authenticated users can view pictures of stations they own (regardless of public/private)
-		query = db.Where("id = ? AND user_id = ?", uint(stationID), userID)
+		query = db.Where("id = ? AND user_id = ?", stationID, userID)
 	} else {
 		// Unauthenticated users can only view pictures of public stations
-		query = db.Where("id = ? AND is_public = ?", uint(stationID), true)
+		query = db.Where("id = ? AND is_public = ?", stationID, true)
 	}
 
 	if err := query.First(&station).Error; err != nil {
@@ -482,15 +490,16 @@ func GetGlobalStations(c *gin.Context) {
 	db := config.GetDB()
 	var stations []models.Station
 
-	if err := db.Where("is_public = ?", true).Find(&stations).Error; err != nil {
+	if err := db.Joins("User").Where("is_public = ?", true).Find(&stations).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch stations")
 		return
 	}
 
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
-		response[i] = StationResponse{
+		stationResponse := StationResponse{
 			ID:         station.ID,
+			UserID:     station.UserID,
 			Name:       station.Name,
 			Location:   station.Location,
 			Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
@@ -500,6 +509,16 @@ func GetGlobalStations(c *gin.Context) {
 			CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
+
+		// Add user information if it exists
+		if station.User.ID != 0 {
+			stationResponse.User = &UserResponse{
+				ID:       station.User.ID,
+				Username: station.User.Username,
+			}
+		}
+
+		response[i] = stationResponse
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Stations retrieved successfully", response)
@@ -516,15 +535,16 @@ func GetUserStations(c *gin.Context) {
 	db := config.GetDB()
 	var stations []models.Station
 
-	if err := db.Where("user_id = ? AND is_public = ?", uint(userID), true).Find(&stations).Error; err != nil {
+	if err := db.Joins("User").Where("user_id = ? AND is_public = ?", uint(userID), true).Find(&stations).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch stations")
 		return
 	}
 
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
-		response[i] = StationResponse{
+		stationResponse := StationResponse{
 			ID:         station.ID,
+			UserID:     station.UserID,
 			Name:       station.Name,
 			Location:   station.Location,
 			Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
@@ -534,7 +554,75 @@ func GetUserStations(c *gin.Context) {
 			CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
+
+		// Add user information if it exists
+		if station.User.ID != 0 {
+			stationResponse.User = &UserResponse{
+				ID:       station.User.ID,
+				Username: station.User.Username,
+			}
+		}
+
+		response[i] = stationResponse
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "User stations retrieved successfully", response)
+}
+
+// GetStationDetails handles retrieving detailed station information with user data (public endpoint)
+func GetStationDetails(c *gin.Context) {
+	stationID := c.Param("id")
+	if stationID == "" {
+		utils.ValidationErrorResponse(c, "Invalid station ID")
+		return
+	}
+
+	db := config.GetDB()
+	var station models.Station
+
+	// Check if user is authenticated for access control
+	userID, isAuthenticated := middleware.GetCurrentUserID(c)
+
+	// Build query based on permissions
+	query := db.Joins("User")
+	if isAuthenticated {
+		// Authenticated users can view stations they own or public stations
+		query = query.Where("(stations.id = ? AND stations.user_id = ?) OR (stations.id = ? AND is_public = ?)",
+			stationID, userID, stationID, true)
+	} else {
+		// Unauthenticated users can only view public stations
+		query = query.Where("stations.id = ? AND stations.is_public = ?", stationID, true)
+	}
+
+	if err := query.First(&station).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Station not found or not accessible")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch station")
+		return
+	}
+
+	response := StationResponse{
+		ID:         station.ID,
+		UserID:     station.UserID,
+		Name:       station.Name,
+		Location:   station.Location,
+		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		HasPicture: len(station.Picture) > 0,
+		Equipment:  station.Equipment,
+		IsPublic:   station.IsPublic,
+		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+
+	// Add user information
+	if station.User.ID != 0 {
+		response.User = &UserResponse{
+			ID:       station.User.ID,
+			Username: station.User.Username,
+		}
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Station details retrieved successfully", response)
 }

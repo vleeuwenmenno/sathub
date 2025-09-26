@@ -49,7 +49,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
     if (!id) return;
     try {
       setLoading(true);
-      const data = await getStation(parseInt(id));
+      const data = await getStation(id);
       setStation(data);
       setFormData({
         name: data.name,
@@ -100,7 +100,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
         stationData = await createStation({ ...formData, is_public: isPublic });
       } else {
         if (!id) throw new Error('Station ID is required');
-        stationData = await updateStation(parseInt(id), { ...formData, is_public: isPublic });
+        stationData = await updateStation(id, { ...formData, is_public: isPublic });
       }
 
       // Upload picture if selected

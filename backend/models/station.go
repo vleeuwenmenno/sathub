@@ -3,22 +3,23 @@ package models
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type Station struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
+	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      uint      `gorm:"not null;index" json:"user_id"`
 	User        User      `gorm:"foreignKey:UserID" json:"-"`
 	Name        string    `gorm:"not null" json:"name"`
 	Location    string    `gorm:"not null" json:"location"`
-	Picture     []byte    `gorm:"type:blob" json:"-"` // Binary image data (not in JSON)
-	PictureType string    `gorm:"size:50" json:"-"`   // MIME type of the image
+	Picture     []byte    `gorm:"type:blob" json:"-"`
+	PictureType string    `gorm:"size:50" json:"-"`
 	Equipment   string    `gorm:"type:text" json:"equipment"`
-	IsPublic    bool      `gorm:"default:true" json:"is_public"` // Whether station is visible globally
-	Token       string    `gorm:"uniqueIndex;not null" json:"-"` // Hidden in JSON responses
+	IsPublic    bool      `gorm:"column:is_public;default:true" json:"is_public"`
+	Token       string    `gorm:"uniqueIndex;not null" json:"-"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -33,11 +34,30 @@ func (s *Station) GenerateToken() error {
 	return nil
 }
 
-// BeforeCreate is a GORM hook that generates a token before creating a station
+// BeforeCreate is a GORM hook that generates a UUID and token before creating a station
 func (s *Station) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		if err := s.GenerateUUID(); err != nil {
+			return err
+		}
+	}
 	if s.Token == "" {
 		return s.GenerateToken()
 	}
+	return nil
+}
+
+// GenerateUUID generates a UUID v4 for the station
+func (s *Station) GenerateUUID() error {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return err
+	}
+	// Set version (4) and variant bits
+	bytes[6] = (bytes[6] & 0x0f) | 0x40 // Version 4
+	bytes[8] = (bytes[8] & 0x3f) | 0x80 // Variant 10
+	s.ID = fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		bytes[0:4], bytes[4:6], bytes[6:8], bytes[8:10], bytes[10:16])
 	return nil
 }
 

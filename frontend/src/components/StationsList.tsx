@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -15,24 +15,49 @@ import {
   Alert,
   IconButton,
   Tooltip,
-} from '@mui/joy';
-import { Delete, Edit, Add, VpnKey, Refresh } from '@mui/icons-material';
-import type { Station } from '../api';
-import { getStations, deleteStation, getStationToken, regenerateStationToken, updateStation, getStationPictureBlob } from '../api';
+  Chip,
+} from "@mui/joy";
+import {
+  Delete,
+  Edit,
+  Add,
+  VpnKey,
+  Refresh,
+  ContentCopy,
+} from "@mui/icons-material";
+import type { Station } from "../api";
+import {
+  getStations,
+  deleteStation,
+  getStationToken,
+  regenerateStationToken,
+  updateStation,
+  getStationPictureBlob,
+} from "../api";
 
 const StationsList: React.FC = () => {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; station: Station | null; confirmationText: string }>({
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    station: Station | null;
+    confirmationText: string;
+  }>({
     open: false,
     station: null,
-    confirmationText: '',
+    confirmationText: "",
   });
-  const [tokenDialog, setTokenDialog] = useState<{ open: boolean; station: Station | null; token: string }>({
+  const [tokenDialog, setTokenDialog] = useState<{
+    open: boolean;
+    station: Station | null;
+    token: string;
+    loading: boolean;
+  }>({
     open: false,
     station: null,
-    token: '',
+    token: "",
+    loading: false,
   });
   const navigate = useNavigate();
 
@@ -43,7 +68,7 @@ const StationsList: React.FC = () => {
       setStations(data);
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load stations');
+      setError(err.response?.data?.error || "Failed to load stations");
     } finally {
       setLoading(false);
     }
@@ -67,7 +92,11 @@ const StationsList: React.FC = () => {
             const blobUrl = await getStationPictureBlob(station.picture_url);
             newImageBlobs[`${station.id}-picture`] = blobUrl;
           } catch (error) {
-            console.error('Failed to load image for station', station.id, error);
+            console.error(
+              "Failed to load image for station",
+              station.id,
+              error,
+            );
           }
         }
       }
@@ -81,28 +110,33 @@ const StationsList: React.FC = () => {
   const handleDelete = async (station: Station) => {
     try {
       await deleteStation(station.id);
-      setStations(stations.filter(s => s.id !== station.id));
-      setDeleteDialog({ open: false, station: null, confirmationText: '' });
+      setStations(stations.filter((s) => s.id !== station.id));
+      setDeleteDialog({ open: false, station: null, confirmationText: "" });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete station');
+      setError(err.response?.data?.error || "Failed to delete station");
     }
   };
 
   const handleShowToken = async (station: Station) => {
     try {
       const token = await getStationToken(station.id);
-      setTokenDialog({ open: true, station, token });
+      setTokenDialog({ open: true, station, token, loading: false });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to get station token');
+      setError(err.response?.data?.error || "Failed to get station token");
     }
   };
 
-  const handleRegenerateToken = async (station: Station) => {
+  const handleRegenerateToken = async () => {
+    if (!tokenDialog.station) return;
     try {
-      const newToken = await regenerateStationToken(station.id);
-      setTokenDialog({ open: true, station, token: newToken });
+      setTokenDialog({ ...tokenDialog, loading: true });
+      // Add artificial delay to make it look like processing
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const newToken = await regenerateStationToken(tokenDialog.station.id);
+      setTokenDialog({ ...tokenDialog, token: newToken, loading: false });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to regenerate token');
+      setError(err.response?.data?.error || "Failed to regenerate token");
+      setTokenDialog({ ...tokenDialog, loading: false });
     }
   };
 
@@ -115,11 +149,15 @@ const StationsList: React.FC = () => {
         is_public: !station.is_public,
       });
       // Update local state
-      setStations(stations.map(s =>
-        s.id === station.id ? { ...s, is_public: !s.is_public } : s
-      ));
+      setStations(
+        stations.map((s) =>
+          s.id === station.id ? { ...s, is_public: !s.is_public } : s,
+        ),
+      );
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update station visibility');
+      setError(
+        err.response?.data?.error || "Failed to update station visibility",
+      );
     }
   };
 
@@ -131,20 +169,27 @@ const StationsList: React.FC = () => {
   if (error) return <Alert color="danger">{error}</Alert>;
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1400px', mx: 'auto' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography level="h2">My Stations</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="outlined"
-            onClick={() => navigate('/stations/global')}
+            onClick={() => navigate("/stations/global")}
             size="lg"
           >
             View All Stations
           </Button>
           <Button
             startDecorator={<Add />}
-            onClick={() => navigate('/stations/new')}
+            onClick={() => navigate("/stations/new")}
             size="lg"
           >
             Add Station
@@ -155,7 +200,7 @@ const StationsList: React.FC = () => {
       {stations.length === 0 ? (
         <Card>
           <CardContent>
-            <Typography level="body-lg" sx={{ textAlign: 'center', py: 4 }}>
+            <Typography level="body-lg" sx={{ textAlign: "center", py: 4 }}>
               No stations found. Create your first station to get started.
             </Typography>
           </CardContent>
@@ -164,58 +209,90 @@ const StationsList: React.FC = () => {
         <Grid container spacing={3}>
           {stations.map((station) => (
             <Grid key={station.id} xs={12} sm={6} lg={4}>
-              <Card sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: 'lg'
-                }
-              }}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "lg",
+                    cursor: "pointer",
+                  },
+                }}
+                onClick={() => navigate(`/station/${station.id}`)}
+              >
                 {imageBlobs[`${station.id}-picture`] && (
-                  <Box sx={{
-                    position: 'relative',
-                    height: 200,
-                    overflow: 'hidden'
-                  }}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      height: 200,
+                      overflow: "hidden",
+                    }}
+                  >
                     <img
                       src={imageBlobs[`${station.id}-picture`]}
                       alt={station.name}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
                       }}
                     />
                   </Box>
                 )}
-                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Typography level="h4" sx={{ mb: 1 }}>{station.name}</Typography>
+                <CardContent
+                  sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                >
+                  <Typography level="h4" sx={{ mb: 1 }}>
+                    {station.name}
+                  </Typography>
                   <Stack spacing={0.5} sx={{ mb: 2, flex: 1 }}>
-                    <Typography level="body-sm" startDecorator={<span>📍</span>}>
+                    <Typography
+                      level="body-sm"
+                      startDecorator={<span>📍</span>}
+                    >
                       {station.location}
                     </Typography>
                     {station.equipment && (
-                      <Typography level="body-sm" startDecorator={<span>🔧</span>}>
-                        {station.equipment.length > 50 ? `${station.equipment.substring(0, 50)}...` : station.equipment}
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>🔧</span>}
+                      >
+                        {station.equipment.length > 50
+                          ? `${station.equipment.substring(0, 50)}...`
+                          : station.equipment}
                       </Typography>
                     )}
-                    <Typography level="body-sm" startDecorator={<span>📅</span>}>
-                      Created {new Date(station.created_at).toLocaleDateString()}
+                    <Typography
+                      level="body-sm"
+                      startDecorator={<span>📅</span>}
+                    >
+                      Created{" "}
+                      {new Date(station.created_at).toLocaleDateString()}
                     </Typography>
-                    <Typography level="body-sm" startDecorator={station.is_public ? <span>🌐</span> : <span>🔒</span>}>
-                      {station.is_public ? 'Public' : 'Private'}
+                    <Typography
+                      level="body-sm"
+                      startDecorator={
+                        station.is_public ? <span>🌐</span> : <span>🔒</span>
+                      }
+                    >
+                      {station.is_public ? "Public" : "Private"}
                     </Typography>
                   </Stack>
-                  <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
-                    <Tooltip title={station.is_public ? "Make Private" : "Make Public"}>
+                  <Stack direction="row" spacing={1} sx={{ mt: "auto" }}>
+                    <Tooltip
+                      title={station.is_public ? "Make Private" : "Make Public"}
+                    >
                       <IconButton
                         size="sm"
                         variant="outlined"
                         color={station.is_public ? "success" : "neutral"}
-                        onClick={() => handleToggleVisibility(station)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleVisibility(station);
+                        }}
                       >
                         {station.is_public ? <span>🌐</span> : <span>🔒</span>}
                       </IconButton>
@@ -224,26 +301,23 @@ const StationsList: React.FC = () => {
                       <IconButton
                         size="sm"
                         variant="outlined"
-                        onClick={() => handleShowToken(station)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShowToken(station);
+                        }}
                       >
                         <VpnKey />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Regenerate Token">
-                      <IconButton
-                        size="sm"
-                        variant="outlined"
-                        color="warning"
-                        onClick={() => handleRegenerateToken(station)}
-                      >
-                        <Refresh />
-                      </IconButton>
-                    </Tooltip>
+
                     <Tooltip title="Edit Station">
                       <IconButton
                         size="sm"
                         variant="outlined"
-                        onClick={() => navigate(`/stations/${station.id}/edit`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/stations/${station.id}/edit`);
+                        }}
                       >
                         <Edit />
                       </IconButton>
@@ -253,7 +327,14 @@ const StationsList: React.FC = () => {
                         size="sm"
                         variant="outlined"
                         color="danger"
-                        onClick={() => setDeleteDialog({ open: true, station, confirmationText: '' })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteDialog({
+                            open: true,
+                            station,
+                            confirmationText: "",
+                          });
+                        }}
                       >
                         <Delete />
                       </IconButton>
@@ -267,31 +348,58 @@ const StationsList: React.FC = () => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Modal open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, station: null, confirmationText: '' })}>
+      <Modal
+        open={deleteDialog.open}
+        onClose={() =>
+          setDeleteDialog({ open: false, station: null, confirmationText: "" })
+        }
+      >
         <ModalDialog>
           <ModalClose />
           <Typography level="h4">Delete Station</Typography>
           <Typography>
-            Are you sure you want to delete "{deleteDialog.station?.name}"? This action cannot be undone.
+            Are you sure you want to delete "{deleteDialog.station?.name}"? This
+            action cannot be undone.
           </Typography>
           <Typography level="body-sm" sx={{ mt: 2, mb: 1 }}>
-            To confirm deletion, type the station name: <strong>{deleteDialog.station?.name}</strong>
+            To confirm deletion, type the station name:{" "}
+            <strong>{deleteDialog.station?.name}</strong>
           </Typography>
           <Input
             fullWidth
             placeholder="Type station name here"
             value={deleteDialog.confirmationText}
-            onChange={(e) => setDeleteDialog({ ...deleteDialog, confirmationText: e.target.value })}
+            onChange={(e) =>
+              setDeleteDialog({
+                ...deleteDialog,
+                confirmationText: e.target.value,
+              })
+            }
             sx={{ mb: 2 }}
           />
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', pt: 2 }}>
-            <Button variant="plain" onClick={() => setDeleteDialog({ open: false, station: null, confirmationText: '' })}>
+          <Box
+            sx={{ display: "flex", gap: 1, justifyContent: "flex-end", pt: 2 }}
+          >
+            <Button
+              variant="plain"
+              onClick={() =>
+                setDeleteDialog({
+                  open: false,
+                  station: null,
+                  confirmationText: "",
+                })
+              }
+            >
               Cancel
             </Button>
             <Button
               color="danger"
-              disabled={deleteDialog.confirmationText !== deleteDialog.station?.name}
-              onClick={() => deleteDialog.station && handleDelete(deleteDialog.station)}
+              disabled={
+                deleteDialog.confirmationText !== deleteDialog.station?.name
+              }
+              onClick={() =>
+                deleteDialog.station && handleDelete(deleteDialog.station)
+              }
             >
               Delete
             </Button>
@@ -300,32 +408,56 @@ const StationsList: React.FC = () => {
       </Modal>
 
       {/* Token Display Dialog */}
-      <Modal open={tokenDialog.open} onClose={() => setTokenDialog({ open: false, station: null, token: '' })}>
+      <Modal
+        open={tokenDialog.open}
+        onClose={() =>
+          setTokenDialog({
+            open: false,
+            station: null,
+            token: "",
+            loading: false,
+          })
+        }
+      >
         <ModalDialog>
           <ModalClose />
-          <Typography level="h4">Station Token - {tokenDialog.station?.name}</Typography>
+          <Typography level="h4">
+            Station Token - {tokenDialog.station?.name}
+          </Typography>
           <Typography level="body-sm" sx={{ mb: 2 }}>
-            This token can be used to authenticate external applications with your station.
-            Keep it secure and regenerate if compromised.
+            This token can be used to authenticate external applications with
+            your station. Keep it secure and regenerate if compromised.
           </Typography>
           <Input
             fullWidth
             value={tokenDialog.token}
             readOnly
+            disabled={tokenDialog.loading}
+            onClick={(e: any) => e.target.select()}
+            endDecorator={
+              <Box sx={{ display: "flex", gap: 0.5 }}>
+                <Tooltip title="Copy to Clipboard">
+                  <IconButton
+                    size="sm"
+                    onClick={() => copyToClipboard(tokenDialog.token)}
+                  >
+                    <ContentCopy />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Regenerate Token">
+                  <IconButton
+                    size="sm"
+                    color="warning"
+                    loading={tokenDialog.loading}
+                    onClick={handleRegenerateToken}
+                  >
+                    <Refresh />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
             sx={{ mb: 2 }}
           />
-          <Button
-            fullWidth
-            onClick={() => copyToClipboard(tokenDialog.token)}
-            sx={{ mb: 2 }}
-          >
-            Copy to Clipboard
-          </Button>
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-            <Button onClick={() => setTokenDialog({ open: false, station: null, token: '' })}>
-              Close
-            </Button>
-          </Box>
         </ModalDialog>
       </Modal>
     </Box>

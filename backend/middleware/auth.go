@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"satdump-ui-backend/config"
+	"satdump-ui-backend/models"
 	"satdump-ui-backend/utils"
 	"strings"
 
@@ -170,4 +172,63 @@ func GetCurrentUserRole(c *gin.Context) (string, bool) {
 
 	userRole, ok := role.(string)
 	return userRole, ok
+}
+
+// StationTokenAuth middleware validates station tokens
+func StationTokenAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			utils.UnauthorizedResponse(c, "Authorization header required")
+			c.Abort()
+			return
+		}
+
+		// Check if the header starts with "Station "
+		tokenParts := strings.SplitN(authHeader, " ", 2)
+		if len(tokenParts) != 2 || strings.ToLower(tokenParts[0]) != "station" {
+			utils.UnauthorizedResponse(c, "Invalid authorization header format")
+			c.Abort()
+			return
+		}
+
+		token := tokenParts[1]
+
+		// Validate station token
+		db := config.GetDB()
+		var station models.Station
+		if err := db.Where("token = ?", token).First(&station).Error; err != nil {
+			utils.UnauthorizedResponse(c, "Invalid station token")
+			c.Abort()
+			return
+		}
+
+		// Store station information in context
+		c.Set("station_id", station.ID)
+		c.Set("station_user_id", station.UserID)
+
+		c.Next()
+	}
+}
+
+// GetCurrentStationID extracts the current station ID from the context
+func GetCurrentStationID(c *gin.Context) (string, bool) {
+	stationID, exists := c.Get("station_id")
+	if !exists {
+		return "", false
+	}
+
+	id, ok := stationID.(string)
+	return id, ok
+}
+
+// GetCurrentStationUserID extracts the user ID of the current station from the context
+func GetCurrentStationUserID(c *gin.Context) (uint, bool) {
+	userID, exists := c.Get("station_user_id")
+	if !exists {
+		return 0, false
+	}
+
+	id, ok := userID.(uint)
+	return id, ok
 }

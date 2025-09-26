@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "4001:4001"
+    volumes:
+      - .:/app
+      - ../data:/app/../data
+    environment:
+      - GIN_MODE=debug
+      - DB_PATH=./satdump.db

@@ -1,0 +1,37 @@
+package models
+
+import (
+	"time"
+)
+
+type Post struct {
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	StationID     string    `gorm:"not null;index" json:"station_id"`
+	Station       Station   `gorm:"foreignKey:StationID" json:"-"`
+	Timestamp     time.Time `gorm:"not null" json:"timestamp"`
+	SatelliteName string    `gorm:"not null" json:"satellite_name"`
+	CBOR          []byte    `gorm:"type:blob" json:"-"`        // Optional CBOR blob
+	Metadata      string    `gorm:"type:text" json:"metadata"` // JSON metadata as string
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// TableName returns the table name for Post model
+func (Post) TableName() string {
+	return "posts"
+}
+
+type PostImage struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	PostID    uint      `gorm:"not null;index" json:"post_id"`
+	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
+	ImageData []byte    `gorm:"type:blob" json:"-"` // Binary image data
+	ImageType string    `gorm:"size:50" json:"-"`   // MIME type of the image
+	Filename  string    `gorm:"not null" json:"filename"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// TableName returns the table name for PostImage model
+func (PostImage) TableName() string {
+	return "post_images"
+}

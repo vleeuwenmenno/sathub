@@ -1,3 +1,23 @@
+// New post types for database-driven posts
+export interface Post {
+  id: number;
+  station_id: number;
+  station_name: string;
+  timestamp: string;
+  satellite_name: string;
+  metadata: string;
+  images: PostImage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostImage {
+  id: number;
+  filename: string;
+  image_url: string;
+}
+
+// Legacy types (kept for backward compatibility if needed)
 export interface PostOverview {
   id: string;
   description: string;

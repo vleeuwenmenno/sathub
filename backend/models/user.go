@@ -3,18 +3,20 @@ package models
 import (
 	"time"
 
+	"database/sql"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Username  string    `gorm:"uniqueIndex;not null" json:"username"`
-	Email     string    `gorm:"uniqueIndex" json:"email,omitempty"`
-	Password  string    `gorm:"not null" json:"-"`
-	Role      string    `gorm:"default:user" json:"role"` // user, admin, moderator
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Username  string         `gorm:"uniqueIndex;not null" json:"username"`
+	Email     sql.NullString `gorm:"unique" json:"email,omitempty"`
+	Password  string         `gorm:"not null" json:"-"`
+	Role      string         `gorm:"default:user" json:"role"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 }
 
 // HashPassword hashes the user's password using bcrypt

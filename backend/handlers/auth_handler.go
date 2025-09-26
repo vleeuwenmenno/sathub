@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"database/sql"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -85,8 +87,14 @@ func Register(c *gin.Context) {
 	// Create new user
 	user := models.User{
 		Username: req.Username,
-		Email:    req.Email,
 		Role:     role,
+	}
+
+	// Set email if provided
+	if req.Email != "" {
+		user.Email = sql.NullString{String: req.Email, Valid: true}
+	} else {
+		user.Email = sql.NullString{Valid: false}
 	}
 
 	// Hash password
@@ -135,7 +143,7 @@ func Register(c *gin.Context) {
 		User: UserInfo{
 			ID:       user.ID,
 			Username: user.Username,
-			Email:    user.Email,
+			Email:    user.Email.String,
 			Role:     user.Role,
 		},
 	}
@@ -204,7 +212,7 @@ func Login(c *gin.Context) {
 		User: UserInfo{
 			ID:       user.ID,
 			Username: user.Username,
-			Email:    user.Email,
+			Email:    user.Email.String,
 			Role:     user.Role,
 		},
 	}
@@ -286,7 +294,7 @@ func RefreshTokens(c *gin.Context) {
 		User: UserInfo{
 			ID:       user.ID,
 			Username: user.Username,
-			Email:    user.Email,
+			Email:    user.Email.String,
 			Role:     user.Role,
 		},
 	}
@@ -341,7 +349,7 @@ func GetProfile(c *gin.Context) {
 	userInfo := UserInfo{
 		ID:       user.ID,
 		Username: user.Username,
-		Email:    user.Email,
+		Email:    user.Email.String,
 		Role:     user.Role,
 	}
 

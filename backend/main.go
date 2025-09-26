@@ -1,20 +1,37 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"satdump-ui-backend/config"
 	"satdump-ui-backend/handlers"
 	"satdump-ui-backend/middleware"
+	"satdump-ui-backend/seed"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Parse command line flags
+	seedFlag := flag.Bool("seed", false, "Run database seeding")
+	flag.Parse()
+
 	// Initialize database
 	config.InitDatabase()
 	defer config.CloseDatabase()
+
+	// Run seeding if flag is provided
+	if *seedFlag {
+		fmt.Println("Starting database seeding...")
+		if err := seed.Database(); err != nil {
+			log.Fatalf("Seeding failed: %v", err)
+		}
+		fmt.Println("Database seeding completed!")
+		return
+	}
 
 	// Set Gin mode from environment
 	if mode := os.Getenv("GIN_MODE"); mode != "" {
@@ -80,7 +97,32 @@ func main() {
 		{
 			publicStations.GET("/global", handlers.GetGlobalStations)
 			publicStations.GET("/user/:userId", handlers.GetUserStations)
+			publicStations.GET("/:id/details", handlers.GetStationDetails)
 			publicStations.GET("/:id/picture", middleware.OptionalAuth(), handlers.GetStationPicture)
+		}
+
+		// Public post routes (no authentication required)
+		publicPosts := api.Group("/posts")
+		{
+			publicPosts.GET("/latest", handlers.GetLatestPosts)
+			publicPosts.GET("/user/:userId", handlers.GetUserPosts)
+			publicPosts.GET("/station/:stationId", middleware.OptionalAuth(), handlers.GetStationPosts)
+			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImage)
+		}
+
+		// Protected post routes (user authentication required)
+		protectedPosts := api.Group("/posts")
+		protectedPosts.Use(middleware.AuthRequired())
+		{
+			protectedPosts.DELETE("/:id", handlers.DeletePost)
+		}
+
+		// Station post routes (station token authentication required)
+		stationPosts := api.Group("/posts")
+		stationPosts.Use(middleware.StationTokenAuth())
+		{
+			stationPosts.POST("", handlers.CreatePost)
+			stationPosts.POST("/:postId/images", handlers.UploadPostImage)
 		}
 
 		// Example protected routes (for future use)

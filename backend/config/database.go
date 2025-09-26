@@ -38,11 +38,12 @@ func InitDatabase() {
 		&models.User{},
 		&models.RefreshToken{},
 		&models.Station{},
+		&models.Post{},
+		&models.PostImage{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
-
 	log.Println("Database initialized successfully")
 }
 

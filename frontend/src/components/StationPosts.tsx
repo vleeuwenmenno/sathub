@@ -1,0 +1,199 @@
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Button,
+  Box,
+  Stack,
+  CircularProgress,
+  Alert,
+} from "@mui/joy";
+import type { Post } from "../types";
+import { getStationPosts, getPostImageUrl, getStation } from "../api";
+import type { Station } from "../api";
+
+const StationPosts: React.FC = () => {
+  const { stationId } = useParams<{ stationId: string }>();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [station, setStation] = useState<Station | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!stationId) return;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const [stationData, stationPosts] = await Promise.all([
+          getStation(stationId),
+          getStationPosts(stationId, 1, 50),
+        ]);
+        setStation(stationData);
+        setPosts(stationPosts.posts || stationPosts);
+      } catch (err) {
+        setError("Failed to load station or posts");
+        console.error("Error loading data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [stationId]);
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
+        <Alert color="danger">{error}</Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: { xs: 1, md: 2 } }}>
+      {station && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography level="h3" sx={{ mb: 2 }}>
+              {station.name}
+            </Typography>
+            <Stack spacing={1}>
+              <Typography level="body-md" startDecorator={<span>📍</span>}>
+                {station.location}
+              </Typography>
+              {station.equipment && (
+                <Typography level="body-md" startDecorator={<span>🔧</span>}>
+                  {station.equipment}
+                </Typography>
+              )}
+              <Typography level="body-md" startDecorator={<span>📅</span>}>
+                Created {new Date(station.created_at).toLocaleDateString()}
+              </Typography>
+              <Typography
+                level="body-md"
+                startDecorator={
+                  station.is_public ? <span>🌐</span> : <span>🔒</span>
+                }
+              >
+                {station.is_public ? "Public Station" : "Private Station"}
+              </Typography>
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
+
+      {posts.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography level="h4" color="neutral">
+            No posts found for this station.
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ mb: 2 }}>
+            <Typography level="body-sm" color="neutral">
+              Showing {posts.length} posts
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            {posts.map((post) => (
+              <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "lg",
+                    },
+                  }}
+                >
+                  {post.images.length > 0 && (
+                    <Box
+                      sx={{
+                        position: "relative",
+                        height: 200,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={getPostImageUrl(post.id, post.images[0].id)}
+                        alt={post.satellite_name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          transition: "transform 0.3s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "scale(1.05)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "scale(1)")
+                        }
+                      />
+                    </Box>
+                  )}
+                  <CardContent
+                    sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                  >
+                    <Typography level="h4" sx={{ mb: 1 }}>
+                      {post.satellite_name}
+                    </Typography>
+                    <Stack spacing={0.5} sx={{ mb: 2, flex: 1 }}>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>📅</span>}
+                      >
+                        {new Date(post.timestamp).toLocaleDateString()}
+                      </Typography>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>🖼️</span>}
+                      >
+                        {post.images.length} image
+                        {post.images.length !== 1 ? "s" : ""}
+                      </Typography>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>📝</span>}
+                      >
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </>
+      )}
+    </Box>
+  );
+};
+
+export default StationPosts;
