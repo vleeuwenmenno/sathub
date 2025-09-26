@@ -5,12 +5,14 @@ import {
   Typography,
   Button,
   Alert,
-  Sheet,
+  Card,
+  CardContent,
   Stack,
   FormControl,
   FormLabel,
   Input,
 } from '@mui/joy';
+import { Email as EmailIcon } from '@mui/icons-material';
 import { forgotPassword } from '../api';
 
 const ForgotPassword: React.FC = () => {
@@ -43,43 +45,78 @@ const ForgotPassword: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'background.body',
+          bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           p: 2,
         }}
       >
-        <Sheet
+        <Card
           sx={{
-            p: 4,
             width: '100%',
-            maxWidth: 400,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
+            maxWidth: 420,
+            boxShadow: 'lg',
+            borderRadius: 'xl',
+            overflow: 'hidden',
           }}
+          variant="outlined"
         >
-          <Typography level="h3" textAlign="center">
-            Check Your Email
-          </Typography>
+          <Box
+            sx={{
+              bgcolor: 'primary.main',
+              p: 3,
+              textAlign: 'center',
+              color: 'white',
+            }}
+          >
+            <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
+              SatDump
+            </Typography>
+            <Typography level="body-sm" sx={{ opacity: 0.9 }}>
+              Email Sent
+            </Typography>
+          </Box>
 
-          <Alert color="success" variant="soft">
-            If an account with that email exists, a password reset link has been sent.
-          </Alert>
+          <CardContent sx={{ p: 4 }}>
+            <Stack spacing={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography level="h3" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Check Your Email
+                </Typography>
+                <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+                  We've sent you a password reset link
+                </Typography>
+              </Box>
 
-          <Typography textAlign="center">
-            Didn't receive the email? Check your spam folder or{' '}
-            <Button
-              variant="plain"
-              onClick={() => setSuccess(false)}
-              sx={{ p: 0, minHeight: 'auto' }}
-            >
-              try again
-            </Button>
-          </Typography>
+              <Alert color="success" variant="soft" sx={{ borderRadius: 'lg' }}>
+                If an account with that email exists, a password reset link has been sent.
+              </Alert>
 
-          <Button onClick={() => navigate('/login')} fullWidth>
-            Back to Login
-          </Button>
-        </Sheet>
+              <Typography level="body-sm" textAlign="center" sx={{ color: 'text.tertiary' }}>
+                Didn't receive the email? Check your spam folder or{' '}
+                <Button
+                  variant="plain"
+                  onClick={() => setSuccess(false)}
+                  sx={{ p: 0, minHeight: 'auto', fontSize: 'inherit' }}
+                >
+                  try again
+                </Button>
+              </Typography>
+
+              <Button
+                onClick={() => navigate('/login')}
+                fullWidth
+                size="lg"
+                sx={{
+                  borderRadius: 'lg',
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                Back to Login
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
       </Box>
     );
   }
@@ -91,66 +128,112 @@ const ForgotPassword: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.body',
+        bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         p: 2,
       }}
     >
-      <Sheet
+      <Card
         sx={{
-          p: 4,
           width: '100%',
-          maxWidth: 400,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
+          maxWidth: 420,
+          boxShadow: 'lg',
+          borderRadius: 'xl',
+          overflow: 'hidden',
         }}
+        variant="outlined"
       >
-        <Typography level="h3" textAlign="center">
-          Forgot Password
-        </Typography>
+        {/* Header */}
+        <Box
+          sx={{
+            bgcolor: 'primary.main',
+            p: 3,
+            textAlign: 'center',
+            color: 'white',
+          }}
+        >
+          <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            SatDump
+          </Typography>
+          <Typography level="body-sm" sx={{ opacity: 0.9 }}>
+            Password Recovery
+          </Typography>
+        </Box>
 
-        <Typography textAlign="center" sx={{ mb: 2 }}>
-          Enter your email address and we'll send you a link to reset your password.
-        </Typography>
+        <CardContent sx={{ p: 4 }}>
+          <Stack spacing={3}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography level="h3" sx={{ mb: 1, fontWeight: 'bold' }}>
+                Forgot Password
+              </Typography>
+              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+                Enter your email address and we'll send you a link to reset your password.
+              </Typography>
+            </Box>
 
-        <form onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            <FormControl>
-              <FormLabel>Email</FormLabel>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                required
-                fullWidth
-                placeholder="your@email.com"
-              />
-            </FormControl>
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={3}>
+                <FormControl>
+                  <FormLabel sx={{ fontWeight: 'bold' }}>
+                    <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                    Email Address
+                  </FormLabel>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                    required
+                    fullWidth
+                    size="lg"
+                    placeholder="your@email.com"
+                    sx={{ borderRadius: 'lg' }}
+                  />
+                </FormControl>
 
-            {error && (
-              <Alert color="danger" variant="soft">
-                {error}
-              </Alert>
-            )}
+                {error && (
+                  <Alert color="danger" variant="soft" sx={{ borderRadius: 'lg' }}>
+                    {error}
+                  </Alert>
+                )}
 
-            <Button
-              type="submit"
-              loading={loading}
-              fullWidth
-              size="lg"
-            >
-              Send Reset Link
-            </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  fullWidth
+                  size="lg"
+                  sx={{
+                    borderRadius: 'lg',
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    bgcolor: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                  }}
+                >
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+              </Stack>
+            </form>
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+                Remember your password?{' '}
+                <Link
+                  to="/login"
+                  style={{
+                    color: 'var(--joy-palette-primary-main)',
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Back to Login
+                </Link>
+              </Typography>
+            </Box>
           </Stack>
-        </form>
-
-        <Typography textAlign="center">
-          Remember your password?{' '}
-          <Link to="/login" style={{ color: 'var(--joy-palette-primary-main)' }}>
-            Back to Login
-          </Link>
-        </Typography>
-      </Sheet>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
