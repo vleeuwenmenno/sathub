@@ -232,3 +232,41 @@ func GetCurrentStationUserID(c *gin.Context) (uint, bool) {
 	id, ok := userID.(uint)
 	return id, ok
 }
+
+// TwoFactorRequired middleware validates that 2FA verification is in progress
+// This is used for the 2FA verification endpoint
+func TwoFactorRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			UserID uint   `json:"user_id" binding:"required"`
+			Code   string `json:"code" binding:"required"`
+		}
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			utils.ValidationErrorResponse(c, "Invalid request format for 2FA verification")
+			c.Abort()
+			return
+		}
+
+		// Verify the user exists and has 2FA enabled
+		db := config.GetDB()
+		var user models.User
+		if err := db.First(&user, req.UserID).Error; err != nil {
+			utils.UnauthorizedResponse(c, "Invalid user session")
+			c.Abort()
+			return
+		}
+
+		if !user.TwoFactorEnabled {
+			utils.UnauthorizedResponse(c, "Two-factor authentication not enabled")
+			c.Abort()
+			return
+		}
+
+		// Store user ID and code in context for the handler
+		c.Set("two_factor_user_id", req.UserID)
+		c.Set("two_factor_code", req.Code)
+
+		c.Next()
+	}
+}

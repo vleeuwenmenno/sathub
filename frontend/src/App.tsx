@@ -20,6 +20,8 @@ import UserSettings from "./components/UserSettings";
 import GlobalUsers from "./components/GlobalUsers";
 import BackendStatus from "./components/BackendStatus";
 import Footer from "./components/Footer";
+import TwoFactorVerify from "./components/TwoFactorVerify";
+import ConfirmDisableTwoFactor from "./components/ConfirmDisableTwoFactor";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -46,12 +48,14 @@ function App() {
                 <Route path="/" element={<Overview />} />
                 <Route path="/post/:id" element={<Detail />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/verify-2fa" element={<TwoFactorVerify />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/confirm-email" element={<ConfirmEmail />} />
                 <Route
                   path="/confirm-email-change"
                   element={<ConfirmEmailChange />}
                 />
+                <Route path="/confirm-disable-2fa" element={<ConfirmDisableTwoFactor />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/stations" element={<StationsList />} />
@@ -68,6 +72,11 @@ function App() {
                 <Route path="/users/global" element={<GlobalUsers />} />
                 <Route path="/user/:id" element={<UserOverview />} />
                 <Route path="/user/settings" element={<UserSettings />} />
+                <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
+                <Route
+                  path="/confirm-disable-2fa"
+                  element={<ConfirmDisableTwoFactor />}
+                />
               </Routes>
             </Box>
             <Footer />

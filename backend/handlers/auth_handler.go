@@ -43,10 +43,11 @@ type AuthResponse struct {
 
 // UserInfo represents user information in responses
 type UserInfo struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email,omitempty"`
-	Role     string `json:"role"`
+	ID               uint   `json:"id"`
+	Username         string `json:"username"`
+	Email            string `json:"email,omitempty"`
+	Role             string `json:"role"`
+	TwoFactorEnabled bool   `json:"two_factor_enabled"`
 }
 
 // Register handles user registration
@@ -166,6 +167,22 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Check if 2FA is enabled
+	if user.TwoFactorEnabled {
+		// Return a response indicating 2FA verification is needed
+		twoFactorResponse := struct {
+			RequiresTwoFactor bool   `json:"requires_two_factor"`
+			UserID            uint   `json:"user_id"`
+			Username          string `json:"username"`
+		}{
+			RequiresTwoFactor: true,
+			UserID:            user.ID,
+			Username:          user.Username,
+		}
+		utils.SuccessResponse(c, http.StatusOK, "Two-factor authentication required", twoFactorResponse)
+		return
+	}
+
 	// Generate access token
 	accessToken, err := utils.GenerateAccessToken(user.ID, user.Username, user.Role)
 	if err != nil {
@@ -198,10 +215,11 @@ func Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email.String,
-			Role:     user.Role,
+			ID:               user.ID,
+			Username:         user.Username,
+			Email:            user.Email.String,
+			Role:             user.Role,
+			TwoFactorEnabled: user.TwoFactorEnabled,
 		},
 	}
 
@@ -280,10 +298,11 @@ func RefreshTokens(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		User: UserInfo{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email.String,
-			Role:     user.Role,
+			ID:               user.ID,
+			Username:         user.Username,
+			Email:            user.Email.String,
+			Role:             user.Role,
+			TwoFactorEnabled: user.TwoFactorEnabled,
 		},
 	}
 
@@ -462,10 +481,11 @@ func GetProfile(c *gin.Context) {
 	}
 
 	userInfo := UserInfo{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email.String,
-		Role:     user.Role,
+		ID:               user.ID,
+		Username:         user.Username,
+		Email:            user.Email.String,
+		Role:             user.Role,
+		TwoFactorEnabled: user.TwoFactorEnabled,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)

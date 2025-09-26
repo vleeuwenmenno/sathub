@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User, AuthState } from '../types';
-import { login as apiLogin, logout as apiLogout, getProfile } from '../api';
+import { login as apiLogin, logout as apiLogout, getProfile, verifyTwoFactorCode } from '../api';
 
 interface AuthContextType extends AuthState {
   login: (username: string, password: string) => Promise<void>;
+  verifyTwoFactor: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -54,7 +55,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const { token, refresh_token, user } = await apiLogin(username, password);
+    const response = await apiLogin(username, password);
+
+    // Check if 2FA is required
+    if ('requires_two_factor' in response && response.requires_two_factor) {
+      // Store temporary 2FA session info
+      sessionStorage.setItem('two_factor_user_id', response.user_id.toString());
+      sessionStorage.setItem('two_factor_username', response.username);
+      throw new Error('REQUIRES_2FA');
+    }
+
+    // Normal login flow
+    const { token, refresh_token, user } = response as { token: string; refresh_token: string; user: User };
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('refresh_token', refresh_token);
+    setAuthState({
+      user,
+      token,
+      isAuthenticated: true,
+    });
+  };
+
+  const verifyTwoFactor = async (code: string) => {
+    const userIdStr = sessionStorage.getItem('two_factor_user_id');
+    if (!userIdStr) {
+      throw new Error('No 2FA session found');
+    }
+    
+    const userId = parseInt(userIdStr, 10);
+    const { token, refresh_token, user } = await verifyTwoFactorCode(userId, code);
+    
+    // Clear 2FA session data
+    sessionStorage.removeItem('two_factor_user_id');
+    sessionStorage.removeItem('two_factor_username');
+    
+    // Complete authentication
     localStorage.setItem('auth_token', token);
     localStorage.setItem('refresh_token', refresh_token);
     setAuthState({
@@ -87,6 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     ...authState,
     login,
+    verifyTwoFactor,
     logout,
     loading,
   };

@@ -45,6 +45,12 @@ const Login: React.FC = () => {
       await login(username, password);
       navigate('/');
     } catch (err: any) {
+      // Check if 2FA is required
+      if (err.message === 'REQUIRES_2FA') {
+        navigate('/verify-2fa');
+        return;
+      }
+
       const errorMessage = err.response?.data?.error || 'Login failed';
       setError(errorMessage);
       

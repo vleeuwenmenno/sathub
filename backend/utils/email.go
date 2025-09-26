@@ -102,3 +102,21 @@ func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken 
 
 	return SendEmail(data)
 }
+
+// SendTwoFactorDisableEmail sends a 2FA disable confirmation email
+func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
+	disableURL := fmt.Sprintf("http://localhost:5173/confirm-disable-2fa?token=%s", disableToken)
+
+	data := EmailData{
+		Subject:  "Confirm Two-Factor Authentication Disable",
+		To:       toEmail,
+		Template: "two_factor_disable_confirmation",
+		Data: map[string]interface{}{
+			"Username":     username,
+			"ConfirmURL":   disableURL,
+			"ConfirmToken": disableToken,
+		},
+	}
+
+	return SendEmail(data)
+}

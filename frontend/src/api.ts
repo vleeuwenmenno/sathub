@@ -21,7 +21,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config._retry) {
+      // Mark this request as retried to prevent infinite loops
+      error.config._retry = true;
+      
       // Token expired, try refresh
       const refreshToken = localStorage.getItem("refresh_token");
       if (refreshToken) {
@@ -29,8 +32,11 @@ api.interceptors.response.use(
           const refreshRes = await axios.post(`${API_BASE}/auth/refresh`, {
             refresh_token: refreshToken,
           });
-          const newToken = refreshRes.data.data.access_token; // Extract from nested structure
+          const authData = refreshRes.data.data; // Extract from nested structure
+          const newToken = authData.access_token;
+          const newRefreshToken = authData.refresh_token;
           localStorage.setItem("auth_token", newToken);
+          localStorage.setItem("refresh_token", newRefreshToken);
           // Retry original request
           error.config.headers.Authorization = `Bearer ${newToken}`;
           return api.request(error.config);
@@ -88,11 +94,22 @@ export const register = async (
 export const login = async (
   usernameOrEmail: string,
   password: string,
-): Promise<{ token: string; refresh_token: string; user: User }> => {
+): Promise<{ token: string; refresh_token: string; user: User } | { requires_two_factor: boolean; user_id: number; username: string }> => {
   const res = await api.post("/auth/login", { username: usernameOrEmail, password });
   const authData = res.data.data; // Extract from the nested data structure
+  
+  // Check if 2FA is required
+  if (authData.requires_two_factor) {
+    return {
+      requires_two_factor: true,
+      user_id: authData.user_id,
+      username: authData.username,
+    };
+  }
+  
+  // Normal login response
   return {
-    token: authData.access_token, // Map access_token to token
+    token: authData.access_token,
     refresh_token: authData.refresh_token,
     user: authData.user,
   };
@@ -367,4 +384,45 @@ export const getGlobalUsers = async (
 
 export const confirmEmailChange = async (token: string): Promise<void> => {
   await api.post("/auth/confirm-email-change", { token });
+};
+
+// Two-Factor Authentication API functions
+export const enableTwoFactor = async (): Promise<{
+  secret: string;
+  qr_code_url: string;
+  issuer: string;
+  account_name: string;
+}> => {
+  const res = await api.post("/auth/enable-2fa");
+  return res.data.data;
+};
+
+export const verifyTwoFactorSetup = async (code: string): Promise<void> => {
+  await api.post("/auth/verify-2fa-setup", { code });
+};
+
+export const verifyTwoFactorCode = async (
+  userId: number,
+  code: string,
+): Promise<{ token: string; refresh_token: string; user: User }> => {
+  const res = await api.post("/auth/verify-2fa", { user_id: userId, code });
+  const authData = res.data.data;
+  return {
+    token: authData.access_token,
+    refresh_token: authData.refresh_token,
+    user: authData.user,
+  };
+};
+
+export const disableTwoFactor = async (code: string): Promise<void> => {
+  await api.post("/auth/disable-2fa", { code });
+};
+
+export const confirmDisableTwoFactor = async (token: string): Promise<void> => {
+  await api.post("/auth/confirm-disable-2fa", { token });
+};
+
+export const getTwoFactorStatus = async (): Promise<{ enabled: boolean }> => {
+  const res = await api.get("/auth/2fa-status");
+  return res.data.data;
 };

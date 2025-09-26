@@ -4,7 +4,7 @@ FROM golang:1.25-alpine
 ENV CGO_ENABLED=1
 
 # Install git and build dependencies for CGO
-RUN apk add --no-cache git gcc musl-dev
+RUN apk add --no-cache git gcc musl-dev sqlite
 
 # Install air for live reloading
 RUN go install github.com/air-verse/air@latest

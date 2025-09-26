@@ -49,6 +49,7 @@ export interface User {
   username: string;
   email?: string;
   role: string;
+  two_factor_enabled: boolean;
 }
 
 export interface AuthState {
