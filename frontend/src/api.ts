@@ -392,6 +392,7 @@ export const enableTwoFactor = async (): Promise<{
   qr_code_url: string;
   issuer: string;
   account_name: string;
+  recovery_codes: string[];
 }> => {
   const res = await api.post("/auth/enable-2fa");
   return res.data.data;
@@ -425,4 +426,24 @@ export const confirmDisableTwoFactor = async (token: string): Promise<void> => {
 export const getTwoFactorStatus = async (): Promise<{ enabled: boolean }> => {
   const res = await api.get("/auth/2fa-status");
   return res.data.data;
+};
+
+export const generateRecoveryCodes = async (): Promise<{ recovery_codes: string[] }> => {
+  const res = await api.post("/auth/generate-recovery-codes");
+  return res.data.data;
+};
+
+export const regenerateRecoveryCodes = async (): Promise<{ recovery_codes: string[] }> => {
+  const res = await api.post("/auth/regenerate-recovery-codes");
+  return res.data.data;
+};
+
+export const verifyRecoveryCode = async (code: string): Promise<{ token: string; refresh_token: string; user: User }> => {
+  const res = await api.post("/auth/verify-recovery-code", { code });
+  const authData = res.data.data;
+  return {
+    token: authData.access_token,
+    refresh_token: authData.refresh_token,
+    user: authData.user,
+  };
 };

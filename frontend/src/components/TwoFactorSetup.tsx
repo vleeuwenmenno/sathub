@@ -19,7 +19,7 @@ interface TwoFactorSetupProps {
 }
 
 export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCancel }) => {
-  const [step, setStep] = useState<'setup' | 'verify'>('setup');
+  const [step, setStep] = useState<'setup' | 'verify' | 'recovery-codes'>('setup');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupData, setSetupData] = useState<{
@@ -27,6 +27,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
     qrCodeUrl: string;
     issuer: string;
     accountName: string;
+    recoveryCodes?: string[];
   } | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
@@ -58,6 +59,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
         qrCodeUrl: data.qr_code_url,
         issuer: data.issuer,
         accountName: data.account_name,
+        recoveryCodes: data.recovery_codes,
       };
       setSetupData(setupInfo);
       
@@ -82,7 +84,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
     setError(null);
     try {
       await verifyTwoFactorSetup(verificationCode);
-      onSuccess();
+      setStep('recovery-codes');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid verification code');
     } finally {
@@ -178,6 +180,55 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSuccess, onCan
                 size="lg"
               >
                 Verify & Enable 2FA
+              </Button>
+            </Box>
+          )}
+
+          {step === 'recovery-codes' && setupData && setupData.recoveryCodes && (
+            <Box>
+              <Typography level="body-md" sx={{ mb: 2 }}>
+                Two-factor authentication has been successfully enabled! Here are your recovery codes:
+              </Typography>
+
+              <Alert sx={{ mb: 2 }}>
+                <strong>Important:</strong> Save these recovery codes in a safe place. You can use them to access your account if you lose your authenticator device. Each code can only be used once.
+              </Alert>
+
+              <Card sx={{ mb: 2 }}>
+                <CardContent>
+                  <Typography level="body-sm" sx={{ mb: 1 }}>
+                    <strong>Recovery Codes:</strong>
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+                    {setupData.recoveryCodes.map((code, index) => (
+                      <Typography
+                        key={index}
+                        level="body-sm"
+                        sx={{
+                          fontFamily: 'monospace',
+                          bgcolor: 'neutral.100',
+                          p: 1,
+                          borderRadius: 1,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {code}
+                      </Typography>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+
+              <Alert color="warning" sx={{ mb: 2 }}>
+                These codes will not be shown again. Make sure to copy them now.
+              </Alert>
+
+              <Button
+                onClick={onSuccess}
+                fullWidth
+                size="lg"
+              >
+                I've Saved My Recovery Codes
               </Button>
             </Box>
           )}

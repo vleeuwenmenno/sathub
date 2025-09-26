@@ -81,6 +81,7 @@ func main() {
 			auth.POST("/resend-confirmation", handlers.ResendConfirmationEmail)
 			auth.POST("/confirm-email-change", handlers.ConfirmEmailChange)
 			auth.POST("/verify-2fa", middleware.TwoFactorRequired(), handlers.VerifyTwoFactorCode)
+			auth.POST("/verify-recovery-code", handlers.VerifyRecoveryCode)
 
 			// Protected auth routes
 			protected := auth.Group("")
@@ -93,6 +94,8 @@ func main() {
 				protected.POST("/disable-2fa", handlers.DisableTwoFactor)
 				protected.POST("/confirm-disable-2fa", handlers.ConfirmDisableTwoFactor)
 				protected.GET("/2fa-status", handlers.GetTwoFactorStatus)
+				protected.POST("/generate-recovery-codes", handlers.GenerateRecoveryCodes)
+				protected.POST("/regenerate-recovery-codes", handlers.RegenerateRecoveryCodes)
 			}
 		}
 

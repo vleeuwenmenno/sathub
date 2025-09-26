@@ -15,6 +15,7 @@ import {
   updateProfile,
   getTwoFactorStatus,
   disableTwoFactor,
+  regenerateRecoveryCodes,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import TwoFactorSetup from "./TwoFactorSetup";
@@ -36,6 +37,9 @@ const UserSettings: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [disableCode, setDisableCode] = useState("");
+  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
 
   useEffect(() => {
     const fetchTwoFactorStatus = async () => {
@@ -152,6 +156,25 @@ const UserSettings: React.FC = () => {
       setError(err.response?.data?.message || "Failed to disable 2FA");
     } finally {
       setTwoFactorLoading(false);
+    }
+  };
+
+  const handleRegenerateRecoveryCodes = async () => {
+    try {
+      setRecoveryCodesLoading(true);
+      setError(null);
+      setEmailSuccess(null);
+      setPasswordSuccess(null);
+      setTwoFactorSuccess(null);
+      const result = await regenerateRecoveryCodes();
+      setRecoveryCodes(result.recovery_codes);
+      setShowRecoveryCodes(true);
+      setTwoFactorSuccess("New recovery codes generated successfully");
+    } catch (err) {
+      setError("Failed to regenerate recovery codes");
+      console.error(err);
+    } finally {
+      setRecoveryCodesLoading(false);
     }
   };
 
@@ -296,6 +319,63 @@ const UserSettings: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Recovery Codes Settings */}
+      {twoFactorEnabled && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography level="h3" sx={{ mb: 2 }}>
+              Recovery Codes
+            </Typography>
+            <Typography sx={{ mb: 2 }}>
+              Recovery codes can be used to access your account if you lose your authenticator device. 
+              Each code can only be used once.
+            </Typography>
+            
+            {showRecoveryCodes && recoveryCodes.length > 0 && (
+              <Alert color="warning" sx={{ mb: 2 }}>
+                <strong>Important:</strong> Save these recovery codes in a safe place. They will not be shown again.
+              </Alert>
+            )}
+            
+            {showRecoveryCodes && recoveryCodes.length > 0 ? (
+              <>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 2 }}>
+                  {recoveryCodes.map((code, index) => (
+                    <Typography
+                      key={index}
+                      level="body-sm"
+                      sx={{
+                        fontFamily: 'monospace',
+                        bgcolor: 'neutral.100',
+                        p: 1,
+                        borderRadius: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {code}
+                    </Typography>
+                  ))}
+                </Box>
+                <Button
+                  onClick={() => setShowRecoveryCodes(false)}
+                  variant="outlined"
+                  sx={{ mr: 1 }}
+                >
+                  I've Saved These Codes
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={handleRegenerateRecoveryCodes}
+                loading={recoveryCodesLoading}
+              >
+                Generate New Recovery Codes
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {showTwoFactorSetup && (
         <TwoFactorSetup

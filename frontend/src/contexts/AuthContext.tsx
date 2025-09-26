@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User, AuthState } from '../types';
-import { login as apiLogin, logout as apiLogout, getProfile, verifyTwoFactorCode } from '../api';
+import { login as apiLogin, logout as apiLogout, getProfile, verifyTwoFactorCode, verifyRecoveryCode as apiVerifyRecoveryCode } from '../api';
 
 interface AuthContextType extends AuthState {
   login: (username: string, password: string) => Promise<void>;
   verifyTwoFactor: (code: string) => Promise<void>;
+  verifyRecoveryCode: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -99,6 +100,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
+  const verifyRecoveryCode = async (code: string) => {
+    const { token, refresh_token, user } = await apiVerifyRecoveryCode(code);
+    
+    // Clear 2FA session data
+    sessionStorage.removeItem('two_factor_user_id');
+    sessionStorage.removeItem('two_factor_username');
+    
+    // Complete authentication
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('refresh_token', refresh_token);
+    setAuthState({
+      user,
+      token,
+      isAuthenticated: true,
+    });
+  };
+
   const logout = async () => {
     try {
       await apiLogout();
@@ -123,6 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...authState,
     login,
     verifyTwoFactor,
+    verifyRecoveryCode,
     logout,
     loading,
   };
