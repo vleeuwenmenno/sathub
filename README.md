@@ -194,4 +194,4 @@ All endpoints return JSON responses. See `backend/main.go` for complete route de
 
 ## License
 
-[Add license information here]
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.

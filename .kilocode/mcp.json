@@ -5,7 +5,7 @@
       "args": [
         "mcp-server-sqlite",
         "--db-path",
-        "/home/menno/Projects/Personal/sathub/backend/satdump.db"
+        "backend/satdump.db"
       ]
     },
     "memory": {
