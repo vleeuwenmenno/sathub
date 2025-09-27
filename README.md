@@ -1,6 +1,7 @@
 # SatHub
 
 [![Release Images](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml)
+[![Client Binaries](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml)
 
 A web-based platform for managing satellite ground stations and their captured data.
 
