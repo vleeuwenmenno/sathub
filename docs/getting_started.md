@@ -61,7 +61,7 @@ Stations represent your ground station equipment and location.
 3. Fill in the details:
    - **Name**: A descriptive name for your station
    - **Description**: Tell others about your setup
-   - **Location**: Enter latitude and longitude (you can use Google Maps to find coordinates)
+   - **Location**: Enter a rough location (city, region, or country)
    - **Visibility**: Choose "Public" to share with the community or "Private" to keep it hidden
 
 4. Click "Create"
@@ -76,7 +76,7 @@ Once created, your station gets:
 
 ### Station Health
 
-SatHub tracks your station's status. When you upload data, it automatically marks your station as "online." Stations that haven't uploaded in a while show as "offline."
+SatHub tracks your station's status through regular health pings. The data client sends a health check every few minutes to let the system know your station is online and operational. If health pings stop, your station will show as "offline" in the directory.
 
 ## Sharing Satellite Data
 
@@ -179,7 +179,6 @@ Update your:
 - Username
 - Email address
 - Profile description
-- Location
 
 ### Security Settings
 
