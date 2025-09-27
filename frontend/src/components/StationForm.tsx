@@ -17,7 +17,7 @@ import {
   Switch,
 } from '@mui/joy';
 import { ArrowBack, PhotoCamera } from '@mui/icons-material';
-import type { Station, CreateStationRequest, UpdateStationRequest } from '../api';
+import type { Station } from '../api';
 import { getStation, createStation, updateStation, uploadStationPicture, getStationPictureBlob } from '../api';
 
 interface StationFormProps {
@@ -34,6 +34,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
     name: '',
     location: '',
     equipment: '',
+    online_threshold: 5, // default 5 minutes
   });
   const [isPublic, setIsPublic] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -55,6 +56,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
         name: data.name,
         location: data.location,
         equipment: data.equipment,
+        online_threshold: data.online_threshold || 5,
       });
       setIsPublic(data.is_public);
       if (data.has_picture && data.picture_url) {
@@ -73,9 +75,10 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
   };
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = field === 'online_threshold' ? parseInt(e.target.value) || 1 : e.target.value;
     setFormData(prev => ({
       ...prev,
-      [field]: e.target.value,
+      [field]: value,
     }));
   };
 
@@ -97,10 +100,22 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
       let stationData: Station;
 
       if (mode === 'create') {
-        stationData = await createStation({ ...formData, is_public: isPublic });
+        stationData = await createStation({ 
+          name: formData.name,
+          location: formData.location,
+          equipment: formData.equipment,
+          is_public: isPublic,
+          online_threshold: formData.online_threshold,
+        });
       } else {
         if (!id) throw new Error('Station ID is required');
-        stationData = await updateStation(id, { ...formData, is_public: isPublic });
+        stationData = await updateStation(id, { 
+          name: formData.name,
+          location: formData.location,
+          equipment: formData.equipment,
+          is_public: isPublic,
+          online_threshold: formData.online_threshold,
+        });
       }
 
       // Upload picture if selected
@@ -222,6 +237,25 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
                 placeholder="Describe your equipment and setup"
                 minRows={3}
               />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Online Time Threshold (minutes)</FormLabel>
+              <Input
+                type="number"
+                value={formData.online_threshold}
+                onChange={handleInputChange('online_threshold')}
+                placeholder="5"
+                slotProps={{
+                  input: {
+                    min: 1,
+                    max: 60,
+                  },
+                }}
+              />
+              <Typography level="body-xs" sx={{ mt: 0.5, color: 'neutral.600' }}>
+                Station is considered online if it has sent a health check within this time period (1-60 minutes)
+              </Typography>
             </FormControl>
 
             <FormControl>
