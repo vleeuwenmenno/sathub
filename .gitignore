@@ -27,10 +27,6 @@ vendor/
 # GoLand IDE
 .idea/
 
-# VS Code
-.vscode/
-!.vscode/extensions.json
-
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -125,3 +121,4 @@ dist/
 data/
 backend/satdump-ui-backend
 client/bin/
+client/satdump-ui-client
