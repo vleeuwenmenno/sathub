@@ -14,6 +14,7 @@ import {
   FormLabel,
   Input,
   IconButton,
+  Tooltip,
 } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
 import type { Station } from "../api";
@@ -50,6 +51,30 @@ const formatLastSeen = (station: Station): string => {
   } else {
     return `${diffDays}d ago`;
   }
+};
+
+const formatFullTimestamp = (station: Station): string => {
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const date = new Date(station.last_seen);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
 };
 
 const GlobalStations: React.FC = () => {
@@ -286,7 +311,7 @@ const GlobalStations: React.FC = () => {
                       startDecorator={<span>📅</span>}
                     >
                       Created{" "}
-                      {new Date(station.created_at).toLocaleDateString()}
+                      {formatDate(station.created_at)}
                     </Typography>
                     <Typography
                       level="body-sm"
@@ -300,13 +325,15 @@ const GlobalStations: React.FC = () => {
                       <Chip size="sm" variant="soft" color="primary">
                         Station {station.id.substring(0, 8)}
                       </Chip>
-                      <Chip
-                        size="sm"
-                        variant="soft"
-                        color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
-                      >
-                        {formatLastSeen(station)}
-                      </Chip>
+                      <Tooltip title={formatFullTimestamp(station)}>
+                        <Chip
+                          size="sm"
+                          variant="soft"
+                          color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                        >
+                          {formatLastSeen(station)}
+                        </Chip>
+                      </Tooltip>
                       {stationDetails[station.id]?.user && (
                         <Chip size="sm" variant="soft" color="primary">
                           @{stationDetails[station.id].user.username}

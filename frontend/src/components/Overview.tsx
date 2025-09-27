@@ -16,6 +16,15 @@ import { getLatestPosts, getPostImageUrl } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
 const Overview: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +118,7 @@ const Overview: React.FC = () => {
                       {post.satellite_name}
                     </Typography>
                     <Typography level="body-sm" startDecorator={<span>📅</span>}>
-                      {new Date(post.timestamp).toLocaleDateString()}
+                      {formatDate(post.timestamp)}
                     </Typography>
                     <Typography level="body-sm" startDecorator={<span>🖼️</span>}>
                       {post.images.length} image

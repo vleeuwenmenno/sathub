@@ -16,6 +16,15 @@ import type { Post } from "../types";
 import { getStationPosts, getPostImageUrl, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
 const StationPosts: React.FC = () => {
   const { stationId } = useParams<{ stationId: string }>();
   const navigate = useNavigate();
@@ -137,7 +146,7 @@ const StationPosts: React.FC = () => {
                 </Typography>
               )}
               <Typography level="body-md" startDecorator={<span>📅</span>}>
-                Created {new Date(station.created_at).toLocaleDateString()}
+                Created {formatDate(station.created_at)}
               </Typography>
               <Typography
                 level="body-md"
@@ -240,7 +249,7 @@ const StationPosts: React.FC = () => {
                         level="body-sm"
                         startDecorator={<span>📅</span>}
                       >
-                        {new Date(post.timestamp).toLocaleDateString()}
+                        {formatDate(post.timestamp)}
                       </Typography>
                       <Typography
                         level="body-sm"
@@ -253,7 +262,7 @@ const StationPosts: React.FC = () => {
                         level="body-sm"
                         startDecorator={<span>📝</span>}
                       >
-                        {new Date(post.created_at).toLocaleDateString()}
+                        {formatDate(post.created_at)}
                       </Typography>
                     </Stack>
                   </CardContent>

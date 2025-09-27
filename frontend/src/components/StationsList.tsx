@@ -65,6 +65,30 @@ const formatLastSeen = (station: Station): string => {
   }
 };
 
+const formatFullTimestamp = (station: Station): string => {
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const date = new Date(station.last_seen);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
 const StationsList: React.FC = () => {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,8 +113,25 @@ const StationsList: React.FC = () => {
     token: "",
     loading: false,
   });
+  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
   const baseUrl = window.location.origin;
+
+  const copyWithFeedback = async (text: string, itemId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedItems((prev) => new Set(prev).add(itemId));
+      setTimeout(() => {
+        setCopiedItems((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }, 2000); // Remove feedback after 2 seconds
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -303,7 +344,7 @@ const StationsList: React.FC = () => {
                       startDecorator={<span>📅</span>}
                     >
                       Created{" "}
-                      {new Date(station.created_at).toLocaleDateString()}
+                      {formatDate(station.created_at)}
                     </Typography>
                     <Typography
                       level="body-sm"
@@ -320,19 +361,21 @@ const StationsList: React.FC = () => {
                       >
                         Status:
                       </Typography>
-                      <Chip
-                        size="sm"
-                        variant="soft"
-                        color={
-                          station.is_online
-                            ? "success"
-                            : station.last_seen
-                            ? "warning"
-                            : "neutral"
-                        }
-                      >
-                        {formatLastSeen(station)}
-                      </Chip>
+                      <Tooltip title={formatFullTimestamp(station)}>
+                        <Chip
+                          size="sm"
+                          variant="soft"
+                          color={
+                            station.is_online
+                              ? "success"
+                              : station.last_seen
+                              ? "warning"
+                              : "neutral"
+                          }
+                        >
+                          {formatLastSeen(station)}
+                        </Chip>
+                      </Tooltip>
                     </Box>
                   </Stack>
                   <Stack direction="row" spacing={1} sx={{ mt: "auto" }}>
@@ -499,17 +542,19 @@ const StationsList: React.FC = () => {
                 <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
                   cURL Example:
                 </Typography>
-                <Box
-                  component="pre"
-                  sx={{
-                    backgroundColor: "background.level1",
-                    padding: 1,
-                    borderRadius: 1,
-                    fontSize: "0.75rem",
-                    overflow: "auto",
-                    mb: 1,
-                  }}
-                >
+                <Box sx={{ position: "relative" }}>
+                  <Box
+                    component="pre"
+                    sx={{
+                      backgroundColor: "background.level1",
+                      padding: 1,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      overflow: "auto",
+                      mb: 1,
+                      pr: 4,
+                    }}
+                  >
 {`curl -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -H "Content-Type: application/json" \\
@@ -523,6 +568,32 @@ const StationsList: React.FC = () => {
     }
   }' \\
   ${baseUrl}/api/posts`}
+                  </Box>
+                  <IconButton
+                    size="sm"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      backgroundColor: "background.surface",
+                      "&:hover": { backgroundColor: "background.level2" },
+                    }}
+                    onClick={() => copyWithFeedback(`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "timestamp": "2024-01-01T12:00:00Z",
+    "satellite_name": "NOAA 19",
+    "metadata": "{\\"frequency\\": 137.1}",
+    "data": {
+      "cbor_path": "/path/to/data.cbor",
+      "info": { "key": "value" }
+    }
+  }' \\
+  ${baseUrl}/api/posts`, 'posts-curl')}
+                  >
+                    {copiedItems.has('posts-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                  </IconButton>
                 </Box>
               </AccordionDetails>
             </Accordion>
@@ -540,21 +611,40 @@ const StationsList: React.FC = () => {
                 <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
                   cURL Example:
                 </Typography>
-                <Box
-                  component="pre"
-                  sx={{
-                    backgroundColor: "background.level1",
-                    padding: 1,
-                    borderRadius: 1,
-                    fontSize: "0.75rem",
-                    overflow: "auto",
-                    mb: 1,
-                  }}
-                >
+                <Box sx={{ position: "relative" }}>
+                  <Box
+                    component="pre"
+                    sx={{
+                      backgroundColor: "background.level1",
+                      padding: 1,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      overflow: "auto",
+                      mb: 1,
+                      pr: 4,
+                    }}
+                  >
 {`curl -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -F "image=@/path/to/image.png" \\
   ${baseUrl}/api/posts/123/images`}
+                  </Box>
+                  <IconButton
+                    size="sm"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      backgroundColor: "background.surface",
+                      "&:hover": { backgroundColor: "background.level2" },
+                    }}
+                    onClick={() => copyWithFeedback(`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  -F "image=@/path/to/image.png" \\
+  ${baseUrl}/api/posts/123/images`, 'images-curl')}
+                  >
+                    {copiedItems.has('images-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                  </IconButton>
                 </Box>
                 <Typography level="body-xs" sx={{ color: "text.secondary" }}>
                   <strong>Content-Type:</strong> multipart/form-data
@@ -575,38 +665,74 @@ const StationsList: React.FC = () => {
                 <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
                   cURL Example:
                 </Typography>
-                <Box
-                  component="pre"
-                  sx={{
-                    backgroundColor: "background.level1",
-                    padding: 1,
-                    borderRadius: 1,
-                    fontSize: "0.75rem",
-                    overflow: "auto",
-                    mb: 1,
-                  }}
-                >
+                <Box sx={{ position: "relative" }}>
+                  <Box
+                    component="pre"
+                    sx={{
+                      backgroundColor: "background.level1",
+                      padding: 1,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      overflow: "auto",
+                      mb: 1,
+                      pr: 4,
+                    }}
+                  >
 {`curl -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
+                  </Box>
+                  <IconButton
+                    size="sm"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      backgroundColor: "background.surface",
+                      "&:hover": { backgroundColor: "background.level2" },
+                    }}
+                    onClick={() => copyWithFeedback(`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  ${baseUrl}/api/stations/health`, 'health-curl')}
+                  >
+                    {copiedItems.has('health-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                  </IconButton>
                 </Box>
                 <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
                   Cron Job Example (every 5 minutes):
                 </Typography>
-                <Box
-                  component="pre"
-                  sx={{
-                    backgroundColor: "background.level1",
-                    padding: 1,
-                    borderRadius: 1,
-                    fontSize: "0.75rem",
-                    overflow: "auto",
-                    mb: 1,
-                  }}
-                >
+                <Box sx={{ position: "relative" }}>
+                  <Box
+                    component="pre"
+                    sx={{
+                      backgroundColor: "background.level1",
+                      padding: 1,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      overflow: "auto",
+                      mb: 1,
+                      pr: 4,
+                    }}
+                  >
 {`*/5 * * * * curl -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
+                  </Box>
+                  <IconButton
+                    size="sm"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      backgroundColor: "background.surface",
+                      "&:hover": { backgroundColor: "background.level2" },
+                    }}
+                    onClick={() => copyWithFeedback(`*/5 * * * * curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  ${baseUrl}/api/stations/health`, 'health-cron')}
+                  >
+                    {copiedItems.has('health-cron') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                  </IconButton>
                 </Box>
                 <Typography level="body-xs" sx={{ color: "text.secondary" }}>
                   This updates the station's "last seen" timestamp. Stations are considered online if last seen within the configured threshold (default: 5 minutes).

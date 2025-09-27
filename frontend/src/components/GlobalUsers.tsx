@@ -23,6 +23,15 @@ import { getGlobalUsers } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
 const GlobalUsers: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -196,7 +205,7 @@ const GlobalUsers: React.FC = () => {
                       level="body-sm"
                       startDecorator={<span>📅</span>}
                     >
-                      Joined {new Date(user.created_at).toLocaleDateString()}
+                      Joined {formatDate(user.created_at)}
                     </Typography>
                   </Stack>
                 </CardContent>

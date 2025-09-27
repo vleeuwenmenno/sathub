@@ -14,6 +14,15 @@ import {
 import { getUserPosts, getUserStations, type Station } from "../api";
 import type { Post } from "../types";
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
 const UserOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -102,7 +111,7 @@ const UserOverview: React.FC = () => {
                       Station: {post.station_name}
                     </Typography>
                     <Typography level="body-xs" color="neutral">
-                      {new Date(post.timestamp).toLocaleDateString()}
+                      {formatDate(post.timestamp)}
                     </Typography>
                     {post.images.length > 0 && (
                       <Chip size="sm" sx={{ mt: 1 }}>
