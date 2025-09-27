@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     image: ghcr.io/vleeuwenmenno/sathub/backend:latest
@@ -7,15 +5,14 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=release
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
     volumes:
-      - sathub_data:/app/data
-      - sathub_uploads:/app/uploads
+      - sathub_database:/app/satdump.db
     networks:
       - sathub
 
@@ -44,8 +41,7 @@ services:
       - frontend
 
 volumes:
-  sathub_data:
-  sathub_uploads:
+  sathub_database:
   caddy_data:
   caddy_config:
 

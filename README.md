@@ -26,11 +26,11 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
   - [x] Email confirmation for new registrations
   - [x] Password reset via email
   - [x] 2FA Support (TOTP and recovery codes)
+- [x] Docker-based production environment
+- [x] GitHub Workfows that publish and compile docker images for prod
 
 ### Planned Features
 
-- [ ] Docker-based production environment
-- [ ] GitHub Workfows that publish and compile docker images for prod
 - [ ] API rate limiting
 - [ ] Data export functionality
 - [ ] Achievements for users
