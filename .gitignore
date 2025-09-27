@@ -122,3 +122,6 @@ data/
 backend/satdump-ui-backend
 client/bin/
 client/satdump-ui-client
+
+# Go Debug files
+__debug*

@@ -21,3 +21,7 @@ seed:
 # Clean up generated files and containers
 clean: down
 	docker volume rm sathub_postgres_data || true
+
+# Create a new release
+release:
+	./release.sh

@@ -1,0 +1,147 @@
+#!/bin/bash
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_color() {
+    printf "${1}${2}${NC}\n"
+}
+
+# Function to get the latest tag
+get_latest_tag() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"
+}
+
+# Function to parse version components
+parse_version() {
+    local version=$1
+    # Remove 'v' prefix if present
+    version=${version#v}
+    IFS='.' read -r major minor patch <<< "$version"
+    echo "$major $minor $patch"
+}
+
+# Function to increment version
+increment_version() {
+    local major=$1
+    local minor=$2
+    local patch=$3
+    local increment_type=$4
+
+    case $increment_type in
+        major)
+            major=$((major + 1))
+            minor=0
+            patch=0
+            ;;
+        minor)
+            minor=$((minor + 1))
+            patch=0
+            ;;
+        patch)
+            patch=$((patch + 1))
+            ;;
+        *)
+            print_color $RED "Invalid increment type: $increment_type"
+            exit 1
+            ;;
+    esac
+
+    echo "$major.$minor.$patch"
+}
+
+# Main script
+print_color $BLUE "🚀 SatHub Release Script"
+echo
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    print_color $RED "Error: Not in a git repository"
+    exit 1
+fi
+
+# Check for uncommitted changes
+if ! git diff-index --quiet HEAD --; then
+    print_color $RED "Error: You have uncommitted changes. Please commit or stash them first."
+    exit 1
+fi
+
+# Get latest tag
+latest_tag=$(get_latest_tag)
+print_color $GREEN "Current latest tag: $latest_tag"
+
+# Parse version
+read -r major minor patch <<< "$(parse_version "$latest_tag")"
+print_color $BLUE "Current version: $major.$minor.$patch"
+
+# Ask for increment type
+echo
+print_color $YELLOW "What type of release would you like to make?"
+echo "1) Patch (bug fixes) - $major.$minor.$((patch + 1))"
+echo "2) Minor (new features) - $major.$((minor + 1)).0"
+echo "3) Major (breaking changes) - $((major + 1)).0.0"
+echo
+read -p "Enter your choice (1-3): " choice
+
+case $choice in
+    1)
+        new_version=$(increment_version "$major" "$minor" "$patch" "patch")
+        ;;
+    2)
+        new_version=$(increment_version "$major" "$minor" "$patch" "minor")
+        ;;
+    3)
+        new_version=$(increment_version "$major" "$minor" "$patch" "major")
+        ;;
+    *)
+        print_color $RED "Invalid choice. Exiting."
+        exit 1
+        ;;
+esac
+
+new_tag="v$new_version"
+print_color $GREEN "New tag will be: $new_tag"
+
+# Confirm
+echo
+read -p "Are you sure you want to create and push tag $new_tag? (y/N): " confirm
+if [[ ! $confirm =~ ^[Yy]$ ]]; then
+    print_color $YELLOW "Release cancelled."
+    exit 0
+fi
+
+# Create and push tag
+print_color $BLUE "Creating tag $new_tag..."
+git tag -a "$new_tag" -m "Release $new_tag"
+
+print_color $BLUE "Pushing tag $new_tag..."
+git push origin "$new_tag"
+
+print_color $GREEN "✅ Tag $new_tag created and pushed successfully!"
+
+# Ask about creating a release
+echo
+read -p "Would you like to create a GitHub release now? (y/N): " create_release
+if [[ $create_release =~ ^[Yy]$ ]]; then
+    # Try to open GitHub releases page
+    if command -v xdg-open > /dev/null; then
+        xdg-open "https://github.com/vleeuwenmenno/sathub/releases/new?tag=$new_tag" 2>/dev/null &
+        print_color $GREEN "Opened GitHub releases page in your browser."
+    elif command -v open > /dev/null; then
+        open "https://github.com/vleeuwenmenno/sathub/releases/new?tag=$new_tag" 2>/dev/null &
+        print_color $GREEN "Opened GitHub releases page in your browser."
+    else
+        print_color $BLUE "Please visit: https://github.com/vleeuwenmenno/sathub/releases/new?tag=$new_tag"
+    fi
+else
+    print_color $BLUE "You can create a release later at: https://github.com/vleeuwenmenno/sathub/releases/new?tag=$new_tag"
+fi
+
+print_color $GREEN "🎉 Release process complete!"

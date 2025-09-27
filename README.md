@@ -164,6 +164,39 @@ This creates:
 
 Login with any user using password: `password123`
 
+## Releases
+
+The project includes a release script to automate the process of creating and publishing new versions.
+
+### Creating a Release
+
+Use the release script to create a new tag and push it to GitHub:
+
+```bash
+# Using the script directly
+./release.sh
+
+# Or using make
+make release
+```
+
+The script will:
+
+1. Check for uncommitted changes
+2. Get the latest tag
+3. Ask you to choose the type of release (patch, minor, or major)
+4. Create a new tag with the incremented version
+5. Push the tag to GitHub
+6. Optionally open the GitHub releases page to create a release
+
+### Version Numbering
+
+The script follows [Semantic Versioning](https://semver.org/):
+
+- **Patch** (1.0.0 → 1.0.1): Bug fixes and small changes
+- **Minor** (1.0.0 → 1.1.0): New features that are backward compatible
+- **Major** (1.0.0 → 2.0.0): Breaking changes
+
 ## API Overview
 
 The backend provides a REST API with the following main endpoints:
