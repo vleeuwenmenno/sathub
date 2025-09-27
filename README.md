@@ -28,6 +28,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [ ] Station health monitoring (Heartbeat API endpoint (Allowing Stations to report back last seen time))
 - [ ] Email notifications / Maybe Shoutrr?
 - [ ] Data export functionality
+- [ ] achievements for users
 
 ## Tech Stack
 
