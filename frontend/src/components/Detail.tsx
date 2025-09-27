@@ -17,7 +17,8 @@ import {
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import type { DatabasePostDetail } from '../types';
-import { getDatabasePostDetail, getPostImageBlob } from '../api';
+import type { Station } from '../api';
+import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob } from '../api';
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -109,12 +110,14 @@ const groupImagesByCategory = (images: DatabasePostDetail['images']): Record<str
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [detail, setDetail] = useState<DatabasePostDetail | null>(null);
+  const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedImageInCategory, setSelectedImageInCategory] = useState<number>(0);
   const [imageBlobs, setImageBlobs] = useState<Record<number, string>>({});
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
+  const [stationImageBlob, setStationImageBlob] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -126,6 +129,14 @@ const Detail: React.FC = () => {
         // Sort images by category
         data.images = sortImagesByCategory(data.images);
         setDetail(data);
+
+        // Also fetch station details for picture
+        try {
+          const stationData = await getStationDetails(data.station_id);
+          setStation(stationData);
+        } catch (stationErr) {
+          console.warn('Could not load station details:', stationErr);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load post details');
       } finally {
@@ -194,6 +205,21 @@ const Detail: React.FC = () => {
 
     loadImages();
   }, [detail]);
+
+  useEffect(() => {
+    if (!station?.has_picture || !station?.picture_url) return;
+
+    const loadStationPicture = async () => {
+      try {
+        const blobUrl = await getStationPictureBlob(station.picture_url);
+        setStationImageBlob(blobUrl);
+      } catch (error) {
+        console.error('Failed to load station picture:', error);
+      }
+    };
+
+    loadStationPicture();
+  }, [station]);
 
   if (loading) {
     return (
@@ -413,19 +439,47 @@ const Detail: React.FC = () => {
         {/* Station and Owner Info on the right */}
         <Grid xs={12} lg={4}>
           <Stack spacing={2}>
-            {/* Station Info */}
+            {/* Station Information */}
             <Card>
               <CardContent>
-                <Typography level="h3" sx={{ mb: 2 }}>Station</Typography>
+                <Typography level="h3" sx={{ mb: 2 }}>
+                  Station: {detail.station_name}
+                </Typography>
+
+                {/* Station Picture */}
+                {station?.has_picture && stationImageBlob && (
+                  <Box sx={{ mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        bgcolor: 'neutral.softBg'
+                      }}
+                    >
+                      <img
+                        src={stationImageBlob}
+                        alt={`${detail.station_name} station`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+
                 <Stack spacing={1}>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Name:</Typography>
-                    <Typography level="body-sm">{detail.station_name}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>ID:</Typography>
-                    <Typography level="body-sm">{detail.station_id}</Typography>
-                  </Box>
+                  <Typography level="body-md" startDecorator={<span>📍</span>}>
+                    Location: {detail.station_name}
+                  </Typography>
+                  {station && (
+                    <Typography level="body-md" startDecorator={<span>📅</span>}>
+                      Created: {formatDate(station.created_at)}
+                    </Typography>
+                  )}
                 </Stack>
               </CardContent>
             </Card>
@@ -457,10 +511,6 @@ const Detail: React.FC = () => {
                   <Box>
                     <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Satellite:</Typography>
                     <Typography level="body-sm">{detail.satellite_name}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Timestamp:</Typography>
-                    <Typography level="body-sm">{formatDate(detail.timestamp)}</Typography>
                   </Box>
                   <Box>
                     <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Created:</Typography>

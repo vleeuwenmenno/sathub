@@ -184,10 +184,12 @@ const StationPosts: React.FC = () => {
                   {posts.map((post) => (
                     <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
                       <Card
+                        onClick={() => navigate(`/post/${post.id}`)}
                         sx={{
                           height: "100%",
                           display: "flex",
                           flexDirection: "column",
+                          cursor: "pointer",
                           transition: "transform 0.2s, box-shadow 0.2s",
                           "&:hover": {
                             transform: "translateY(-4px)",
@@ -293,7 +295,7 @@ const StationPosts: React.FC = () => {
               {/* Station Owner */}
               {station.user && (
                 <Card
-                  onClick={() => navigate(`/post/${post.id}`)}
+                  onClick={() => navigate(`/user/${station.user!.id}`)}
                   sx={{
                     height: "100%",
                     display: "flex",
@@ -305,7 +307,6 @@ const StationPosts: React.FC = () => {
                       boxShadow: "lg",
                     },
                   }}
-                  onClick={() => navigate(`/user/${station.user!.id}`)}
                 >
                   <CardContent>
                     <Typography level="title-md" sx={{ mb: 2 }}>
