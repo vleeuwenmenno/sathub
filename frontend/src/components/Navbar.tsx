@@ -106,9 +106,10 @@ const Navbar: React.FC = () => {
           alignItems: "center",
           justifyContent: "space-between",
           px: { xs: 2, md: 4 },
-          py: 2,
+          py: 3,
           maxWidth: "1400px",
           mx: "auto",
+          minHeight: "5rem",
         }}
       >
         {/* Left side - Logo and Mobile Menu */}
@@ -154,7 +155,11 @@ const Navbar: React.FC = () => {
                 <ArrowBack />
               </IconButton>
             )}
-            <Satellite sx={{ fontSize: "1.8rem", color: "primary.main" }} />
+            <img
+              src="/src/assets/output-onlinepngtools.svg"
+              alt="SatHub Logo"
+              style={{ width: "4rem", height: "4rem" }}
+            />
             <Typography
               level="h4"
               className="logo-text"
@@ -301,7 +306,11 @@ const Navbar: React.FC = () => {
           {/* Drawer Header */}
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Satellite sx={{ fontSize: "1.5rem", color: "primary.main" }} />
+              <img
+                src="/src/assets/output-onlinepngtools.svg"
+                alt="SatHub Logo"
+                style={{ width: "3rem", height: "3rem" }}
+              />
               <Typography level="h4" sx={{ fontWeight: "bold" }}>
                 SatHub
               </Typography>
