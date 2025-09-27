@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,14 +109,30 @@ func (c *APIClient) UploadImage(postID uint, imagePath string) error {
 	}
 	defer file.Close()
 
+	// Read first 512 bytes to detect content type
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("failed to read file header: %w", err)
+	}
+	contentType := http.DetectContentType(buffer[:n])
+
+	// Reset file pointer to beginning
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to reset file pointer: %w", err)
+	}
+
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	// Add the image file
+	// Create form file part with proper headers
 	filename := filepath.Base(imagePath)
-	part, err := writer.CreateFormFile("image", filename)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="image"; filename="%s"`, filename))
+	h.Set("Content-Type", contentType)
+	part, err := writer.CreatePart(h)
 	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
+		return fmt.Errorf("failed to create form part: %w", err)
 	}
 
 	if _, err := io.Copy(part, file); err != nil {
