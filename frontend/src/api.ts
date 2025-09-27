@@ -184,6 +184,9 @@ export interface Station {
   user?: {
     id: number;
     username: string;
+    display_name?: string;
+    profile_picture_url?: string;
+    has_profile_picture: boolean;
   };
 }
 
