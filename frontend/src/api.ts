@@ -79,7 +79,7 @@ export const getImageBlob = async (
 export const getStationPictureBlob = async (
   pictureUrl: string,
 ): Promise<string> => {
-  const res = await api.get(pictureUrl, { responseType: "blob" });
+  const res = await api.get(pictureUrl, { responseType: 'blob' });
   return URL.createObjectURL(res.data);
 };
 

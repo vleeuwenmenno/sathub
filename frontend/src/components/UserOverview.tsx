@@ -10,8 +10,9 @@ import {
   Avatar,
   Divider,
   CircularProgress,
+  Tooltip,
 } from "@mui/joy";
-import { getUserPosts, getUserStations, type Station } from "../api";
+import { getUserPosts, getUserStations, getStationPictureBlob, type Station } from "../api";
 import type { Post } from "../types";
 
 const formatDate = (dateString: string): string => {
@@ -23,11 +24,53 @@ const formatDate = (dateString: string): string => {
   return `${day}-${month}-${year}`;
 };
 
+const formatLastSeen = (station: Station): string => {
+  if (station.is_online) {
+    return "ONLINE";
+  }
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const lastSeen = new Date(station.last_seen);
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) {
+    return "Just now";
+  } else if (diffMins < 60) {
+    return `${diffMins}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else {
+    return `${diffDays}d ago`;
+  }
+};
+
+const formatFullTimestamp = (station: Station): string => {
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const date = new Date(station.last_seen);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
+
 const UserOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
+  const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +103,33 @@ const UserOverview: React.FC = () => {
 
     fetchUserData();
   }, [id]);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      if (!stations.length) return;
+
+      const newImageBlobs: Record<string, string> = {};
+
+      for (const station of stations) {
+        if (station.has_picture && station.picture_url) {
+          try {
+            const blobUrl = await getStationPictureBlob(station.picture_url);
+            newImageBlobs[`${station.id}-picture`] = blobUrl;
+          } catch (error) {
+            console.error(
+              "Failed to load image for station",
+              station.id,
+              error,
+            );
+          }
+        }
+      }
+
+      setImageBlobs(newImageBlobs);
+    };
+
+    loadImages();
+  }, [stations]);
 
   if (loading) {
     return (
@@ -152,15 +222,27 @@ const UserOverview: React.FC = () => {
                     }
                   }}
                 >
+                  {imageBlobs[`${station.id}-picture`] && (
+                    <Box
+                      sx={{
+                        position: "relative",
+                        height: 120,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={imageBlobs[`${station.id}-picture`]}
+                        alt={station.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
                   <CardContent>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Avatar
-                        src={station.picture_url}
-                        alt={station.name}
-                        sx={{ mr: 2, width: 40, height: 40 }}
-                      >
-                        {station.name.charAt(0).toUpperCase()}
-                      </Avatar>
                       <Box>
                         <Typography level="title-md">{station.name}</Typography>
                         <Typography level="body-sm" color="neutral">
@@ -173,9 +255,20 @@ const UserOverview: React.FC = () => {
                         Equipment: {station.equipment}
                       </Typography>
                     )}
-                    <Chip size="sm" color="success">
-                      Public
-                    </Chip>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip size="sm" color="success">
+                        Public
+                      </Chip>
+                      <Tooltip title={formatFullTimestamp(station)}>
+                        <Chip
+                          size="sm"
+                          variant="soft"
+                          color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                        >
+                          {formatLastSeen(station)}
+                        </Chip>
+                      </Tooltip>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
