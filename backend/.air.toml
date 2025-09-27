@@ -8,7 +8,7 @@ tmp_dir = "tmp"
   include_ext = ["go"]
   exclude_dir = ["tmp", "vendor"]
   kill_delay = "0s"
-  env = ["CGO_ENABLED=1"]
+  env = ["CGO_ENABLED=0"]
 
 [log]
   time = true

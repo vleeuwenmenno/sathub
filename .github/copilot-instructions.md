@@ -4,7 +4,7 @@
 
 SatHub is a full-stack satellite ground station management platform with a **Go Gin backend** (`backend/`) and **React/TypeScript frontend** (`frontend/`). The architecture features:
 
-- **Backend**: RESTful JSON API with JWT auth, GORM ORM, SQLite database
+- **Backend**: RESTful JSON API with JWT auth, GORM ORM, **PostgreSQL database**
 - **Frontend**: React 19 + Vite + Material-UI Joy with TypeScript
 - **Data Model**: Users → Stations → Posts (with satellite data/images)
 - **Authentication**: JWT access tokens + refresh tokens, station-specific API tokens

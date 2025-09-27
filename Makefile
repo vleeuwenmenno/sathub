@@ -14,11 +14,10 @@ down:
 logs:
 	docker compose logs -f
 
-# Seed the database (removes old DB and seeds with test data, if backend is running it will automatically restart due to the file change)
+# Seed the database (requires backend container running)
 seed:
-	rm -f backend/satdump.db
 	docker compose exec backend go run main.go --seed
 
 # Clean up generated files and containers
 clean: down
-	rm -f backend/satdump.db
+	docker volume rm sathub_postgres_data || true

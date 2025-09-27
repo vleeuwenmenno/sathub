@@ -10,7 +10,7 @@ type Post struct {
 	Station       Station   `gorm:"foreignKey:StationID" json:"-"`
 	Timestamp     time.Time `gorm:"not null" json:"timestamp"`
 	SatelliteName string    `gorm:"not null" json:"satellite_name"`
-	CBOR          []byte    `gorm:"type:blob" json:"-"`        // Optional CBOR blob
+	CBOR          []byte    `json:"-"`                         // Optional CBOR blob
 	Metadata      string    `gorm:"type:text" json:"metadata"` // JSON metadata as string
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
@@ -25,8 +25,8 @@ type PostImage struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	PostID    uint      `gorm:"not null;index" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
-	ImageData []byte    `gorm:"type:blob" json:"-"` // Binary image data
-	ImageType string    `gorm:"size:50" json:"-"`   // MIME type of the image
+	ImageData []byte    `json:"-"`                // Binary image data
+	ImageType string    `gorm:"size:50" json:"-"` // MIME type of the image
 	Filename  string    `gorm:"not null" json:"filename"`
 	CreatedAt time.Time `json:"created_at"`
 }

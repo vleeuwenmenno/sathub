@@ -5,14 +5,33 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=release
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sathub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-sathub}
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+    networks:
+      - sathub
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: sathub-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER:-sathub}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-sathub}
     volumes:
-      - sathub_database:/app/satdump.db
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - sathub
 
@@ -41,6 +60,7 @@ services:
       - frontend
 
 volumes:
+  postgres_data:
   sathub_database:
   caddy_data:
   caddy_config:

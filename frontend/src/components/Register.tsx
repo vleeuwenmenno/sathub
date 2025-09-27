@@ -93,21 +93,21 @@ const Register: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <FormControl>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Username</FormLabel>
               <Input
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required
                 fullWidth
               />
             </FormControl>
 
             <FormControl>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Email</FormLabel>
               <Input
-                value={username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
                 fullWidth
               />

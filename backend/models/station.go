@@ -17,7 +17,7 @@ type Station struct {
 	Location        string     `gorm:"not null" json:"location"`
 	Latitude        *float64   `gorm:"type:decimal(10,8)" json:"latitude,omitempty"`
 	Longitude       *float64   `gorm:"type:decimal(11,8)" json:"longitude,omitempty"`
-	Picture         []byte     `gorm:"type:blob" json:"-"`
+	Picture         []byte     `json:"-"`
 	PictureType     string     `gorm:"size:50" json:"-"`
 	Equipment       string     `gorm:"type:text" json:"equipment"`
 	IsPublic        bool       `gorm:"column:is_public;default:true" json:"is_public"`

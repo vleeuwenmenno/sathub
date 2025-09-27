@@ -46,7 +46,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 
 - **Language**: Go 1.21+
 - **Framework**: Gin web framework
-- **Database**: SQLite with GORM ORM (Allows switching to MariaDB or Postgres)
+- **Database**: PostgreSQL with GORM ORM (SQLite supported for development)
 - **Authentication**: JWT tokens with refresh tokens
 - **API**: RESTful JSON API
 

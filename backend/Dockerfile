@@ -1,10 +1,10 @@
 FROM golang:1.25-alpine
 
-# Enable CGO for SQLite support
-ENV CGO_ENABLED=1
+# Disable GCO for cross-compilation support
+ENV CGO_ENABLED=0
 
 # Install git and build dependencies for CGO
-RUN apk add --no-cache git gcc musl-dev sqlite
+RUN apk add --no-cache git
 
 # Install air for live reloading
 RUN go install github.com/air-verse/air@latest

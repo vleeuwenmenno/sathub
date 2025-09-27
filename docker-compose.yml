@@ -8,7 +8,25 @@ services:
       - ./data:/app/../data
     environment:
       - GIN_MODE=debug
-      - DB_PATH=./satdump.db
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=sathub
+      - POSTGRES_PASSWORD=sathub_password
+      - POSTGRES_DB=sathub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   frontend:
     build: ./frontend
@@ -31,4 +49,5 @@ services:
       - mailpit_data:/data
 
 volumes:
+  postgres_data:
   mailpit_data:

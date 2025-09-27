@@ -35,7 +35,7 @@ The seed script creates:
 
 - Go 1.21+ installed
 - Backend dependencies installed (`go mod download`)
-- Database will be created automatically (uses `./satdump.db` if `DB_PATH` not set)
+- Database connection configured (PostgreSQL by default, SQLite if DB_TYPE=sqlite)
 
 ### Method 1: Direct execution
 

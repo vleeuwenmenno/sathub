@@ -12,7 +12,7 @@ mkdir -p bin
 
 # Build for Linux (amd64)
 echo "Building for Linux amd64..."
-CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o bin/sathub-client .
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o bin/sathub-client .
 
 echo "Build complete! Binary available at bin/sathub-client"
 ls -la bin/
