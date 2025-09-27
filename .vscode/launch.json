@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/client",
             "env": {
-                "STATION_TOKEN": "afba3bfeae4d18e326f4b617ee8685b2",
+                "STATION_TOKEN": "b88024133e3f47c56f042ea33189c449",
                 "API_URL": "http://localhost:4001",
                 "WATCH_PATHS": "./data",
                 "PROCESSED_DIR": "./data/processed",

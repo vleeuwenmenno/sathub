@@ -75,7 +75,6 @@ func main() {
 		posts.Use(middleware.AuthRequired())
 		{
 			posts.GET("", handlers.GetPosts)
-			posts.GET("/:id", handlers.GetPostDetail)
 			posts.GET("/:id/image/*filename", handlers.GetImage)
 		}
 
@@ -161,6 +160,7 @@ func main() {
 			publicPosts.GET("/latest", handlers.GetLatestPosts)
 			publicPosts.GET("/user/:userId", handlers.GetUserPosts)
 			publicPosts.GET("/station/:stationId", middleware.OptionalAuth(), handlers.GetStationPosts)
+			publicPosts.GET("/:id", middleware.OptionalAuth(), handlers.GetDatabasePostDetail)
 			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImage)
 		}
 

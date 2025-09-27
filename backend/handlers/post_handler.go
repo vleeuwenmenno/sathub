@@ -119,6 +119,55 @@ func GetStationPosts(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Posts retrieved successfully", response)
 }
 
+// GetDatabasePostDetail handles fetching a single database post detail
+func GetDatabasePostDetail(c *gin.Context) {
+	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Check if user is authenticated
+	userID, isAuthenticated := middleware.GetCurrentUserID(c)
+
+	// Find post with station and user info
+	var post models.Post
+	query := db.Preload("Station").Preload("Station.User").Where("posts.id = ?", uint(postID))
+	if !isAuthenticated {
+		query = query.Joins("Station").Where("is_public = ?", true)
+	} else {
+		query = query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID)
+	}
+
+	if err := query.First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Post not found or not accessible")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	response := buildPostDetailResponse(post, db)
+	utils.SuccessResponse(c, http.StatusOK, "Post detail retrieved successfully", response)
+}
+
+// PostDetailResponse represents detailed post information
+type PostDetailResponse struct {
+	ID            uint                `json:"id"`
+	StationID     string              `json:"station_id"`
+	StationName   string              `json:"station_name"`
+	StationUser   *UserResponse       `json:"station_user,omitempty"`
+	Timestamp     string              `json:"timestamp"`
+	SatelliteName string              `json:"satellite_name"`
+	Metadata      string              `json:"metadata"`
+	Images        []PostImageResponse `json:"images"`
+	CreatedAt     string              `json:"created_at"`
+	UpdatedAt     string              `json:"updated_at"`
+}
+
 // GetLatestPosts handles fetching the latest public posts
 func GetLatestPosts(c *gin.Context) {
 	db := config.GetDB()
@@ -378,6 +427,42 @@ func GetPostImage(c *gin.Context) {
 
 	c.Header("Content-Type", contentType)
 	c.Data(http.StatusOK, contentType, image.ImageData)
+}
+
+// buildPostDetailResponse builds a PostDetailResponse from a Post model
+func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
+	var images []models.PostImage
+	db.Where("post_id = ?", post.ID).Find(&images)
+
+	imageResponses := make([]PostImageResponse, len(images))
+	for i, img := range images {
+		imageResponses[i] = PostImageResponse{
+			ID:       img.ID,
+			Filename: img.Filename,
+			ImageURL: generatePostImageURL(post.ID, img.ID),
+		}
+	}
+
+	var stationUser *UserResponse
+	if post.Station.User.ID != 0 {
+		stationUser = &UserResponse{
+			ID:       post.Station.User.ID,
+			Username: post.Station.User.Username,
+		}
+	}
+
+	return PostDetailResponse{
+		ID:            post.ID,
+		StationID:     post.StationID,
+		StationName:   post.Station.Name,
+		StationUser:   stationUser,
+		Timestamp:     post.Timestamp.Format("2006-01-02T15:04:05Z07:00"),
+		SatelliteName: post.SatelliteName,
+		Metadata:      post.Metadata,
+		Images:        imageResponses,
+		CreatedAt:     post.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:     post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
 }
 
 // buildPostResponse builds a PostResponse from a Post model

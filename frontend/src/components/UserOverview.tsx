@@ -173,7 +173,11 @@ const UserOverview: React.FC = () => {
           <Grid container spacing={2}>
             {posts.slice(0, 6).map((post) => (
               <Grid key={post.id} xs={12} sm={6} md={4}>
-                <Card variant="outlined">
+                <Card
+                  variant="outlined"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                  sx={{ cursor: "pointer" }}
+                >
                   <CardContent>
                     <Typography level="title-md" sx={{ mb: 1 }}>
                       {post.satellite_name}
