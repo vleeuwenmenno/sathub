@@ -25,7 +25,8 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [ ] Docker-based production environment
 - [ ] GitHub Workfows that publish and compile docker images for prod
 - [ ] API rate limiting
-- [ ] Station health monitoring
+- [ ] Station health monitoring (Heartbeat API endpoint (Allowing Stations to report back last seen time))
+- [ ] Email notifications / Maybe Shoutrr?
 - [ ] Data export functionality
 
 ## Tech Stack
