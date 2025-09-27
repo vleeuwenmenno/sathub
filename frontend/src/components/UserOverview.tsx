@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -25,6 +25,7 @@ const formatDate = (dateString: string): string => {
 
 const UserOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,7 +140,18 @@ const UserOverview: React.FC = () => {
           <Grid container spacing={2}>
             {stations.map((station) => (
               <Grid key={station.id} xs={12} sm={6} md={4}>
-                <Card variant="outlined">
+                <Card 
+                  variant="outlined"
+                  onClick={() => navigate(`/station/${station.id}`)}
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'lg',
+                    }
+                  }}
+                >
                   <CardContent>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       <Avatar

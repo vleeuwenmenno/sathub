@@ -15,6 +15,7 @@ import {
 import type { Post } from "../types";
 import { getStationPosts, getPostImageUrl, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
+import StationMap from "./StationMap";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -131,34 +132,52 @@ const StationPosts: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 1, md: 2 } }}>
       {station && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography level="h3" sx={{ mb: 2 }}>
-              {station.name}
-            </Typography>
-            <Stack spacing={1}>
-              <Typography level="body-md" startDecorator={<span>📍</span>}>
-                {station.location}
-              </Typography>
-              {station.equipment && (
-                <Typography level="body-md" startDecorator={<span>🔧</span>}>
-                  {station.equipment}
-                </Typography>
-              )}
-              <Typography level="body-md" startDecorator={<span>📅</span>}>
-                Created {formatDate(station.created_at)}
-              </Typography>
-              <Typography
-                level="body-md"
-                startDecorator={
-                  station.is_public ? <span>🌐</span> : <span>🔒</span>
-                }
-              >
-                {station.is_public ? "Public Station" : "Private Station"}
-              </Typography>
-            </Stack>
-          </CardContent>
-        </Card>
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={3}>
+            {/* Station Information */}
+            <Grid xs={12} md={8}>
+              <Card>
+                <CardContent>
+                  <Typography level="h3" sx={{ mb: 2 }}>
+                    {station.name}
+                  </Typography>
+                  <Stack spacing={1}>
+                    <Typography level="body-md" startDecorator={<span>📍</span>}>
+                      {station.location}
+                    </Typography>
+                    {station.equipment && (
+                      <Typography level="body-md" startDecorator={<span>🔧</span>}>
+                        {station.equipment}
+                      </Typography>
+                    )}
+                    <Typography level="body-md" startDecorator={<span>📅</span>}>
+                      Created {formatDate(station.created_at)}
+                    </Typography>
+                    <Typography
+                      level="body-md"
+                      startDecorator={
+                        station.is_public ? <span>🌐</span> : <span>🔒</span>
+                      }
+                    >
+                      {station.is_public ? "Public Station" : "Private Station"}
+                    </Typography>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            {/* Station Map */}
+            <Grid xs={12} md={4}>
+              <StationMap
+                stationName={station.name}
+                location={station.location}
+                latitude={station.latitude}
+                longitude={station.longitude}
+                height={280}
+              />
+            </Grid>
+          </Grid>
+        </Box>
       )}
 
       {posts.length === 0 ? (
