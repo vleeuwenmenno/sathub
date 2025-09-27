@@ -50,7 +50,8 @@ func SendEmail(data EmailData) error {
 
 // SendPasswordResetEmail sends a password reset email
 func SendPasswordResetEmail(toEmail, username, resetToken string) error {
-	resetURL := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", resetToken)
+	appConfig := config.GetAppConfig()
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", appConfig.FrontendURL, resetToken)
 
 	data := EmailData{
 		Subject:  "Password Reset Request",
@@ -68,7 +69,8 @@ func SendPasswordResetEmail(toEmail, username, resetToken string) error {
 
 // SendEmailConfirmationEmail sends an email confirmation email
 func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
-	confirmURL := fmt.Sprintf("http://localhost:5173/confirm-email?token=%s", confirmToken)
+	appConfig := config.GetAppConfig()
+	confirmURL := fmt.Sprintf("%s/confirm-email?token=%s", appConfig.FrontendURL, confirmToken)
 
 	data := EmailData{
 		Subject:  "Confirm Your SatDump Account",
@@ -86,7 +88,8 @@ func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
 
 // SendEmailChangeConfirmationEmail sends an email change confirmation email
 func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken string) error {
-	confirmURL := fmt.Sprintf("http://localhost:5173/confirm-email-change?token=%s", confirmToken)
+	appConfig := config.GetAppConfig()
+	confirmURL := fmt.Sprintf("%s/confirm-email-change?token=%s", appConfig.FrontendURL, confirmToken)
 
 	data := EmailData{
 		Subject:  "Confirm Your Email Change",
@@ -105,7 +108,8 @@ func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken 
 
 // SendTwoFactorDisableEmail sends a 2FA disable confirmation email
 func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
-	disableURL := fmt.Sprintf("http://localhost:5173/confirm-disable-2fa?token=%s", disableToken)
+	appConfig := config.GetAppConfig()
+	disableURL := fmt.Sprintf("%s/confirm-disable-2fa?token=%s", appConfig.FrontendURL, disableToken)
 
 	data := EmailData{
 		Subject:  "Confirm Two-Factor Authentication Disable",
