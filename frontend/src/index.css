@@ -1,3 +1,6 @@
+/* Import Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
+
 /* Reset default styles and ensure full viewport coverage */
 * {
   box-sizing: border-box;

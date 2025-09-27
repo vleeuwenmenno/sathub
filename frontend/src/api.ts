@@ -167,6 +167,8 @@ export interface Station {
   id: string;
   name: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   picture_url?: string;
   has_picture?: boolean;
   equipment: string;
@@ -185,6 +187,8 @@ export interface Station {
 export interface CreateStationRequest {
   name: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   equipment?: string;
   is_public?: boolean;
   online_threshold?: number;

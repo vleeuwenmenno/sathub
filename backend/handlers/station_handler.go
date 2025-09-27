@@ -44,6 +44,8 @@ func buildStationResponse(station models.Station) StationResponse {
 		ID:              station.ID,
 		Name:            station.Name,
 		Location:        station.Location,
+		Latitude:        station.Latitude,
+		Longitude:       station.Longitude,
 		Picture:         generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasPicture:      len(station.Picture) > 0,
 		Equipment:       station.Equipment,
@@ -65,11 +67,13 @@ func buildStationResponseWithToken(station models.Station) StationResponse {
 
 // StationRequest represents the request body for creating/updating a station
 type StationRequest struct {
-	Name            string `json:"name" binding:"required,min=1,max=100"`
-	Location        string `json:"location" binding:"required,min=1,max=200"`
-	Equipment       string `json:"equipment" binding:"max=1000"`
-	IsPublic        *bool  `json:"is_public,omitempty"`        // Optional, defaults to true
-	OnlineThreshold *int   `json:"online_threshold,omitempty"` // Optional, defaults to 5
+	Name            string   `json:"name" binding:"required,min=1,max=100"`
+	Location        string   `json:"location" binding:"required,min=1,max=200"`
+	Latitude        *float64 `json:"latitude,omitempty"`
+	Longitude       *float64 `json:"longitude,omitempty"`
+	Equipment       string   `json:"equipment" binding:"max=1000"`
+	IsPublic        *bool    `json:"is_public,omitempty"`        // Optional, defaults to true
+	OnlineThreshold *int     `json:"online_threshold,omitempty"` // Optional, defaults to 5
 }
 
 // UserResponse represents user data in responses
@@ -85,6 +89,8 @@ type StationResponse struct {
 	User            *UserResponse `json:"user,omitempty"`
 	Name            string        `json:"name"`
 	Location        string        `json:"location"`
+	Latitude        *float64      `json:"latitude,omitempty"`
+	Longitude       *float64      `json:"longitude,omitempty"`
 	Picture         string        `json:"picture_url"` // URL to access the picture
 	HasPicture      bool          `json:"has_picture"`
 	Equipment       string        `json:"equipment"`
@@ -178,6 +184,8 @@ func CreateStation(c *gin.Context) {
 		UserID:          userID,
 		Name:            req.Name,
 		Location:        req.Location,
+		Latitude:        req.Latitude,
+		Longitude:       req.Longitude,
 		Equipment:       req.Equipment,
 		IsPublic:        req.IsPublic == nil || *req.IsPublic, // Default to true if not specified
 		OnlineThreshold: onlineThreshold,
@@ -230,6 +238,8 @@ func UpdateStation(c *gin.Context) {
 	// Update fields
 	station.Name = req.Name
 	station.Location = req.Location
+	station.Latitude = req.Latitude
+	station.Longitude = req.Longitude
 	station.Equipment = req.Equipment
 	if req.IsPublic != nil {
 		station.IsPublic = *req.IsPublic

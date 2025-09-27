@@ -19,6 +19,7 @@ import {
 import { ArrowBack, PhotoCamera } from '@mui/icons-material';
 import type { Station } from '../api';
 import { getStation, createStation, updateStation, uploadStationPicture, getStationPictureBlob } from '../api';
+import LocationPicker from './LocationPicker';
 
 interface StationFormProps {
   mode: 'create' | 'edit';
@@ -33,6 +34,8 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
     equipment: '',
     online_threshold: 5, // default 5 minutes
   });
@@ -52,9 +55,11 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
       setLoading(true);
       const data = await getStation(id);
       setStation(data);
-      setFormData({
+            setFormData({
         name: data.name,
         location: data.location,
+        latitude: data.latitude,
+        longitude: data.longitude,
         equipment: data.equipment,
         online_threshold: data.online_threshold || 5,
       });
@@ -82,6 +87,15 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
     }));
   };
 
+  const handleLocationChange = (location: string, latitude?: number, longitude?: number) => {
+    setFormData(prev => ({
+      ...prev,
+      location,
+      latitude,
+      longitude,
+    }));
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -103,6 +117,8 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
         stationData = await createStation({ 
           name: formData.name,
           location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           equipment: formData.equipment,
           is_public: isPublic,
           online_threshold: formData.online_threshold,
@@ -112,6 +128,8 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
         stationData = await updateStation(id, { 
           name: formData.name,
           location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           equipment: formData.equipment,
           is_public: isPublic,
           online_threshold: formData.online_threshold,
@@ -219,15 +237,14 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
               />
             </FormControl>
 
-            <FormControl>
-              <FormLabel>Location *</FormLabel>
-              <Input
-                value={formData.location}
-                onChange={handleInputChange('location')}
-                placeholder="Enter station location"
-                required
-              />
-            </FormControl>
+            <LocationPicker
+              value={formData.location}
+              onChange={handleLocationChange}
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              placeholder="Enter station location"
+              required
+            />
 
             <FormControl>
               <FormLabel>Equipment & Description</FormLabel>
