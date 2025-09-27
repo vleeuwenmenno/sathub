@@ -17,6 +17,22 @@ export interface PostImage {
   image_url: string;
 }
 
+export interface DatabasePostDetail {
+  id: number;
+  station_id: string;
+  station_name: string;
+  station_user?: {
+    id: number;
+    username: string;
+  };
+  timestamp: string;
+  satellite_name: string;
+  metadata: string;
+  images: PostImage[];
+  created_at: string;
+  updated_at: string;
+}
+
 // Legacy types (kept for backward compatibility if needed)
 export interface PostOverview {
   id: string;

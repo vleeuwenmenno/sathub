@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail } from "./types";
 
 const API_BASE = "/api";
 
@@ -364,6 +364,11 @@ export const getPostImageBlob = async (
     responseType: "blob",
   });
   return URL.createObjectURL(res.data);
+};
+
+export const getDatabasePostDetail = async (id: string): Promise<DatabasePostDetail> => {
+  const res = await api.get(`/posts/${id}`);
+  return res.data.data;
 };
 
 export const getStationDetails = async (

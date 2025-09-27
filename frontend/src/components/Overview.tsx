@@ -67,10 +67,12 @@ const Overview: React.FC = () => {
           {posts.map((post) => (
             <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
               <Card
+                onClick={() => navigate(`/post/${post.id}`)}
                 sx={{
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  cursor: "pointer",
                   transition: "transform 0.2s, box-shadow 0.2s",
                   "&:hover": {
                     transform: "translateY(-4px)",

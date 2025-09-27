@@ -293,7 +293,11 @@ const StationPosts: React.FC = () => {
               {/* Station Owner */}
               {station.user && (
                 <Card
+                  onClick={() => navigate(`/post/${post.id}`)}
                   sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                     cursor: "pointer",
                     transition: "transform 0.2s, box-shadow 0.2s",
                     "&:hover": {
