@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -27,6 +27,7 @@ import {
   Build,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
+import { getProfilePictureBlob } from "../api";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +35,25 @@ const Navbar: React.FC = () => {
   const { mode, setMode } = useColorScheme();
   const { isAuthenticated, user, logout } = useAuth();
   const isDetailPage = location.pathname.includes("/post/");
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      if (user?.has_profile_picture && user?.profile_picture_url) {
+        try {
+          const blobUrl = await getProfilePictureBlob(user.profile_picture_url);
+          setProfilePictureUrl(blobUrl);
+        } catch (err) {
+          console.error("Failed to fetch profile picture", err);
+          setProfilePictureUrl(null);
+        }
+      } else {
+        setProfilePictureUrl(null);
+      }
+    };
+
+    fetchProfilePicture();
+  }, [user]);
 
   const toggleColorScheme = () => {
     setMode(mode === "dark" ? "light" : "dark");
@@ -222,12 +242,13 @@ const Navbar: React.FC = () => {
               >
                 <Avatar
                   size="sm"
+                  src={profilePictureUrl || undefined}
                   sx={{ mr: 1 }}
                 >
-                  {user?.username?.charAt(0).toUpperCase()}
+                  {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
                 </Avatar>
                 <Typography level="body-sm" sx={{ fontWeight: "medium" }}>
-                  {user?.username}
+                  {user?.display_name || user?.username}
                 </Typography>
               </MenuButton>
               <Menu sx={{ minWidth: 180 }}>

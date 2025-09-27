@@ -146,6 +146,7 @@ export const getProfile = async (): Promise<User> => {
 export const updateProfile = async (data: {
   email?: string;
   password?: string;
+  display_name?: string;
 }): Promise<User> => {
   const res = await api.put("/auth/profile", data);
   return res.data.data; // Extract from the nested data structure
@@ -371,11 +372,14 @@ export const getStationDetails = async (
 export interface UserSummary {
   id: number;
   username: string;
+  display_name?: string;
   email?: string;
   role: string;
   public_stations: number;
   public_posts: number;
   created_at: string;
+  profile_picture_url?: string;
+  has_profile_picture: boolean;
 }
 
 // Global user API calls (authentication required)
@@ -463,4 +467,23 @@ export const verifyRecoveryCode = async (code: string): Promise<{ token: string;
     refresh_token: authData.refresh_token,
     user: authData.user,
   };
+};
+
+export const uploadProfilePicture = async (file: File): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
+  const formData = new FormData();
+  formData.append("picture", file);
+  
+  const res = await api.post("/auth/profile/upload-picture", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data.data; // Extract from the nested data structure
+};
+
+export const getProfilePictureBlob = async (
+  pictureUrl: string,
+): Promise<string> => {
+  const res = await api.get(pictureUrl, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
 };

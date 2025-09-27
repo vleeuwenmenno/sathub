@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -10,36 +9,54 @@ import {
   FormControl,
   FormLabel,
   Alert,
+  Avatar,
+  Stack,
 } from "@mui/joy";
 import {
   updateProfile,
   getTwoFactorStatus,
   disableTwoFactor,
   regenerateRecoveryCodes,
+  uploadProfilePicture,
+  getProfilePictureBlob,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import TwoFactorSetup from "./TwoFactorSetup";
 
 const UserSettings: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Profile section states
+  const [displayName, setDisplayName] = useState(user?.display_name || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  
+  // Password section states
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [emailLoading, setEmailLoading] = useState(false);
+  
+  // Loading states
+  const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
+  
+  // Success/Error states
   const [error, setError] = useState<string | null>(null);
-  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [twoFactorSuccess, setTwoFactorSuccess] = useState<string | null>(null);
+  
+  // 2FA states
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [disableCode, setDisableCode] = useState("");
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-  const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
 
   useEffect(() => {
     const fetchTwoFactorStatus = async () => {
@@ -51,39 +68,23 @@ const UserSettings: React.FC = () => {
       }
     };
 
+    const fetchProfilePicture = async () => {
+      if (user?.has_profile_picture && user?.profile_picture_url) {
+        try {
+          const blobUrl = await getProfilePictureBlob(user.profile_picture_url);
+          setProfilePictureUrl(blobUrl);
+        } catch (err) {
+          console.error("Failed to fetch profile picture", err);
+        }
+      } else {
+        // Clear profile picture if user doesn't have one
+        setProfilePictureUrl(null);
+      }
+    };
+
     fetchTwoFactorStatus();
-  }, []);
-
-  const handleUpdateEmail = async () => {
-    if (!email.trim()) {
-      setError("Email is required");
-      return;
-    }
-
-    if (email.trim() === user?.email) {
-      setError("New email is the same as current email");
-      return;
-    }
-
-    try {
-      setEmailLoading(true);
-      setError(null);
-      setPasswordSuccess(null);
-      setTwoFactorSuccess(null);
-      setEmailSuccess(null);
-      await updateProfile({ email: email.trim() });
-      setEmailSuccess(
-        "Email change confirmation sent. Please check your new email address to confirm the change."
-      );
-      // Clear the email field to show it's not updated yet
-      setEmail(user?.email || "");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to request email change");
-      console.error(err);
-    } finally {
-      setEmailLoading(false);
-    }
-  };
+    fetchProfilePicture();
+  }, [user]);
 
   const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -103,10 +104,7 @@ const UserSettings: React.FC = () => {
 
     try {
       setPasswordLoading(true);
-      setError(null);
-      setEmailSuccess(null);
-      setTwoFactorSuccess(null);
-      setPasswordSuccess(null);
+      clearMessages();
       await updateProfile({ password: newPassword });
       setPasswordSuccess("Password updated successfully");
       setCurrentPassword("");
@@ -121,19 +119,14 @@ const UserSettings: React.FC = () => {
   };
 
   const handleEnableTwoFactor = () => {
-    setError(null);
-    setEmailSuccess(null);
-    setPasswordSuccess(null);
-    setTwoFactorSuccess(null);
+    clearMessages();
     setShowTwoFactorSetup(true);
   };
 
   const handleTwoFactorSetupSuccess = () => {
     setShowTwoFactorSetup(false);
     setTwoFactorEnabled(true);
-    setError(null);
-    setEmailSuccess(null);
-    setPasswordSuccess(null);
+    clearMessages();
     setTwoFactorSuccess("Two-factor authentication enabled successfully");
   };
 
@@ -145,10 +138,7 @@ const UserSettings: React.FC = () => {
 
     try {
       setTwoFactorLoading(true);
-      setError(null);
-      setEmailSuccess(null);
-      setPasswordSuccess(null);
-      setTwoFactorSuccess(null);
+      clearMessages();
       await disableTwoFactor(disableCode);
       setTwoFactorSuccess("2FA disable confirmation sent. Please check your email to complete the process.");
       setDisableCode("");
@@ -162,10 +152,7 @@ const UserSettings: React.FC = () => {
   const handleRegenerateRecoveryCodes = async () => {
     try {
       setRecoveryCodesLoading(true);
-      setError(null);
-      setEmailSuccess(null);
-      setPasswordSuccess(null);
-      setTwoFactorSuccess(null);
+      clearMessages();
       const result = await regenerateRecoveryCodes();
       setRecoveryCodes(result.recovery_codes);
       setShowRecoveryCodes(true);
@@ -175,6 +162,101 @@ const UserSettings: React.FC = () => {
       console.error(err);
     } finally {
       setRecoveryCodesLoading(false);
+    }
+  };
+
+  const clearMessages = () => {
+    setError(null);
+    setProfileSuccess(null);
+    setPasswordSuccess(null);
+    setTwoFactorSuccess(null);
+  };
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setProfilePictureFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setProfilePicturePreview(previewUrl);
+    }
+  };
+
+  const getCurrentProfilePicture = () => {
+    if (profilePicturePreview) return profilePicturePreview;
+    if (profilePictureUrl) return profilePictureUrl;
+    return undefined;
+  };
+
+  const handleUpdateProfile = async () => {
+    const updates: { display_name?: string; email?: string } = {};
+    let hasUpdates = false;
+
+    if (displayName.trim() !== (user?.display_name || "")) {
+      updates.display_name = displayName.trim();
+      hasUpdates = true;
+    }
+
+    if (email.trim() !== (user?.email || "")) {
+      if (!email.trim()) {
+        setError("Email is required");
+        return;
+      }
+      updates.email = email.trim();
+      hasUpdates = true;
+    }
+
+    if (!hasUpdates) {
+      setError("No changes to save");
+      return;
+    }
+
+    try {
+      setProfileLoading(true);
+      clearMessages();
+      
+      await updateProfile(updates);
+      
+      if (updates.email) {
+        setProfileSuccess(
+          "Email change confirmation sent. Please check your new email address to confirm the change."
+        );
+        setEmail(user?.email || ""); // Reset to current email
+      } else {
+        setProfileSuccess("Profile updated successfully");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to update profile");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleUploadProfilePicture = async () => {
+    if (!profilePictureFile) return;
+
+    try {
+      setProfileLoading(true);
+      clearMessages();
+      
+      const result = await uploadProfilePicture(profilePictureFile);
+      
+      // Update the profile picture URL immediately from the upload response
+      if (result.profile_picture_url) {
+        const blobUrl = await getProfilePictureBlob(result.profile_picture_url);
+        setProfilePictureUrl(blobUrl);
+      }
+      
+      setProfileSuccess("Profile picture uploaded successfully");
+      setProfilePictureFile(null);
+      setProfilePicturePreview(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to upload profile picture");
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -190,17 +272,90 @@ const UserSettings: React.FC = () => {
         </Alert>
       )}
 
-      {/* Email Settings */}
+      {/* Profile Settings - Combined Card */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Email Address
+            Profile Information
           </Typography>
-          {emailSuccess && (
+          
+          {profileSuccess && (
             <Alert color="success" sx={{ mb: 2 }}>
-              {emailSuccess}
+              {profileSuccess}
             </Alert>
           )}
+
+          {/* Profile Picture Section */}
+          <Box sx={{ mb: 3, textAlign: 'center' }}>
+            <Avatar
+              src={getCurrentProfilePicture()}
+              size="lg"
+              sx={{ 
+                width: 100, 
+                height: 100, 
+                mx: 'auto', 
+                mb: 2,
+                cursor: 'pointer',
+                position: 'relative',
+                '&:hover': {
+                  opacity: 0.8,
+                  '&::after': {
+                    content: '"Click to change"',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    fontSize: '12px',
+                    borderRadius: '50%',
+                  }
+                }
+              }}
+              onClick={handleProfilePictureClick}
+            >
+              {user?.username?.[0]?.toUpperCase()}
+            </Avatar>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept="image/*"
+              onChange={handleProfilePictureChange}
+            />
+            
+            {profilePictureFile && (
+              <Stack spacing={1} alignItems="center">
+                <Typography level="body-sm">
+                  Selected: {profilePictureFile.name}
+                </Typography>
+                <Button
+                  size="sm"
+                  onClick={handleUploadProfilePicture}
+                  loading={profileLoading}
+                >
+                  Upload Picture
+                </Button>
+              </Stack>
+            )}
+          </Box>
+
+          {/* Display Name */}
+          <FormControl sx={{ mb: 2 }}>
+            <FormLabel>Display Name</FormLabel>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your display name"
+            />
+          </FormControl>
+
+          {/* Email */}
           <FormControl sx={{ mb: 2 }}>
             <FormLabel>Email</FormLabel>
             <Input
@@ -210,12 +365,16 @@ const UserSettings: React.FC = () => {
               placeholder="Enter your email"
             />
           </FormControl>
+
           <Button
-            onClick={handleUpdateEmail}
-            loading={emailLoading}
-            disabled={!email.trim() || email === user?.email}
+            onClick={handleUpdateProfile}
+            loading={profileLoading}
+            disabled={
+              displayName.trim() === (user?.display_name || "") &&
+              email.trim() === (user?.email || "")
+            }
           >
-            Update Email
+            Save Changes
           </Button>
         </CardContent>
       </Card>
@@ -267,6 +426,8 @@ const UserSettings: React.FC = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Two-Factor Authentication */}
 
       {/* Two-Factor Authentication Settings */}
       <Card sx={{ mb: 3 }}>

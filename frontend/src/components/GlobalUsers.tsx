@@ -17,9 +17,8 @@ import {
   Avatar,
 } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
-import PersonIcon from "@mui/icons-material/Person";
 import type { UserSummary } from "../api";
-import { getGlobalUsers } from "../api";
+import { getGlobalUsers, getProfilePictureBlob } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -44,6 +43,7 @@ const GlobalUsers: React.FC = () => {
   const [order, setOrder] = useState("desc");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [profilePictureUrls, setProfilePictureUrls] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -66,6 +66,30 @@ const GlobalUsers: React.FC = () => {
       setLoading(true);
       const data = await getGlobalUsers(limit, page, sort, order, search);
       setUsers(data);
+      
+      // Load profile pictures for users that have them
+      const picturePromises = data
+        .filter(user => user.has_profile_picture && user.profile_picture_url)
+        .map(async (user) => {
+          try {
+            const blobUrl = await getProfilePictureBlob(user.profile_picture_url!);
+            return { id: user.id, url: blobUrl };
+          } catch (err) {
+            console.error(`Failed to load profile picture for user ${user.id}:`, err);
+            return null;
+          }
+        });
+
+      const pictureResults = await Promise.all(picturePromises);
+      const newProfilePictureUrls: Record<number, string> = {};
+      
+      pictureResults.forEach(result => {
+        if (result) {
+          newProfilePictureUrls[result.id] = result.url;
+        }
+      });
+      
+      setProfilePictureUrls(newProfilePictureUrls);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to load users");
@@ -118,6 +142,7 @@ const GlobalUsers: React.FC = () => {
             >
               <Option value="created_at">Created Date</Option>
               <Option value="username">Username</Option>
+              <Option value="display_name">Display Name</Option>
             </Select>
           </FormControl>
           <FormControl size="sm">
@@ -176,13 +201,19 @@ const GlobalUsers: React.FC = () => {
                 >
                   <Box sx={{ mb: 2 }}>
                     <Avatar
+                      src={profilePictureUrls[user.id] || undefined}
                       sx={{ width: 80, height: 80, mx: "auto", mb: 1 }}
                     >
-                      <PersonIcon sx={{ fontSize: 40 }} />
+                      {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
                     </Avatar>
-                    <Typography level="h4" sx={{ mb: 1 }}>
-                      @{user.username}
+                    <Typography level="h4" sx={{ mb: 0.5 }}>
+                      {user.display_name || user.username}
                     </Typography>
+                    {user.display_name && (
+                      <Typography level="body-sm" sx={{ mb: 1, color: "text.tertiary" }}>
+                        @{user.username}
+                      </Typography>
+                    )}
                     <Chip size="sm" variant="soft" color={user.role === 'admin' ? 'danger' : user.role === 'moderator' ? 'warning' : 'primary'}>
                       {user.role}
                     </Chip>

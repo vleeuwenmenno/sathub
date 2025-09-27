@@ -50,6 +50,9 @@ export interface User {
   email?: string;
   role: string;
   two_factor_enabled: boolean;
+  display_name?: string;
+  profile_picture_url?: string;
+  has_profile_picture: boolean;
 }
 
 export interface AuthState {

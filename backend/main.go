@@ -47,6 +47,9 @@ func main() {
 	// Create Gin router
 	r := gin.Default()
 
+	// Set maximum multipart memory to 32MB (prevents large file attacks)
+	r.MaxMultipartMemory = 32 << 20 // 32 MiB
+
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:4001"}, // Frontend URLs + backend for proxy
@@ -89,6 +92,7 @@ func main() {
 			{
 				protected.GET("/profile", handlers.GetProfile)
 				protected.PUT("/profile", handlers.UpdateProfile)
+				protected.POST("/profile/upload-picture", handlers.UploadProfilePicture)
 				protected.POST("/enable-2fa", handlers.EnableTwoFactor)
 				protected.POST("/verify-2fa-setup", handlers.VerifyTwoFactorSetup)
 				protected.POST("/disable-2fa", handlers.DisableTwoFactor)
@@ -125,6 +129,12 @@ func main() {
 		{
 			publicStations.GET("/user/:userId", handlers.GetUserStations)
 			publicStations.GET("/:id/picture", middleware.OptionalAuth(), handlers.GetStationPicture)
+		}
+
+		// Public user routes (no authentication required)
+		publicUsers := api.Group("/users")
+		{
+			publicUsers.GET("/:id/profile-picture", handlers.GetProfilePicture)
 		}
 
 		// Station details (authentication required)

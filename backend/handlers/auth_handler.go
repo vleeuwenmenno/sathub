@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"satdump-ui-backend/config"
 	"satdump-ui-backend/middleware"
@@ -43,11 +44,14 @@ type AuthResponse struct {
 
 // UserInfo represents user information in responses
 type UserInfo struct {
-	ID               uint   `json:"id"`
-	Username         string `json:"username"`
-	Email            string `json:"email,omitempty"`
-	Role             string `json:"role"`
-	TwoFactorEnabled bool   `json:"two_factor_enabled"`
+	ID                uint   `json:"id"`
+	Username          string `json:"username"`
+	Email             string `json:"email,omitempty"`
+	Role              string `json:"role"`
+	TwoFactorEnabled  bool   `json:"two_factor_enabled"`
+	DisplayName       string `json:"display_name,omitempty"`
+	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture bool   `json:"has_profile_picture"`
 }
 
 // Register handles user registration
@@ -215,11 +219,14 @@ func Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:               user.ID,
-			Username:         user.Username,
-			Email:            user.Email.String,
-			Role:             user.Role,
-			TwoFactorEnabled: user.TwoFactorEnabled,
+			ID:                user.ID,
+			Username:          user.Username,
+			Email:             user.Email.String,
+			Role:              user.Role,
+			TwoFactorEnabled:  user.TwoFactorEnabled,
+			DisplayName:       user.DisplayName,
+			ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture: len(user.ProfilePicture) > 0,
 		},
 	}
 
@@ -298,11 +305,14 @@ func RefreshTokens(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		User: UserInfo{
-			ID:               user.ID,
-			Username:         user.Username,
-			Email:            user.Email.String,
-			Role:             user.Role,
-			TwoFactorEnabled: user.TwoFactorEnabled,
+			ID:                user.ID,
+			Username:          user.Username,
+			Email:             user.Email.String,
+			Role:              user.Role,
+			TwoFactorEnabled:  user.TwoFactorEnabled,
+			DisplayName:       user.DisplayName,
+			ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture: len(user.ProfilePicture) > 0,
 		},
 	}
 
@@ -335,8 +345,9 @@ func Logout(c *gin.Context) {
 
 // UpdateProfileRequest represents the request body for updating user profile
 type UpdateProfileRequest struct {
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Password    string `json:"password,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
 }
 
 // UpdateProfile handles updating current user profile
@@ -449,8 +460,20 @@ func UpdateProfile(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to process password")
 			return
 		}
+	}
 
-		// Save changes
+	// Update display name if provided
+	if req.DisplayName != "" {
+		// Basic validation for display name
+		if len(req.DisplayName) > 100 {
+			utils.ValidationErrorResponse(c, "Display name must be 100 characters or less")
+			return
+		}
+		user.DisplayName = req.DisplayName
+	}
+
+	// Save changes if password or display name was updated
+	if req.Password != "" || req.DisplayName != "" {
 		if err := db.Save(&user).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to update profile")
 			return
@@ -481,14 +504,157 @@ func GetProfile(c *gin.Context) {
 	}
 
 	userInfo := UserInfo{
-		ID:               user.ID,
-		Username:         user.Username,
-		Email:            user.Email.String,
-		Role:             user.Role,
-		TwoFactorEnabled: user.TwoFactorEnabled,
+		ID:                user.ID,
+		Username:          user.Username,
+		Email:             user.Email.String,
+		Role:              user.Role,
+		TwoFactorEnabled:  user.TwoFactorEnabled,
+		DisplayName:       user.DisplayName,
+		ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		HasProfilePicture: len(user.ProfilePicture) > 0,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)
+}
+
+// UploadProfilePicture handles uploading a profile picture for the current user
+func UploadProfilePicture(c *gin.Context) {
+	// TODO: Consider implementing rate limiting to prevent abuse
+	// Example: Allow max 10 uploads per user per hour
+
+	userID, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	// Get the uploaded file
+	file, err := c.FormFile("picture")
+	if err != nil {
+		utils.ValidationErrorResponse(c, "No picture file provided")
+		return
+	}
+
+	// Validate file size (max 5MB - reasonable for profile pictures)
+	const maxSize = 5 * 1024 * 1024 // 5MB
+	if file.Size > maxSize {
+		utils.ValidationErrorResponse(c, fmt.Sprintf("Picture file too large (%d bytes). Maximum size is 5MB", file.Size))
+		return
+	}
+
+	// Additional safety check - reject extremely small files (likely not real images)
+	const minSize = 100 // 100 bytes minimum
+	if file.Size < minSize {
+		utils.ValidationErrorResponse(c, "Picture file too small. Please upload a valid image")
+		return
+	}
+
+	// Validate file type from Content-Type header
+	contentType := file.Header.Get("Content-Type")
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+		"image/gif":  true,
+		"image/webp": true,
+	}
+
+	if !allowedTypes[contentType] {
+		utils.ValidationErrorResponse(c, fmt.Sprintf("Invalid file type: %s. Only JPEG, PNG, GIF, and WebP images are allowed", contentType))
+		return
+	}
+
+	// Read file data
+	fileData, err := file.Open()
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to read file")
+		return
+	}
+	defer fileData.Close()
+
+	data := make([]byte, file.Size)
+	_, err = fileData.Read(data)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to read file data")
+		return
+	}
+
+	// Validate file content by checking magic numbers (file signatures)
+	if !isValidImageFile(data, contentType) {
+		utils.ValidationErrorResponse(c, "Invalid image file. The file content doesn't match the declared type")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Get current user
+	var user models.User
+	if err := db.First(&user, userID).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to find user")
+		return
+	}
+
+	// Update user with picture data
+	// Note: Storing images in database as BLOBs. For production with many users,
+	// consider using cloud storage (S3, CloudFlare R2) with database storing only URLs
+	user.ProfilePicture = data
+	user.ProfilePictureType = contentType
+
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update profile picture")
+		return
+	}
+
+	response := map[string]interface{}{
+		"profile_picture_url": generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		"has_profile_picture": true,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Profile picture uploaded successfully", response)
+}
+
+// GetProfilePicture serves user profile pictures from database BLOB
+func GetProfilePicture(c *gin.Context) {
+	userIDStr := c.Param("id")
+	if userIDStr == "" {
+		utils.ValidationErrorResponse(c, "Invalid user ID")
+		return
+	}
+
+	// Parse user ID
+	var userID uint
+	if _, err := fmt.Sscanf(userIDStr, "%d", &userID); err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID format")
+		return
+	}
+
+	db := config.GetDB()
+	var user models.User
+
+	if err := db.First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "User not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch user")
+		return
+	}
+
+	// Check if user has a profile picture
+	if len(user.ProfilePicture) == 0 {
+		utils.NotFoundResponse(c, "No profile picture available")
+		return
+	}
+
+	// Set appropriate content type
+	contentType := user.ProfilePictureType
+	if contentType == "" {
+		contentType = "image/jpeg" // default
+	}
+
+	c.Header("Content-Type", contentType)
+	c.Header("Cache-Control", "public, max-age=86400") // Cache for 24 hours for profile pictures
+	c.Data(http.StatusOK, contentType, user.ProfilePicture)
 }
 
 // ForgotPasswordRequest represents the request body for forgot password
@@ -795,4 +961,37 @@ func ConfirmEmailChange(c *gin.Context) {
 	db.Save(&changeTokenRecord)
 
 	utils.SuccessResponse(c, http.StatusOK, "Email changed successfully", nil)
+}
+
+// generateProfilePictureURL creates a URL for accessing user profile pictures
+func generateProfilePictureURL(userID uint, updatedAt string) string {
+	return fmt.Sprintf("users/%d/profile-picture?t=%s", userID, updatedAt)
+}
+
+// isValidImageFile validates file content using magic numbers (file signatures)
+func isValidImageFile(data []byte, contentType string) bool {
+	if len(data) < 12 {
+		return false
+	}
+
+	switch contentType {
+	case "image/jpeg", "image/jpg":
+		// JPEG files start with FF D8 FF
+		return len(data) >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF
+	case "image/png":
+		// PNG files start with 89 50 4E 47 0D 0A 1A 0A
+		return len(data) >= 8 &&
+			data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
+			data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A
+	case "image/gif":
+		// GIF files start with "GIF87a" or "GIF89a"
+		return len(data) >= 6 &&
+			((string(data[0:6]) == "GIF87a") || (string(data[0:6]) == "GIF89a"))
+	case "image/webp":
+		// WebP files start with "RIFF" and have "WEBP" at bytes 8-11
+		return len(data) >= 12 &&
+			string(data[0:4]) == "RIFF" && string(data[8:12]) == "WEBP"
+	default:
+		return false
+	}
 }
