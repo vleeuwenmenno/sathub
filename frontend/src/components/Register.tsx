@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Box,
@@ -11,17 +11,31 @@ import {
   FormLabel,
   Input,
 } from '@mui/joy';
-import { register as apiRegister } from '../api';
+import { register as apiRegister, getCaptcha } from '../api';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCaptcha = async () => {
+      try {
+        const res = await getCaptcha();
+        setCaptchaId(res.captcha_id);
+      } catch (err) {
+        console.error('Failed to load captcha', err);
+      }
+    };
+    fetchCaptcha();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +47,15 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (!captchaAnswer) {
+      setError('Please complete the captcha');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await apiRegister(email, username, password);
+      await apiRegister(email, username, password, captchaId, captchaAnswer);
       setSuccess('Registration successful! Please check your email to confirm your account before logging in.');
       setTimeout(() => navigate('/login'), 5000);
     } catch (err: any) {
@@ -113,6 +132,22 @@ const Register: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                 required
                 fullWidth
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Captcha</FormLabel>
+              {captchaId && (
+                <Box sx={{ mb: 1 }}>
+                  <img src={`/captcha/${captchaId}.png`} alt="Captcha" />
+                </Box>
+              )}
+              <Input
+                value={captchaAnswer}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCaptchaAnswer(e.target.value)}
+                required
+                fullWidth
+                placeholder="Enter the text shown above"
               />
             </FormControl>
 

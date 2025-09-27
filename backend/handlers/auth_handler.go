@@ -12,16 +12,19 @@ import (
 
 	"database/sql"
 
+	"github.com/dchest/captcha"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 // RegisterRequest represents the request body for user registration
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Username string `json:"username" binding:"required,min=3,max=50"`
-	Password string `json:"password" binding:"required,min=6"`
-	Role     string `json:"role" binding:"omitempty"`
+	Email         string `json:"email" binding:"required,email"`
+	Username      string `json:"username" binding:"required,min=3,max=50"`
+	Password      string `json:"password" binding:"required,min=6"`
+	Role          string `json:"role" binding:"omitempty"`
+	CaptchaID     string `json:"captcha_id" binding:"required"`
+	CaptchaAnswer string `json:"captcha_answer" binding:"required"`
 }
 
 // LoginRequest represents the request body for user login
@@ -59,6 +62,12 @@ func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	// Verify captcha
+	if !captcha.VerifyString(req.CaptchaID, req.CaptchaAnswer) {
+		utils.ValidationErrorResponse(c, "Invalid captcha")
 		return
 	}
 

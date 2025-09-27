@@ -87,8 +87,10 @@ export const register = async (
   email: string,
   username: string,
   password: string,
+  captchaId: string,
+  captchaAnswer: string,
 ): Promise<void> => {
-  await api.post("/auth/register", { email, username, password });
+  await api.post("/auth/register", { email, username, password, captcha_id: captchaId, captcha_answer: captchaAnswer });
 };
 
 export const login = async (
@@ -486,4 +488,9 @@ export const getProfilePictureBlob = async (
 ): Promise<string> => {
   const res = await api.get(pictureUrl, { responseType: 'blob' });
   return URL.createObjectURL(res.data);
+};
+
+export const getCaptcha = async (): Promise<{ captcha_id: string }> => {
+  const res = await api.get("/captcha/new");
+  return res.data;
 };
