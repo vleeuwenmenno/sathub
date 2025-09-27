@@ -12,6 +12,12 @@ import {
   Dropdown,
   Sheet,
   Avatar,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemDecorator,
+  Divider,
 } from "@mui/joy";
 import {
   DarkMode,
@@ -25,6 +31,8 @@ import {
   Router,
   Group,
   Build,
+  Menu as MenuIcon,
+  Close,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
@@ -36,6 +44,7 @@ const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const isDetailPage = location.pathname.includes("/post/");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfilePicture = async () => {
@@ -62,9 +71,22 @@ const Navbar: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/");
+    setMobileMenuOpen(false);
   };
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
+  };
+
+  const navigationItems = [
+    { path: "/", label: "Home", icon: <Home />, show: true },
+    { path: "/stations/global", label: "Stations", icon: <Router />, show: isAuthenticated },
+    { path: "/users/global", label: "Users", icon: <Group />, show: isAuthenticated },
+    { path: "/stations", label: "My Stations", icon: <Build />, show: isAuthenticated },
+  ];
 
   return (
     <Sheet
@@ -89,8 +111,21 @@ const Navbar: React.FC = () => {
           mx: "auto",
         }}
       >
-        {/* Left side - Logo and Navigation */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+        {/* Left side - Logo and Mobile Menu */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* Mobile Menu Button */}
+          <IconButton
+            variant="soft"
+            size="sm"
+            onClick={() => setMobileMenuOpen(true)}
+            sx={{
+              display: { xs: "flex", md: "none" },
+              borderRadius: "50%",
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           {/* Logo */}
           <Box
             sx={{
@@ -104,7 +139,7 @@ const Navbar: React.FC = () => {
               },
               transition: "all 0.2s ease",
             }}
-            onClick={() => navigate("/")}
+            onClick={() => handleNavigate("/")}
           >
             {isDetailPage && (
               <IconButton
@@ -112,7 +147,7 @@ const Navbar: React.FC = () => {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate("/");
+                  handleNavigate("/");
                 }}
                 sx={{ mr: 1 }}
               >
@@ -126,38 +161,24 @@ const Navbar: React.FC = () => {
               sx={{
                 fontWeight: "bold",
                 transition: "color 0.2s ease",
+                display: { xs: "none", sm: "block" },
               }}
             >
               SatHub
             </Typography>
           </Box>
 
-          {/* Navigation */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              variant={isActive("/") ? "solid" : "plain"}
-              size="sm"
-              onClick={() => navigate("/")}
-              startDecorator={<Home />}
-              sx={{
-                borderRadius: "lg",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: "sm",
-                },
-              }}
-            >
-              Home
-            </Button>
-
-            {isAuthenticated && (
-              <>
+          {/* Desktop Navigation */}
+          <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1, ml: 3 }}>
+            {navigationItems
+              .filter((item) => item.show)
+              .map((item) => (
                 <Button
-                  variant={isActive("/stations/global") ? "solid" : "plain"}
+                  key={item.path}
+                  variant={isActive(item.path) ? "solid" : "plain"}
                   size="sm"
-                  onClick={() => navigate("/stations/global")}
-                  startDecorator={<Router />}
+                  onClick={() => handleNavigate(item.path)}
+                  startDecorator={item.icon}
                   sx={{
                     borderRadius: "lg",
                     transition: "all 0.2s ease",
@@ -167,49 +188,14 @@ const Navbar: React.FC = () => {
                     },
                   }}
                 >
-                  Stations
+                  {item.label}
                 </Button>
-
-                <Button
-                  variant={isActive("/users/global") ? "solid" : "plain"}
-                  size="sm"
-                  onClick={() => navigate("/users/global")}
-                  startDecorator={<Group />}
-                  sx={{
-                    borderRadius: "lg",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: "sm",
-                    },
-                  }}
-                >
-                  Users
-                </Button>
-
-                <Button
-                  variant={isActive("/stations") ? "solid" : "plain"}
-                  size="sm"
-                  onClick={() => navigate("/stations")}
-                  startDecorator={<Build />}
-                  sx={{
-                    borderRadius: "lg",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: "sm",
-                    },
-                  }}
-                >
-                  My Stations
-                </Button>
-              </>
-            )}
+              ))}
           </Box>
         </Box>
 
         {/* Right side - Theme and Account */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
           <IconButton
             variant="soft"
             size="sm"
@@ -234,6 +220,7 @@ const Navbar: React.FC = () => {
                 sx={{
                   borderRadius: "lg",
                   transition: "all 0.2s ease",
+                  minWidth: 0,
                   "&:hover": {
                     transform: "translateY(-1px)",
                     boxShadow: "sm",
@@ -243,20 +230,26 @@ const Navbar: React.FC = () => {
                 <Avatar
                   size="sm"
                   src={profilePictureUrl || undefined}
-                  sx={{ mr: 1 }}
+                  sx={{ mr: { xs: 0, sm: 1 } }}
                 >
                   {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography level="body-sm" sx={{ fontWeight: "medium" }}>
+                <Typography 
+                  level="body-sm" 
+                  sx={{ 
+                    fontWeight: "medium",
+                    display: { xs: "none", sm: "block" }
+                  }}
+                >
                   {user?.display_name || user?.username}
                 </Typography>
               </MenuButton>
               <Menu sx={{ minWidth: 180 }}>
-                <MenuItem onClick={() => navigate(`/user/${user?.id}`)}>
+                <MenuItem onClick={() => handleNavigate(`/user/${user?.id}`)}>
                   <Person sx={{ mr: 1 }} />
                   Overview
                 </MenuItem>
-                <MenuItem onClick={() => navigate("/user/settings")}>
+                <MenuItem onClick={() => handleNavigate("/user/settings")}>
                   <Settings sx={{ mr: 1 }} />
                   Settings
                 </MenuItem>
@@ -270,7 +263,7 @@ const Navbar: React.FC = () => {
             <Button
               variant="solid"
               size="sm"
-              onClick={() => navigate("/login")}
+              onClick={() => handleNavigate("/login")}
               sx={{
                 borderRadius: "lg",
                 transition: "all 0.2s ease",
@@ -280,11 +273,165 @@ const Navbar: React.FC = () => {
                 },
               }}
             >
-              Login
+              <Typography sx={{ display: { xs: "none", sm: "block" } }}>Login</Typography>
+              <Person sx={{ display: { xs: "block", sm: "none" } }} />
             </Button>
           )}
         </Box>
       </Box>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        anchor="left"
+        sx={{
+          display: { xs: "block", md: "none" },
+        }}
+      >
+        <Box
+          sx={{
+            width: 280,
+            p: 2,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Drawer Header */}
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Satellite sx={{ fontSize: "1.5rem", color: "primary.main" }} />
+              <Typography level="h4" sx={{ fontWeight: "bold" }}>
+                SatHub
+              </Typography>
+            </Box>
+            <IconButton
+              variant="soft"
+              size="sm"
+              onClick={() => setMobileMenuOpen(false)}
+              sx={{ borderRadius: "50%" }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {/* Navigation Items */}
+          <List sx={{ gap: 1, mb: 2 }}>
+            {navigationItems
+              .filter((item) => item.show)
+              .map((item) => (
+                <ListItem key={item.path}>
+                  <ListItemButton
+                    onClick={() => handleNavigate(item.path)}
+                    selected={isActive(item.path)}
+                    sx={{
+                      borderRadius: "lg",
+                      "&:hover": {
+                        backgroundColor: "primary.softHoverBg",
+                      },
+                    }}
+                  >
+                    <ListItemDecorator>{item.icon}</ListItemDecorator>
+                    {item.label}
+                  </ListItemButton>
+                </ListItem>
+              ))}
+          </List>
+
+          {/* User Section */}
+          {isAuthenticated && (
+            <>
+              <Divider sx={{ mb: 2 }} />
+              <Box sx={{ mt: "auto" }}>
+                <List sx={{ gap: 1 }}>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={() => handleNavigate(`/user/${user?.id}`)}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <Avatar
+                          size="sm"
+                          src={profilePictureUrl || undefined}
+                        >
+                          {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
+                        </Avatar>
+                      </ListItemDecorator>
+                      <Box sx={{ overflow: "hidden" }}>
+                        <Typography level="body-sm" sx={{ fontWeight: "medium", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {user?.display_name || user?.username}
+                        </Typography>
+                        <Typography level="body-xs" sx={{ color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          View Profile
+                        </Typography>
+                      </Box>
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={() => handleNavigate("/user/settings")}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <Settings />
+                      </ListItemDecorator>
+                      Settings
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={handleLogout}
+                      sx={{
+                        borderRadius: "lg",
+                        color: "danger.main",
+                        "&:hover": {
+                          backgroundColor: "danger.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <Logout />
+                      </ListItemDecorator>
+                      Logout
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+              </Box>
+            </>
+          )}
+
+          {/* Login Button for Non-authenticated Users */}
+          {!isAuthenticated && (
+            <Box sx={{ mt: "auto", p: 2 }}>
+              <Button
+                variant="solid"
+                fullWidth
+                onClick={() => handleNavigate("/login")}
+                startDecorator={<Person />}
+                sx={{
+                  borderRadius: "lg",
+                  py: 1.5,
+                }}
+              >
+                Login
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Drawer>
     </Sheet>
   );
 };
