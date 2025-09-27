@@ -1,5 +1,8 @@
 # SatHub
 
+[![Backend Build](https://github.com/vleeuwenmenno/sathub/actions/workflows/backend-production.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/backend-production.yml)
+[![Frontend Build](https://github.com/vleeuwenmenno/sathub/actions/workflows/frontend-production.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/frontend-production.yml)
+
 A web-based platform for managing satellite ground stations and their captured data.
 
 ## Features
@@ -200,6 +203,15 @@ All endpoints return JSON responses. See `backend/main.go` for complete route de
 - Use meaningful commit messages
 - Update documentation for API changes
 - Test your changes thoroughly
+
+## Production Images
+
+Production Docker images are automatically built and published to GitHub Container Registry when releases are created:
+
+- Backend: `ghcr.io/vleeuwenmenno/sathub/backend:latest`
+- Frontend: `ghcr.io/vleeuwenmenno/sathub/frontend:latest`
+
+Images are tagged with semantic versions (e.g., `v1.0.0`, `v1.0`, `v1`) and `latest`.
 
 ## License
 

@@ -1,0 +1,36 @@
+# Replace sathub.example.com with your actual domain
+sathub.example.com {
+    # Serve frontend for all routes except /api
+    handle /api/* {
+        reverse_proxy backend:4001
+    }
+    
+    handle {
+        reverse_proxy frontend:4173
+    }
+    
+    # Enable compression
+    encode gzip
+    
+    # Security headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+}
+
+# For local development without domain
+:80 {
+    handle /api/* {
+        reverse_proxy backend:4001
+    }
+    
+    handle {
+        reverse_proxy frontend:4173
+    }
+    
+    encode gzip
+}

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/vleeuwenmenno/sathub/backend:latest
+    container_name: sathub-backend
+    restart: unless-stopped
+    environment:
+      - GIN_MODE=release
+      - JWT_SECRET=${JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+    volumes:
+      - sathub_data:/app/data
+      - sathub_uploads:/app/uploads
+    networks:
+      - sathub
+
+  frontend:
+    image: ghcr.io/vleeuwenmenno/sathub/frontend:latest
+    container_name: sathub-frontend
+    restart: unless-stopped
+    networks:
+      - sathub
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: sathub-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - sathub
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  sathub_data:
+  sathub_uploads:
+  caddy_data:
+  caddy_config:
+
+networks:
+  sathub:
+    driver: bridge
