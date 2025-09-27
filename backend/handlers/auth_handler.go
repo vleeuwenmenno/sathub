@@ -19,12 +19,12 @@ import (
 
 // RegisterRequest represents the request body for user registration
 type RegisterRequest struct {
-	Email          string `json:"email" binding:"required,email"`
-	Username       string `json:"username" binding:"required,min=3,max=50"`
-	Password       string `json:"password" binding:"required,min=6"`
-	Role           string `json:"role" binding:"omitempty"`
-	CaptchaID      string `json:"captcha_id" binding:"required"`
-	CaptchaAnswer  string `json:"captcha_answer" binding:"required"`
+	Email         string `json:"email" binding:"required,email"`
+	Username      string `json:"username" binding:"required,min=3,max=50"`
+	Password      string `json:"password" binding:"required,min=6"`
+	Role          string `json:"role" binding:"omitempty"`
+	CaptchaID     string `json:"captcha_id" binding:"required"`
+	CaptchaAnswer string `json:"captcha_answer" binding:"required"`
 }
 
 // LoginRequest represents the request body for user login
