@@ -78,8 +78,11 @@ type StationRequest struct {
 
 // UserResponse represents user data in responses
 type UserResponse struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
+	ID                uint   `json:"id"`
+	Username          string `json:"username"`
+	DisplayName       string `json:"display_name,omitempty"`
+	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture bool   `json:"has_profile_picture"`
 }
 
 // StationResponse represents the station data in responses
@@ -563,9 +566,17 @@ func GetGlobalStations(c *gin.Context) {
 
 		// Add user information if it exists
 		if station.User.ID != 0 {
+			hasProfilePicture := len(station.User.ProfilePicture) > 0
+			profilePictureURL := ""
+			if hasProfilePicture {
+				profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+			}
 			stationResponse.User = &UserResponse{
-				ID:       station.User.ID,
-				Username: station.User.Username,
+				ID:                station.User.ID,
+				Username:          station.User.Username,
+				DisplayName:       station.User.DisplayName,
+				ProfilePictureURL: profilePictureURL,
+				HasProfilePicture: hasProfilePicture,
 			}
 		}
 
@@ -597,9 +608,17 @@ func GetUserStations(c *gin.Context) {
 
 		// Add user information if it exists
 		if station.User.ID != 0 {
+			hasProfilePicture := len(station.User.ProfilePicture) > 0
+			profilePictureURL := ""
+			if hasProfilePicture {
+				profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+			}
 			stationResponse.User = &UserResponse{
-				ID:       station.User.ID,
-				Username: station.User.Username,
+				ID:                station.User.ID,
+				Username:          station.User.Username,
+				DisplayName:       station.User.DisplayName,
+				ProfilePictureURL: profilePictureURL,
+				HasProfilePicture: hasProfilePicture,
 			}
 		}
 
@@ -647,9 +666,17 @@ func GetStationDetails(c *gin.Context) {
 
 	// Add user information
 	if station.User.ID != 0 {
+		hasProfilePicture := len(station.User.ProfilePicture) > 0
+		profilePictureURL := ""
+		if hasProfilePicture {
+			profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+		}
 		response.User = &UserResponse{
-			ID:       station.User.ID,
-			Username: station.User.Username,
+			ID:                station.User.ID,
+			Username:          station.User.Username,
+			DisplayName:       station.User.DisplayName,
+			ProfilePictureURL: profilePictureURL,
+			HasProfilePicture: hasProfilePicture,
 		}
 	}
 

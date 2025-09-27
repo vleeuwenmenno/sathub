@@ -5,15 +5,14 @@ import {
   CardContent,
   Typography,
   Grid,
-  Button,
-  Box,
   Stack,
   CircularProgress,
   Alert,
   Skeleton,
+  Box,
 } from "@mui/joy";
 import type { Post } from "../types";
-import { getStationPosts, getPostImageUrl, getPostImageBlob, getStationDetails } from "../api";
+import { getStationPosts, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
 
@@ -132,10 +131,10 @@ const StationPosts: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 1, md: 2 } }}>
       {station && (
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={3}>
-            {/* Station Information */}
-            <Grid xs={12} md={8}>
+        <Grid container spacing={3}>
+          {/* Left Column: Station Info and Posts */}
+          <Grid xs={12} md={8}>
+            <Box sx={{ mb: 3 }}>
               <Card>
                 <CardContent>
                   <Typography level="h3" sx={{ mb: 2 }}>
@@ -164,10 +163,125 @@ const StationPosts: React.FC = () => {
                   </Stack>
                 </CardContent>
               </Card>
-            </Grid>
-            
-            {/* Station Map */}
-            <Grid xs={12} md={4}>
+            </Box>
+
+            {/* Posts Section */}
+            {posts.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography level="h4" color="neutral">
+                  No posts found for this station.
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ mb: 2 }}>
+                  <Typography level="body-sm" color="neutral">
+                    Showing {posts.length} posts
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {posts.map((post) => (
+                    <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          "&:hover": {
+                            transform: "translateY(-4px)",
+                            boxShadow: "lg",
+                          },
+                        }}
+                      >
+                        {post.images.length > 0 && (
+                          <Box
+                            sx={{
+                              position: "relative",
+                              height: 200,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <Skeleton loading={!loadedImages[`${post.id}-image`]}>
+                              <img
+                                src={imageBlobs[`${post.id}-image`] || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}
+                                alt={post.satellite_name}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  transition: "transform 0.3s",
+                                }}
+                                onLoad={() => {
+                                  setLoadedImages(prev => ({
+                                    ...prev,
+                                    [`${post.id}-image`]: true
+                                  }));
+                                  setLoadingImages(prev => ({
+                                    ...prev,
+                                    [`${post.id}-image`]: false
+                                  }));
+                                }}
+                                onError={() => {
+                                  setLoadedImages(prev => ({
+                                    ...prev,
+                                    [`${post.id}-image`]: true
+                                  }));
+                                  setLoadingImages(prev => ({
+                                    ...prev,
+                                    [`${post.id}-image`]: false
+                                  }));
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.transform = "scale(1.05)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.transform = "scale(1)")
+                                }
+                              />
+                            </Skeleton>
+                          </Box>
+                        )}
+                        <CardContent
+                          sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                        >
+                          <Typography level="h4" sx={{ mb: 1 }}>
+                            {post.satellite_name}
+                          </Typography>
+                          <Stack spacing={0.5} sx={{ mb: 2, flex: 1 }}>
+                            <Typography
+                              level="body-sm"
+                              startDecorator={<span>📅</span>}
+                            >
+                              {formatDate(post.timestamp)}
+                            </Typography>
+                            <Typography
+                              level="body-sm"
+                              startDecorator={<span>🖼️</span>}
+                            >
+                              {post.images.length} image
+                              {post.images.length !== 1 ? "s" : ""}
+                            </Typography>
+                            <Typography
+                              level="body-sm"
+                              startDecorator={<span>📝</span>}
+                            >
+                              {formatDate(post.created_at)}
+                            </Typography>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+            )}
+          </Grid>
+          
+          {/* Right Column: Map and Owner */}
+          <Grid xs={12} md={4}>
+            <Stack spacing={3}>
               <StationMap
                 stationName={station.name}
                 location={station.location}
@@ -175,28 +289,9 @@ const StationPosts: React.FC = () => {
                 longitude={station.longitude}
                 height={280}
               />
-            </Grid>
-          </Grid>
-        </Box>
-      )}
-
-      {posts.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 4 }}>
-          <Typography level="h4" color="neutral">
-            No posts found for this station.
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <Box sx={{ mb: 2 }}>
-            <Typography level="body-sm" color="neutral">
-              Showing {posts.length} posts
-            </Typography>
-          </Box>
-
-          <Grid container spacing={3}>
-            {posts.map((post) => (
-              <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
+              
+              {/* Station Owner */}
+              {station.user && (
                 <Card
                   onClick={() => navigate(`/post/${post.id}`)}
                   sx={{
@@ -206,92 +301,62 @@ const StationPosts: React.FC = () => {
                     cursor: "pointer",
                     transition: "transform 0.2s, box-shadow 0.2s",
                     "&:hover": {
-                      transform: "translateY(-4px)",
+                      transform: "translateY(-2px)",
                       boxShadow: "lg",
                     },
                   }}
+                  onClick={() => navigate(`/user/${station.user!.id}`)}
                 >
-                  {post.images.length > 0 && (
-                    <Box
-                      sx={{
-                        position: "relative",
-                        height: 200,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Skeleton loading={!loadedImages[`${post.id}-image`]}>
-                        <img
-                          src={imageBlobs[`${post.id}-image`] || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}
-                          alt={post.satellite_name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            transition: "transform 0.3s",
-                          }}
-                          onLoad={() => {
-                            setLoadedImages(prev => ({
-                              ...prev,
-                              [`${post.id}-image`]: true
-                            }));
-                            setLoadingImages(prev => ({
-                              ...prev,
-                              [`${post.id}-image`]: false
-                            }));
-                          }}
-                          onError={() => {
-                            setLoadedImages(prev => ({
-                              ...prev,
-                              [`${post.id}-image`]: true
-                            }));
-                            setLoadingImages(prev => ({
-                              ...prev,
-                              [`${post.id}-image`]: false
-                            }));
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.05)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        />
-                      </Skeleton>
-                    </Box>
-                  )}
-                  <CardContent
-                    sx={{ flex: 1, display: "flex", flexDirection: "column" }}
-                  >
-                    <Typography level="h4" sx={{ mb: 1 }}>
-                      {post.satellite_name}
+                  <CardContent>
+                    <Typography level="title-md" sx={{ mb: 2 }}>
+                      Station Owner
                     </Typography>
-                    <Stack spacing={0.5} sx={{ mb: 2, flex: 1 }}>
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>📅</span>}
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          bgcolor: "neutral.softBg",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
                       >
-                        {formatDate(post.timestamp)}
-                      </Typography>
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>🖼️</span>}
-                      >
-                        {post.images.length} image
-                        {post.images.length !== 1 ? "s" : ""}
-                      </Typography>
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>📝</span>}
-                      >
-                        {formatDate(post.created_at)}
-                      </Typography>
+                        {station.user.has_profile_picture && station.user.profile_picture_url ? (
+                          <img
+                            src={station.user.profile_picture_url}
+                            alt={`${station.user.username}'s profile`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <Typography level="h3" color="neutral">
+                            {station.user.username.charAt(0).toUpperCase()}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography level="body-lg" fontWeight="bold">
+                          {station.user.display_name || station.user.username}
+                        </Typography>
+                        {station.user.display_name && (
+                          <Typography level="body-sm" color="neutral">
+                            @{station.user.username}
+                          </Typography>
+                        )}
+                      </Box>
                     </Stack>
                   </CardContent>
                 </Card>
-              </Grid>
-            ))}
+              )}
+            </Stack>
           </Grid>
-        </>
+        </Grid>
       )}
     </Box>
   );

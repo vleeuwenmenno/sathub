@@ -39,6 +39,8 @@ services:
     image: ghcr.io/vleeuwenmenno/sathub/frontend:latest
     container_name: sathub-frontend
     restart: unless-stopped
+    environment:
+      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-sathub.de,localhost,127.0.0.1}
     networks:
       - sathub
 
