@@ -76,17 +76,27 @@ Once created, your station gets:
 
 ### Station Health
 
-SatHub tracks your station's status through regular health pings. The data client sends a health check every few minutes to let the system know your station is online and operational. If health pings stop, your station will show as "last seen XXX" in the directory.
+SatHub tracks your station's status through regular health pings. The data client sends a health check every few minutes to let the system know your station is online and operational. If health pings stop, your station will show as "offline" in the directory.
 
 ## Sharing Satellite Data
 
 The primary way to share satellite data on SatHub is through automated uploads using the SatHub Data Client. This ensures your station runs 24/7 and automatically shares every satellite pass you capture.
 
+### Prerequisites for Automated Uploads
+
+Before setting up the SatHub Data Client, you'll need:
+
+#### Satdump Software
+You'll need satdump (satellite processing software) installed and configured to capture satellite signals. Set it up so it automatically processes satellite passes and saves the output to a directory that the SatHub client can monitor.
+
+**Example setup:** Configure satdump to output processed satellite data to a folder like `/home/user/satellite-data` or `C:\satellite-data` on Windows.
+
 #### What You Need
 
 - The SatHub Data Client software (download from the website)
 - Your station token
-- Satdump software running and saving to a monitored folder
+- Satdump software installed and configured
+- A directory where satdump saves processed satellite data
 
 #### Basic Setup
 
