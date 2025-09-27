@@ -26,6 +26,32 @@ import {
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 
+const formatLastSeen = (station: Station): string => {
+  if (station.is_online) {
+    return "ONLINE";
+  }
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const lastSeen = new Date(station.last_seen);
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) {
+    return "Just now";
+  } else if (diffMins < 60) {
+    return `${diffMins}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else {
+    return `${diffDays}d ago`;
+  }
+};
+
 const GlobalStations: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -262,14 +288,27 @@ const GlobalStations: React.FC = () => {
                       Created{" "}
                       {new Date(station.created_at).toLocaleDateString()}
                     </Typography>
+                    <Typography
+                      level="body-sm"
+                      startDecorator={<span>⏱️</span>}
+                    >
+                      Last seen: {formatLastSeen(station)}
+                    </Typography>
                   </Stack>
                   <Box sx={{ mt: "auto" }}>
                     <Stack spacing={0.5}>
                       <Chip size="sm" variant="soft" color="primary">
                         Station {station.id.substring(0, 8)}
                       </Chip>
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                        color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                      >
+                        {formatLastSeen(station)}
+                      </Chip>
                       {stationDetails[station.id]?.user && (
-                        <Chip size="sm" variant="soft" color="info">
+                        <Chip size="sm" variant="soft" color="primary">
                           @{stationDetails[station.id].user.username}
                         </Chip>
                       )}

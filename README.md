@@ -13,6 +13,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [x] Database using GORM with SQLite (easily switchable to MariaDB or Postgres)
   - [x] Database seeding for development and testing
 - [x] Station management (create, edit, delete ground stations)
+  - [x] Station health monitoring
   - [x] Public and private station visibility
   - [x] Satellite data post management
   - [x] Posts upload using API keys per station
@@ -29,10 +30,9 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [ ] Docker-based production environment
 - [ ] GitHub Workfows that publish and compile docker images for prod
 - [ ] API rate limiting
-- [ ] Station health monitoring (Heartbeat API endpoint (Allowing Stations to report back last seen time))
-- [ ] Email notifications / Maybe Shoutrr?
 - [ ] Data export functionality
-- [ ] achievements for users
+- [ ] Achievements for users
+- [ ] Notifications (Email, Shoutrr) (e.g. new post from followed station, station offline, etc)
 
 ## Tech Stack
 

@@ -16,6 +16,10 @@ import {
   IconButton,
   Tooltip,
   Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  AccordionGroup,
 } from "@mui/joy";
 import {
   Delete,
@@ -34,6 +38,32 @@ import {
   updateStation,
   getStationPictureBlob,
 } from "../api";
+
+const formatLastSeen = (station: Station): string => {
+  if (station.is_online) {
+    return "ONLINE";
+  }
+  if (!station.last_seen) {
+    return "Never seen";
+  }
+
+  const lastSeen = new Date(station.last_seen);
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) {
+    return "Just now";
+  } else if (diffMins < 60) {
+    return `${diffMins}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else {
+    return `${diffDays}d ago`;
+  }
+};
 
 const StationsList: React.FC = () => {
   const [stations, setStations] = useState<Station[]>([]);
@@ -59,6 +89,9 @@ const StationsList: React.FC = () => {
     token: "",
     loading: false,
   });
+
+  const baseUrl = window.location.origin;
+
   const navigate = useNavigate();
 
   const loadStations = async () => {
@@ -280,6 +313,27 @@ const StationsList: React.FC = () => {
                     >
                       {station.is_public ? "Public" : "Private"}
                     </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>📡</span>}
+                      >
+                        Status:
+                      </Typography>
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                        color={
+                          station.is_online
+                            ? "success"
+                            : station.last_seen
+                            ? "warning"
+                            : "neutral"
+                        }
+                      >
+                        {formatLastSeen(station)}
+                      </Chip>
+                    </Box>
                   </Stack>
                   <Stack direction="row" spacing={1} sx={{ mt: "auto" }}>
                     <Tooltip
@@ -297,7 +351,7 @@ const StationsList: React.FC = () => {
                         {station.is_public ? <span>🌐</span> : <span>🔒</span>}
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="View Token">
+                    <Tooltip title="Station API Token">
                       <IconButton
                         size="sm"
                         variant="outlined"
@@ -422,12 +476,153 @@ const StationsList: React.FC = () => {
         <ModalDialog>
           <ModalClose />
           <Typography level="h4">
-            Station Token - {tokenDialog.station?.name}
+            Station API Token - {tokenDialog.station?.name}
           </Typography>
           <Typography level="body-sm" sx={{ mb: 2 }}>
-            This token can be used to authenticate external applications with
-            your station. Keep it secure and regenerate if compromised.
+            This API token allows external applications and satellite ground stations to authenticate with your station for uploading data and health monitoring. Keep it secure and regenerate if compromised.
           </Typography>
+
+          <Typography level="title-md" sx={{ mb: 1 }}>
+            Available API Endpoints
+          </Typography>
+          <AccordionGroup sx={{ mb: 2 }}>
+            <Accordion>
+              <AccordionSummary>
+                <Typography level="body-sm" fontWeight="bold">
+                  POST {baseUrl}/api/posts
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                  Create new satellite data posts. Send JSON payload with satellite data.
+                </Typography>
+                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                  cURL Example:
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    backgroundColor: "background.level1",
+                    padding: 1,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    overflow: "auto",
+                    mb: 1,
+                  }}
+                >
+{`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "timestamp": "2024-01-01T12:00:00Z",
+    "satellite_name": "NOAA 19",
+    "metadata": "{\\"frequency\\": 137.1}",
+    "data": {
+      "cbor_path": "/path/to/data.cbor",
+      "info": { "key": "value" }
+    }
+  }' \\
+  ${baseUrl}/api/posts`}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion>
+              <AccordionSummary>
+                <Typography level="body-sm" fontWeight="bold">
+                  POST {baseUrl}/api/posts/{"{postId}"}/images
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                  Upload images for existing posts. Use multipart/form-data with 'image' field.
+                </Typography>
+                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                  cURL Example:
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    backgroundColor: "background.level1",
+                    padding: 1,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    overflow: "auto",
+                    mb: 1,
+                  }}
+                >
+{`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  -F "image=@/path/to/image.png" \\
+  ${baseUrl}/api/posts/123/images`}
+                </Box>
+                <Typography level="body-xs" sx={{ color: "text.secondary" }}>
+                  <strong>Content-Type:</strong> multipart/form-data
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion>
+              <AccordionSummary>
+                <Typography level="body-sm" fontWeight="bold">
+                  POST {baseUrl}/api/stations/health
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                  Health check endpoint. Call periodically to indicate station is online.
+                </Typography>
+                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                  cURL Example:
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    backgroundColor: "background.level1",
+                    padding: 1,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    overflow: "auto",
+                    mb: 1,
+                  }}
+                >
+{`curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  ${baseUrl}/api/stations/health`}
+                </Box>
+                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                  Cron Job Example (every 5 minutes):
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    backgroundColor: "background.level1",
+                    padding: 1,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    overflow: "auto",
+                    mb: 1,
+                  }}
+                >
+{`*/5 * * * * curl -X POST \\
+  -H "Authorization: Station ${tokenDialog.token}" \\
+  ${baseUrl}/api/stations/health`}
+                </Box>
+                <Typography level="body-xs" sx={{ color: "text.secondary" }}>
+                  This updates the station's "last seen" timestamp. Stations are considered online if last seen within the configured threshold (default: 5 minutes).
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          </AccordionGroup>
+
+          <Typography level="title-md" sx={{ mb: 1 }}>
+            Authentication
+          </Typography>
+          <Typography level="body-sm" sx={{ mb: 2 }}>
+            Include the token in the Authorization header:{" "}
+            <code>Station {tokenDialog.token}</code>
+          </Typography>
+
           <Input
             fullWidth
             value={tokenDialog.token}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"satdump-ui-backend/config"
 	"satdump-ui-backend/middleware"
@@ -23,12 +24,52 @@ func generatePictureURL(stationID string, updatedAt string) string {
 	return fmt.Sprintf("/stations/%s/picture?t=%s", stationID, updatedAt)
 }
 
+// isStationOnline checks if a station is considered online based on last seen time
+func isStationOnline(lastSeen *time.Time, thresholdMinutes int) bool {
+	if lastSeen == nil {
+		return false
+	}
+	return time.Since(*lastSeen) <= time.Duration(thresholdMinutes)*time.Minute
+}
+
+// buildStationResponse creates a StationResponse from a Station model
+func buildStationResponse(station models.Station) StationResponse {
+	var lastSeenStr *string
+	if station.LastSeen != nil {
+		formatted := station.LastSeen.Format("2006-01-02T15:04:05Z07:00")
+		lastSeenStr = &formatted
+	}
+
+	return StationResponse{
+		ID:              station.ID,
+		Name:            station.Name,
+		Location:        station.Location,
+		Picture:         generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		HasPicture:      len(station.Picture) > 0,
+		Equipment:       station.Equipment,
+		IsPublic:        station.IsPublic,
+		LastSeen:        lastSeenStr,
+		IsOnline:        isStationOnline(station.LastSeen, station.OnlineThreshold),
+		OnlineThreshold: station.OnlineThreshold,
+		CreatedAt:       station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:       station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+// buildStationResponseWithToken creates a StationResponse from a Station model including the token
+func buildStationResponseWithToken(station models.Station) StationResponse {
+	response := buildStationResponse(station)
+	response.Token = station.Token
+	return response
+}
+
 // StationRequest represents the request body for creating/updating a station
 type StationRequest struct {
-	Name      string `json:"name" binding:"required,min=1,max=100"`
-	Location  string `json:"location" binding:"required,min=1,max=200"`
-	Equipment string `json:"equipment" binding:"max=1000"`
-	IsPublic  *bool  `json:"is_public,omitempty"` // Optional, defaults to true
+	Name            string `json:"name" binding:"required,min=1,max=100"`
+	Location        string `json:"location" binding:"required,min=1,max=200"`
+	Equipment       string `json:"equipment" binding:"max=1000"`
+	IsPublic        *bool  `json:"is_public,omitempty"`        // Optional, defaults to true
+	OnlineThreshold *int   `json:"online_threshold,omitempty"` // Optional, defaults to 5
 }
 
 // UserResponse represents user data in responses
@@ -39,18 +80,21 @@ type UserResponse struct {
 
 // StationResponse represents the station data in responses
 type StationResponse struct {
-	ID         string        `json:"id"`
-	UserID     uint          `json:"user_id,omitempty"`
-	User       *UserResponse `json:"user,omitempty"`
-	Name       string        `json:"name"`
-	Location   string        `json:"location"`
-	Picture    string        `json:"picture_url"` // URL to access the picture
-	HasPicture bool          `json:"has_picture"`
-	Equipment  string        `json:"equipment"`
-	IsPublic   bool          `json:"is_public"`
-	Token      string        `json:"token,omitempty"` // Only included when explicitly requested
-	CreatedAt  string        `json:"created_at"`
-	UpdatedAt  string        `json:"updated_at"`
+	ID              string        `json:"id"`
+	UserID          uint          `json:"user_id,omitempty"`
+	User            *UserResponse `json:"user,omitempty"`
+	Name            string        `json:"name"`
+	Location        string        `json:"location"`
+	Picture         string        `json:"picture_url"` // URL to access the picture
+	HasPicture      bool          `json:"has_picture"`
+	Equipment       string        `json:"equipment"`
+	IsPublic        bool          `json:"is_public"`
+	Token           string        `json:"token,omitempty"` // Only included when explicitly requested
+	LastSeen        *string       `json:"last_seen,omitempty"`
+	IsOnline        bool          `json:"is_online"`
+	OnlineThreshold int           `json:"online_threshold"`
+	CreatedAt       string        `json:"created_at"`
+	UpdatedAt       string        `json:"updated_at"`
 }
 
 // GetStations handles listing all stations for the authenticated user
@@ -71,17 +115,7 @@ func GetStations(c *gin.Context) {
 
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
-		response[i] = StationResponse{
-			ID:         station.ID,
-			Name:       station.Name,
-			Location:   station.Location,
-			Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasPicture: len(station.Picture) > 0,
-			Equipment:  station.Equipment,
-			IsPublic:   station.IsPublic,
-			CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		}
+		response[i] = buildStationResponse(station)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Stations retrieved successfully", response)
@@ -113,17 +147,7 @@ func GetStation(c *gin.Context) {
 		return
 	}
 
-	response := StationResponse{
-		ID:         station.ID,
-		Name:       station.Name,
-		Location:   station.Location,
-		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasPicture: len(station.Picture) > 0,
-		Equipment:  station.Equipment,
-		IsPublic:   station.IsPublic,
-		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
+	response := buildStationResponse(station)
 
 	utils.SuccessResponse(c, http.StatusOK, "Station retrieved successfully", response)
 }
@@ -145,12 +169,18 @@ func CreateStation(c *gin.Context) {
 	db := config.GetDB()
 
 	// Create new station
+	onlineThreshold := 5 // default
+	if req.OnlineThreshold != nil && *req.OnlineThreshold > 0 {
+		onlineThreshold = *req.OnlineThreshold
+	}
+
 	station := models.Station{
-		UserID:    userID,
-		Name:      req.Name,
-		Location:  req.Location,
-		Equipment: req.Equipment,
-		IsPublic:  req.IsPublic == nil || *req.IsPublic, // Default to true if not specified
+		UserID:          userID,
+		Name:            req.Name,
+		Location:        req.Location,
+		Equipment:       req.Equipment,
+		IsPublic:        req.IsPublic == nil || *req.IsPublic, // Default to true if not specified
+		OnlineThreshold: onlineThreshold,
 	}
 
 	// Save to database (token will be generated by BeforeCreate hook)
@@ -159,18 +189,7 @@ func CreateStation(c *gin.Context) {
 		return
 	}
 
-	response := StationResponse{
-		ID:         station.ID,
-		Name:       station.Name,
-		Location:   station.Location,
-		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasPicture: len(station.Picture) > 0,
-		Equipment:  station.Equipment,
-		IsPublic:   station.IsPublic,
-		Token:      station.Token, // Include token in creation response
-		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
+	response := buildStationResponseWithToken(station)
 
 	utils.SuccessResponse(c, http.StatusCreated, "Station created successfully", response)
 }
@@ -215,23 +234,16 @@ func UpdateStation(c *gin.Context) {
 	if req.IsPublic != nil {
 		station.IsPublic = *req.IsPublic
 	}
+	if req.OnlineThreshold != nil && *req.OnlineThreshold > 0 {
+		station.OnlineThreshold = *req.OnlineThreshold
+	}
 
 	if err := db.Save(&station).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to update station")
 		return
 	}
 
-	response := StationResponse{
-		ID:         station.ID,
-		Name:       station.Name,
-		Location:   station.Location,
-		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasPicture: len(station.Picture) > 0,
-		Equipment:  station.Equipment,
-		IsPublic:   station.IsPublic,
-		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
+	response := buildStationResponse(station)
 
 	utils.SuccessResponse(c, http.StatusOK, "Station updated successfully", response)
 }
@@ -412,17 +424,7 @@ func UploadStationPicture(c *gin.Context) {
 		return
 	}
 
-	response := StationResponse{
-		ID:         station.ID,
-		Name:       station.Name,
-		Location:   station.Location,
-		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasPicture: len(station.Picture) > 0,
-		Equipment:  station.Equipment,
-		IsPublic:   station.IsPublic,
-		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
+	response := buildStationResponse(station)
 
 	utils.SuccessResponse(c, http.StatusOK, "Station picture uploaded successfully", response)
 }
@@ -546,18 +548,8 @@ func GetGlobalStations(c *gin.Context) {
 
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
-		stationResponse := StationResponse{
-			ID:         station.ID,
-			UserID:     station.UserID,
-			Name:       station.Name,
-			Location:   station.Location,
-			Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasPicture: len(station.Picture) > 0,
-			Equipment:  station.Equipment,
-			IsPublic:   station.IsPublic,
-			CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		}
+		stationResponse := buildStationResponse(station)
+		stationResponse.UserID = station.UserID
 
 		// Add user information if it exists
 		if station.User.ID != 0 {
@@ -591,18 +583,7 @@ func GetUserStations(c *gin.Context) {
 
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
-		stationResponse := StationResponse{
-			ID:         station.ID,
-			UserID:     station.UserID,
-			Name:       station.Name,
-			Location:   station.Location,
-			Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasPicture: len(station.Picture) > 0,
-			Equipment:  station.Equipment,
-			IsPublic:   station.IsPublic,
-			CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		}
+		stationResponse := buildStationResponse(station)
 
 		// Add user information if it exists
 		if station.User.ID != 0 {
@@ -651,18 +632,8 @@ func GetStationDetails(c *gin.Context) {
 		return
 	}
 
-	response := StationResponse{
-		ID:         station.ID,
-		UserID:     station.UserID,
-		Name:       station.Name,
-		Location:   station.Location,
-		Picture:    generatePictureURL(station.ID, station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasPicture: len(station.Picture) > 0,
-		Equipment:  station.Equipment,
-		IsPublic:   station.IsPublic,
-		CreatedAt:  station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
+	response := buildStationResponse(station)
+	response.UserID = station.UserID
 
 	// Add user information
 	if station.User.ID != 0 {
@@ -673,4 +644,27 @@ func GetStationDetails(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Station details retrieved successfully", response)
+}
+
+// StationHealth handles health check endpoint for stations
+func StationHealth(c *gin.Context) {
+	stationID, exists := middleware.GetCurrentStationID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "Station not authenticated")
+		return
+	}
+
+	db := config.GetDB()
+	now := time.Now()
+
+	// Update the station's last seen timestamp
+	if err := db.Model(&models.Station{}).Where("id = ?", stationID).Update("last_seen", now).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update station health")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Health check successful", gin.H{
+		"status":    "online",
+		"timestamp": now.Format("2006-01-02T15:04:05Z07:00"),
+	})
 }

@@ -161,6 +161,13 @@ func main() {
 			stationPosts.POST("/:postId/images", handlers.UploadPostImage)
 		}
 
+		// Station health routes (station token authentication required)
+		stationHealth := api.Group("/stations")
+		stationHealth.Use(middleware.StationTokenAuth())
+		{
+			stationHealth.POST("/health", handlers.StationHealth)
+		}
+
 		// Example protected routes (for future use)
 		protected := api.Group("/admin")
 		protected.Use(middleware.AuthRequired())

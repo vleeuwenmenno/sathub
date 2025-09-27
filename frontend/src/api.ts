@@ -171,6 +171,9 @@ export interface Station {
   has_picture?: boolean;
   equipment: string;
   is_public: boolean;
+  last_seen?: string;
+  is_online: boolean;
+  online_threshold: number;
   created_at: string;
   updated_at: string;
   user?: {
@@ -184,6 +187,7 @@ export interface CreateStationRequest {
   location: string;
   equipment?: string;
   is_public?: boolean;
+  online_threshold?: number;
 }
 
 export interface UpdateStationRequest extends CreateStationRequest {}
@@ -226,6 +230,15 @@ export const getStationToken = async (id: string): Promise<string> => {
 export const regenerateStationToken = async (id: string): Promise<string> => {
   const res = await api.post(`/stations/${id}/regenerate-token`);
   return res.data.data.token;
+};
+
+export const stationHealthCheck = async (token: string): Promise<{ status: string; timestamp: string }> => {
+  const res = await api.post("/stations/health", {}, {
+    headers: {
+      "Authorization": `Station ${token}`,
+    },
+  });
+  return res.data.data;
 };
 
 export const uploadStationPicture = async (

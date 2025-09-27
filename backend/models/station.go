@@ -10,18 +10,20 @@ import (
 )
 
 type Station struct {
-	ID          string    `gorm:"primaryKey" json:"id"`
-	UserID      uint      `gorm:"not null;index" json:"user_id"`
-	User        User      `gorm:"foreignKey:UserID" json:"-"`
-	Name        string    `gorm:"not null" json:"name"`
-	Location    string    `gorm:"not null" json:"location"`
-	Picture     []byte    `gorm:"type:blob" json:"-"`
-	PictureType string    `gorm:"size:50" json:"-"`
-	Equipment   string    `gorm:"type:text" json:"equipment"`
-	IsPublic    bool      `gorm:"column:is_public;default:true" json:"is_public"`
-	Token       string    `gorm:"uniqueIndex;not null" json:"-"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID              string     `gorm:"primaryKey" json:"id"`
+	UserID          uint       `gorm:"not null;index" json:"user_id"`
+	User            User       `gorm:"foreignKey:UserID" json:"-"`
+	Name            string     `gorm:"not null" json:"name"`
+	Location        string     `gorm:"not null" json:"location"`
+	Picture         []byte     `gorm:"type:blob" json:"-"`
+	PictureType     string     `gorm:"size:50" json:"-"`
+	Equipment       string     `gorm:"type:text" json:"equipment"`
+	IsPublic        bool       `gorm:"column:is_public;default:true" json:"is_public"`
+	Token           string     `gorm:"uniqueIndex;not null" json:"-"`
+	LastSeen        *time.Time `json:"last_seen,omitempty"`
+	OnlineThreshold int        `gorm:"default:5" json:"online_threshold"` // minutes
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 // GenerateToken generates a secure random token for the station
