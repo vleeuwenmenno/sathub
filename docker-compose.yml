@@ -14,6 +14,7 @@ services:
       - DB_USER=sathub
       - DB_PASSWORD=sathub_password
       - DB_NAME=sathub
+      - FRONTEND_URL=http://localhost:5173
     depends_on:
       - postgres
 

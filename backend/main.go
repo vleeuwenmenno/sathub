@@ -52,8 +52,9 @@ func main() {
 	r.MaxMultipartMemory = 32 << 20 // 32 MiB
 
 	// Configure CORS
+	appConfig := config.GetAppConfig()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:4001"}, // Frontend URLs + backend for proxy
+		AllowOrigins:     []string{appConfig.FrontendURL, "http://localhost:5173", "http://localhost:3000", "http://localhost:4001"}, // Frontend URLs + backend for proxy
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		AllowCredentials: true,

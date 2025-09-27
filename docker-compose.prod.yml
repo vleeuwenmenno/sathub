@@ -12,11 +12,13 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME:-sathub}
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret}
+      - FRONTEND_URL=${FRONTEND_URL:-https://sathub.de}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - TWO_FA_ENCRYPTION_KEY=${TWO_FA_ENCRYPTION_KEY}
     networks:
       - sathub
     depends_on:
