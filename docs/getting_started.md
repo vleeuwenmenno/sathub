@@ -76,7 +76,7 @@ Once created, your station gets:
 
 ### Station Health
 
-SatHub tracks your station's status through regular health pings. The data client sends a health check every few minutes to let the system know your station is online and operational. If health pings stop, your station will show as "offline" in the directory.
+SatHub tracks your station's status through regular health pings. The data client sends a health check every few minutes to let the system know your station is online and operational. If health pings stop, your station will show as "last seen XXX" in the directory.
 
 ## Sharing Satellite Data
 
