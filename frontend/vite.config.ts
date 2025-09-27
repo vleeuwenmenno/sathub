@@ -17,6 +17,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/captcha": {
+        target: "http://backend:4001",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

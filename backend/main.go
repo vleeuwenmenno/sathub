@@ -10,6 +10,7 @@ import (
 	"satdump-ui-backend/middleware"
 	"satdump-ui-backend/seed"
 
+	"github.com/dchest/captcha"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -58,6 +59,13 @@ func main() {
 		AllowCredentials: true,
 		ExposeHeaders:    []string{"Content-Length"},
 	}))
+
+	// Captcha routes
+	r.GET("/captcha/*path", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))
+	r.GET("/api/captcha/new", func(c *gin.Context) {
+		id := captcha.New()
+		c.JSON(200, gin.H{"captcha_id": id})
+	})
 
 	// API routes
 	api := r.Group("/api")
