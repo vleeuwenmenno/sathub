@@ -156,9 +156,9 @@ const Navbar: React.FC = () => {
               </IconButton>
             )}
             <img
-              src="/src/assets/output-onlinepngtools.svg"
+              src="/src/assets/logo.svg"
               alt="SatHub Logo"
-              style={{ width: "4rem", height: "4rem" }}
+              style={{ width: "2rem", height: "2rem" }}
             />
             <Typography
               level="h4"
@@ -307,9 +307,9 @@ const Navbar: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <img
-                src="/src/assets/output-onlinepngtools.svg"
+                src="/src/assets/logo.svg"
                 alt="SatHub Logo"
-                style={{ width: "3rem", height: "3rem" }}
+                style={{ width: "1.5rem", height: "1.5rem" }}
               />
               <Typography level="h4" sx={{ fontWeight: "bold" }}>
                 SatHub
