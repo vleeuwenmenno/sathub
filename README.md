@@ -36,6 +36,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [ ] Data export functionality
 - [ ] Achievements for users
 - [ ] Notifications (Email, Shoutrr) (e.g. new post from followed station, station offline, etc)
+- [ ] Quick access to popular stations
 
 ## Tech Stack
 
