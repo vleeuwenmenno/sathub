@@ -296,50 +296,51 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 		return fmt.Errorf("failed to parse dataset.json: %w", err)
 	}
 
-	// Find product directories
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		return fmt.Errorf("failed to read directory: %w", err)
-	}
-
-	var imagePaths []string
-	var cborData []byte
-	var productDirs []string
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		productDir := filepath.Join(dirPath, entry.Name())
-		productDirs = append(productDirs, entry.Name())
-
-		// Read CBOR data
-		cborPath := filepath.Join(productDir, "product.cbor")
-		if data, err := os.ReadFile(cborPath); err == nil {
-			cborData = data
-			fw.logger.Printf("Found CBOR data in %s (%d bytes)", entry.Name(), len(data))
-		}
-
-		// Collect all PNG images
-		productEntries, err := os.ReadDir(productDir)
-		if err != nil {
-			continue
-		}
-
-		imageCount := 0
-		for _, productEntry := range productEntries {
-			if strings.HasSuffix(productEntry.Name(), ".png") {
-				imagePaths = append(imagePaths, filepath.Join(productDir, productEntry.Name()))
-				imageCount++
+	// Find the first non-filled product from dataset
+	var selectedProduct string
+	if products, ok := dataset.Metadata["products"].([]interface{}); ok {
+		for _, prod := range products {
+			if name, ok := prod.(string); ok && !strings.Contains(name, "(Filled)") {
+				selectedProduct = name
+				break
 			}
 		}
-		if imageCount > 0 {
-			fw.logger.Printf("Found %d images in %s", imageCount, entry.Name())
-		}
+	}
+	if selectedProduct == "" {
+		return fmt.Errorf("no suitable product found in dataset.json")
 	}
 
-	fw.logger.Printf("Found %d product directories: %v", len(productDirs), productDirs)
+	productDir := filepath.Join(dirPath, selectedProduct)
+	// Check if dir exists
+	if _, err := os.Stat(productDir); os.IsNotExist(err) {
+		return fmt.Errorf("product directory %s does not exist", selectedProduct)
+	}
+
+	// Read CBOR data
+	cborPath := filepath.Join(productDir, "product.cbor")
+	cborData, err := os.ReadFile(cborPath)
+	if err != nil {
+		return fmt.Errorf("failed to read CBOR from %s: %w", selectedProduct, err)
+	}
+	fw.logger.Printf("Found CBOR data in %s (%d bytes)", selectedProduct, len(cborData))
+
+	// Collect all PNG images
+	var imagePaths []string
+	productEntries, err := os.ReadDir(productDir)
+	if err != nil {
+		return fmt.Errorf("failed to read product directory: %w", err)
+	}
+
+	imageCount := 0
+	for _, productEntry := range productEntries {
+		if strings.HasSuffix(productEntry.Name(), ".png") {
+			imagePaths = append(imagePaths, filepath.Join(productDir, productEntry.Name()))
+			imageCount++
+		}
+	}
+	fw.logger.Printf("Found %d images in %s", imageCount, selectedProduct)
+
+	fw.logger.Printf("Selected product: %s", selectedProduct)
 	fw.logger.Printf("Total images to upload: %d", len(imagePaths))
 
 	// Create post with combined metadata
