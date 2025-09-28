@@ -15,6 +15,7 @@ import type { Post } from "../types";
 import { getLatestPosts, getPostImageUrl } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
+import LikeButton from "./LikeButton";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -127,16 +128,13 @@ const Overview: React.FC = () => {
                       {post.images.length !== 1 ? "s" : ""}
                     </Typography>
                   </Stack>
-                  {isAuthenticated && (
-                    <Button
-                      variant="solid"
-                      fullWidth
-                      onClick={() => navigate(`/station/${post.station_id}`)}
-                      sx={{ mt: "auto" }}
-                    >
-                      View Station
-                    </Button>
-                  )}
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
+                    <LikeButton
+                      postId={post.id}
+                      initialLikesCount={post.likes_count}
+                      initialIsLiked={post.is_liked}
+                    />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>

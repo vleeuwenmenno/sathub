@@ -17,6 +17,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import type { DatabasePostDetail } from '../types';
 import type { Station } from '../api';
 import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob } from '../api';
+import LikeButton from './LikeButton';
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -61,15 +62,13 @@ const getImageCategory = (filename: string): string => {
 };
 
 const categorizeImages = (images: DatabasePostDetail['images']): string[] => {
-  const categories = new Set<string>(['All']); // Always include 'All' first
+  const categories = new Set<string>();
 
   images.forEach(image => {
     categories.add(getImageCategory(image.filename));
   });
 
-  // Remove 'All' and add it back at the beginning
-  const sortedCategories = Array.from(categories).filter(cat => cat !== 'All').sort();
-  return ['All', ...sortedCategories];
+  return Array.from(categories).sort();
 };
 
 const sortImagesByCategory = (images: DatabasePostDetail['images']): DatabasePostDetail['images'] => {
@@ -148,8 +147,11 @@ const Detail: React.FC = () => {
 
   useEffect(() => {
     if (detail?.images && detail.images.length > 0 && selectedCategory === null) {
-      // Always start with "All" category selected
-      setSelectedCategory('All');
+      // Start with the first available category
+      const categories = categorizeImages(detail.images);
+      if (categories.length > 0) {
+        setSelectedCategory(categories[0]);
+      }
     }
   }, [detail, selectedCategory]);
 
@@ -158,9 +160,7 @@ const Detail: React.FC = () => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (!selectedCategory || !detail?.images) return;
 
-      const images = selectedCategory === 'All'
-        ? detail.images
-        : groupImagesByCategory(detail.images)[selectedCategory];
+      const images = groupImagesByCategory(detail.images)[selectedCategory];
 
       if (!images || images.length <= 1) return;
 
@@ -282,9 +282,7 @@ const Detail: React.FC = () => {
               {/* Selected Category Carousel */}
               <Box>
                 {selectedCategory && (() => {
-                  const images = selectedCategory === 'All'
-                    ? detail.images
-                    : groupImagesByCategory(detail.images)[selectedCategory];
+                  const images = groupImagesByCategory(detail.images)[selectedCategory];
 
                   if (!images) return null;
 
@@ -550,7 +548,14 @@ const Detail: React.FC = () => {
             {/* Post Info */}
             <Card>
               <CardContent>
-                <Typography level="h3" sx={{ mb: 2 }}>Post Details</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                  <Typography level="h3">Post Details</Typography>
+                  <LikeButton
+                    postId={detail.id}
+                    initialLikesCount={detail.likes_count}
+                    initialIsLiked={detail.is_liked}
+                  />
+                </Box>
                 <Stack spacing={1}>
                   <Box>
                     <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Satellite:</Typography>

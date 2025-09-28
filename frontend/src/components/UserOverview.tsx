@@ -11,7 +11,7 @@ import {
   CircularProgress,
   Tooltip,
 } from "@mui/joy";
-import { getUserPosts, getUserStations, getStationPictureBlob, type Station } from "../api";
+import { getUserPosts, getUserStations, getStationPictureBlob, getUserLikedPosts, type Station } from "../api";
 import type { Post } from "../types";
 
 const formatDate = (dateString: string): string => {
@@ -68,6 +68,7 @@ const UserOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -85,13 +86,15 @@ const UserOverview: React.FC = () => {
           return;
         }
 
-        const [postsData, stationsData] = await Promise.all([
+        const [postsData, stationsData, likedPostsData] = await Promise.all([
           getUserPosts(userId),
           getUserStations(userId),
+          getUserLikedPosts(userId, 1, 20),
         ]);
 
         setPosts(postsData);
         setStations(stationsData);
+        setLikedPosts(likedPostsData.posts);
       } catch (err) {
         setError("Failed to load user data");
         console.error(err);
@@ -204,6 +207,47 @@ const UserOverview: React.FC = () => {
 
           <Divider sx={{ my: 4 }} />
 
+          {/* Liked Posts Section */}
+          <Box sx={{ mb: 4 }}>
+            <Typography level="h3" sx={{ mb: 2 }}>
+              Liked Posts ({likedPosts.length})
+            </Typography>
+            {likedPosts.length === 0 ? (
+              <Typography>No liked posts yet</Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {likedPosts.slice(0, 6).map((post) => (
+                  <Grid key={post.id} xs={12} sm={6} md={4}>
+                    <Card
+                      variant="outlined"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <CardContent>
+                        <Typography level="title-md" sx={{ mb: 1 }}>
+                          {post.satellite_name}
+                        </Typography>
+                        <Typography level="body-sm" sx={{ mb: 1 }}>
+                          Station: {post.station_name}
+                        </Typography>
+                        <Typography level="body-xs" color="neutral">
+                          {formatDate(post.timestamp)}
+                        </Typography>
+                        {post.images.length > 0 && (
+                          <Chip size="sm" sx={{ mt: 1 }}>
+                            {post.images.length} image{post.images.length !== 1 ? "s" : ""}
+                          </Chip>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+
+          <Divider sx={{ my: 4 }} />
+
           {/* Stations Section */}
           <Box>
             <Typography level="h3" sx={{ mb: 2 }}>
@@ -215,10 +259,10 @@ const UserOverview: React.FC = () => {
               <Grid container spacing={2}>
                 {stations.map((station) => (
                   <Grid key={station.id} xs={12} sm={6} md={4}>
-                    <Card
+                    <Card 
                       variant="outlined"
                       onClick={() => navigate(`/station/${station.id}`)}
-                      sx={{
+                      sx={{ 
                         cursor: 'pointer',
                         transition: 'transform 0.2s, box-shadow 0.2s',
                         '&:hover': {

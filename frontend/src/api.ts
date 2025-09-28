@@ -292,12 +292,12 @@ export const getUserStations = async (userId: number): Promise<Station[]> => {
 
 // Post API calls
 export const getLatestPosts = async (limit: number = 10, page: number = 1): Promise<Post[]> => {
-  const res = await axios.get(`${API_BASE}/posts/latest?limit=${limit}&page=${page}`);
+  const res = await api.get(`/posts/latest?limit=${limit}&page=${page}`);
   return res.data.data;
 };
 
 export const getUserPosts = async (userId: number): Promise<Post[]> => {
-  const res = await axios.get(`${API_BASE}/posts/user/${userId}`);
+  const res = await api.get(`/posts/user/${userId}`);
   return res.data.data;
 };
 
@@ -309,9 +309,7 @@ export const getStationPosts = async (
   const res = await api.get(
     `/posts/station/${stationId}?page=${page}&limit=${limit}`,
   );
-  // For now, return the posts array directly (API returns {posts: [...], pagination: {...}})
-  const data = res.data.data;
-  return data.posts || data;
+  return res.data.data;
 };
 
 export const createPost = async (
@@ -498,4 +496,19 @@ export const getProfilePictureBlob = async (
 export const getCaptcha = async (): Promise<{ captcha_id: string }> => {
   const res = await api.get("/captcha/new");
   return res.data;
+};
+
+// Like API functions
+export const likePost = async (postId: number): Promise<{ liked: boolean }> => {
+  const res = await api.post(`/likes/${postId}`);
+  return res.data.data;
+};
+
+export const getUserLikedPosts = async (
+  userId: number,
+  page: number = 1,
+  limit: number = 20
+): Promise<{ posts: Post[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
+  const res = await api.get(`/likes/user/${userId}?page=${page}&limit=${limit}`);
+  return res.data.data;
 };

@@ -15,6 +15,7 @@ import type { Post } from "../types";
 import { getStationPosts, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
+import LikeButton from "./LikeButton";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -249,6 +250,13 @@ const StationPosts: React.FC = () => {
                               {formatDate(post.created_at)}
                             </Typography>
                           </Stack>
+                          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
+                            <LikeButton
+                              postId={post.id}
+                              initialLikesCount={post.likes_count}
+                              initialIsLiked={post.is_liked}
+                            />
+                          </Box>
                         </CardContent>
                       </Card>
                     </Grid>

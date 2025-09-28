@@ -158,7 +158,7 @@ func main() {
 		// Public post routes (no authentication required)
 		publicPosts := api.Group("/posts")
 		{
-			publicPosts.GET("/latest", handlers.GetLatestPosts)
+			publicPosts.GET("/latest", middleware.OptionalAuth(), handlers.GetLatestPosts)
 			publicPosts.GET("/user/:userId", handlers.GetUserPosts)
 			publicPosts.GET("/station/:stationId", middleware.OptionalAuth(), handlers.GetStationPosts)
 			publicPosts.GET("/:id", middleware.OptionalAuth(), handlers.GetDatabasePostDetail)
@@ -178,6 +178,14 @@ func main() {
 		{
 			stationPosts.POST("", handlers.CreatePost)
 			stationPosts.POST("/:postId/images", handlers.UploadPostImage)
+		}
+
+		// Like routes (user authentication required)
+		likes := api.Group("/likes")
+		likes.Use(middleware.AuthRequired())
+		{
+			likes.POST("/:postId", handlers.LikePost)
+			likes.GET("/user/:userId", handlers.GetUserLikedPosts)
 		}
 
 		// Station health routes (station token authentication required)

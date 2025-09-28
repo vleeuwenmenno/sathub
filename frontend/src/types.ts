@@ -7,6 +7,8 @@ export interface Post {
   satellite_name: string;
   metadata: string;
   images: PostImage[];
+  likes_count: number;
+  is_liked: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +34,8 @@ export interface DatabasePostDetail {
   satellite_name: string;
   metadata: string;
   images: PostImage[];
+  likes_count: number;
+  is_liked: boolean;
   created_at: string;
   updated_at: string;
 }

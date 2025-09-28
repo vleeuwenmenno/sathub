@@ -33,6 +33,8 @@ type PostResponse struct {
 	SatelliteName string              `json:"satellite_name"`
 	Metadata      string              `json:"metadata"`
 	Images        []PostImageResponse `json:"images"`
+	LikesCount    int                 `json:"likes_count"`
+	IsLiked       bool                `json:"is_liked"`
 	CreatedAt     string              `json:"created_at"`
 	UpdatedAt     string              `json:"updated_at"`
 }
@@ -68,7 +70,7 @@ func GetUserPosts(c *gin.Context) {
 
 	response := make([]PostResponse, len(posts))
 	for i, post := range posts {
-		response[i] = buildPostResponse(post, db)
+		response[i] = buildPostResponseWithUser(post, db, uint(userID))
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Posts retrieved successfully", response)
@@ -113,7 +115,7 @@ func GetStationPosts(c *gin.Context) {
 
 	response := make([]PostResponse, len(posts))
 	for i, post := range posts {
-		response[i] = buildPostResponse(post, db)
+		response[i] = buildPostResponseWithUser(post, db, userID)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Posts retrieved successfully", response)
@@ -150,7 +152,7 @@ func GetDatabasePostDetail(c *gin.Context) {
 		return
 	}
 
-	response := buildPostDetailResponse(post, db)
+	response := buildPostDetailResponseWithUser(post, db, uint(userID))
 	utils.SuccessResponse(c, http.StatusOK, "Post detail retrieved successfully", response)
 }
 
@@ -164,6 +166,8 @@ type PostDetailResponse struct {
 	SatelliteName string              `json:"satellite_name"`
 	Metadata      string              `json:"metadata"`
 	Images        []PostImageResponse `json:"images"`
+	LikesCount    int                 `json:"likes_count"`
+	IsLiked       bool                `json:"is_liked"`
 	CreatedAt     string              `json:"created_at"`
 	UpdatedAt     string              `json:"updated_at"`
 }
@@ -182,8 +186,8 @@ func GetLatestPosts(c *gin.Context) {
 	db := config.GetDB()
 	var posts []models.Post
 
-	// Check if user is authenticated
-	_, isAuthenticated := middleware.GetCurrentUserID(c)
+	// Check if user is authenticated and get user ID
+	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 
 	// Parse limit from query, default to 10
 	limitStr := c.DefaultQuery("limit", "10")
@@ -215,7 +219,7 @@ func GetLatestPosts(c *gin.Context) {
 
 	response := make([]PostResponse, len(posts))
 	for i, post := range posts {
-		response[i] = buildPostResponse(post, db)
+		response[i] = buildPostResponseWithUser(post, db, userID)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Latest posts retrieved successfully", response)
@@ -267,7 +271,7 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	response := buildPostResponse(post, db)
+	response := buildPostResponseWithUser(post, db, 0) // New post, no likes yet
 	utils.SuccessResponse(c, http.StatusCreated, "Post created successfully", response)
 }
 
@@ -440,6 +444,11 @@ func GetPostImage(c *gin.Context) {
 
 // buildPostDetailResponse builds a PostDetailResponse from a Post model
 func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
+	return buildPostDetailResponseWithUser(post, db, 0)
+}
+
+// buildPostDetailResponseWithUser builds a PostDetailResponse from a Post model with user context
+func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID uint) PostDetailResponse {
 	var images []models.PostImage
 	db.Where("post_id = ?", post.ID).Find(&images)
 
@@ -463,6 +472,18 @@ func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
 		}
 	}
 
+	// Get likes count
+	var likesCount int64
+	db.Model(&models.Like{}).Where("post_id = ?", post.ID).Count(&likesCount)
+
+	// Check if user liked this post
+	var isLiked bool
+	if userID > 0 {
+		var like models.Like
+		err := db.Where("user_id = ? AND post_id = ?", userID, post.ID).First(&like).Error
+		isLiked = err == nil
+	}
+
 	return PostDetailResponse{
 		ID:            post.ID,
 		StationID:     post.StationID,
@@ -472,6 +493,8 @@ func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
 		SatelliteName: post.SatelliteName,
 		Metadata:      post.Metadata,
 		Images:        imageResponses,
+		LikesCount:    int(likesCount),
+		IsLiked:       isLiked,
 		CreatedAt:     post.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:     post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
@@ -479,6 +502,11 @@ func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
 
 // buildPostResponse builds a PostResponse from a Post model
 func buildPostResponse(post models.Post, db *gorm.DB) PostResponse {
+	return buildPostResponseWithUser(post, db, 0)
+}
+
+// buildPostResponseWithUser builds a PostResponse from a Post model with user context for likes
+func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID uint) PostResponse {
 	var images []models.PostImage
 	db.Where("post_id = ?", post.ID).Find(&images)
 
@@ -491,6 +519,18 @@ func buildPostResponse(post models.Post, db *gorm.DB) PostResponse {
 		}
 	}
 
+	// Get likes count
+	var likesCount int64
+	db.Model(&models.Like{}).Where("post_id = ?", post.ID).Count(&likesCount)
+
+	// Check if user liked this post
+	var isLiked bool
+	if userID > 0 {
+		var like models.Like
+		err := db.Where("user_id = ? AND post_id = ?", userID, post.ID).First(&like).Error
+		isLiked = err == nil
+	}
+
 	return PostResponse{
 		ID:            post.ID,
 		StationID:     post.StationID,
@@ -499,6 +539,8 @@ func buildPostResponse(post models.Post, db *gorm.DB) PostResponse {
 		SatelliteName: post.SatelliteName,
 		Metadata:      post.Metadata,
 		Images:        imageResponses,
+		LikesCount:    int(likesCount),
+		IsLiked:       isLiked,
 		CreatedAt:     post.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:     post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
