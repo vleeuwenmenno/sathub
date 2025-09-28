@@ -168,7 +168,7 @@ if [[ ! $update_versions =~ ^[Nn]$ ]]; then
     # Check if there are changes to commit
     if ! git diff-index --quiet HEAD --; then
         print_color $BLUE "Committing version updates..."
-        git add frontend/src/version.ts backend/version.go frontend/package.json
+        git add frontend/src/version.ts backend/version.go frontend/package.json client/version.go client/go.mod
         git commit -m "chore: bump version to $new_version"
         
         # Ask if we should push the commit
