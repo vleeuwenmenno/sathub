@@ -526,8 +526,8 @@ func GetStationPicture(c *gin.Context) {
 	// Build query based on permissions
 	var query *gorm.DB
 	if isAuthenticated {
-		// Authenticated users can view pictures of stations they own (regardless of public/private)
-		query = db.Where("id = ? AND user_id = ?", stationID, userID)
+		// Authenticated users can view pictures of stations they own or public stations
+		query = db.Where("id = ? AND (user_id = ? OR is_public = ?)", stationID, userID, true)
 	} else {
 		// Unauthenticated users can only view pictures of public stations
 		query = db.Where("id = ? AND is_public = ?", stationID, true)
