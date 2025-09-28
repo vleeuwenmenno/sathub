@@ -49,18 +49,7 @@ function App() {
           >
             <Navbar />
             <BackendStatus />
-            <Box sx={{
-              px: { xs: 2, md: 4 },
-              ml: {
-                xs: 0,
-                sm: "280px"
-              },
-              flex: 1,
-              transition: "margin-left 0.3s ease",
-              "@media (max-width: 899px)": {
-                ml: 0
-              }
-            }}>
+            <Box sx={{ px: { xs: 2, md: 4 }, flex: 1 }}>
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/post/:id" element={<Detail />} />
