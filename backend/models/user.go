@@ -26,6 +26,7 @@ type User struct {
 	DisplayName        string         `gorm:"size:100" json:"display_name,omitempty"`
 	ProfilePicture     []byte         `json:"-"`
 	ProfilePictureType string         `gorm:"size:50" json:"-"`
+	EmailNotifications bool           `gorm:"default:false" json:"email_notifications"`
 	CreatedAt          time.Time      `json:"created_at"`
 	UpdatedAt          time.Time      `json:"updated_at"`
 }

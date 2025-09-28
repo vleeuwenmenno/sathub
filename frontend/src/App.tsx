@@ -25,6 +25,8 @@ import AdminOverview from "./components/AdminOverview";
 import AdminUserManagement from "./components/AdminUserManagement";
 import AdminPendingUsers from "./components/AdminPendingUsers";
 import AdminInvite from "./components/AdminInvite";
+import Achievements from "./components/Achievements";
+import Notifications from "./components/Notifications";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -75,11 +77,13 @@ function App() {
                 <Route path="/users/global" element={<GlobalUsers />} />
                 <Route path="/user/:id" element={<UserOverview />} />
                 <Route path="/user/settings" element={<UserSettings />} />
+                <Route path="/user/achievements" element={<Achievements />} />
                 <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
                 <Route
                   path="/confirm-disable-2fa"
                   element={<ConfirmDisableTwoFactor />}
                 />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/admin" element={<AdminOverview />} />
                 <Route path="/admin/users" element={<AdminUserManagement />} />
                 <Route path="/admin/pending-users" element={<AdminPendingUsers />} />

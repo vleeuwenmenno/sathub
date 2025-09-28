@@ -48,14 +48,15 @@ type AuthResponse struct {
 
 // UserInfo represents user information in responses
 type UserInfo struct {
-	ID                string `json:"id"`
-	Username          string `json:"username"`
-	Email             string `json:"email,omitempty"`
-	Role              string `json:"role"`
-	TwoFactorEnabled  bool   `json:"two_factor_enabled"`
-	DisplayName       string `json:"display_name,omitempty"`
-	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
-	HasProfilePicture bool   `json:"has_profile_picture"`
+	ID                 string `json:"id"`
+	Username           string `json:"username"`
+	Email              string `json:"email,omitempty"`
+	Role               string `json:"role"`
+	TwoFactorEnabled   bool   `json:"two_factor_enabled"`
+	DisplayName        string `json:"display_name,omitempty"`
+	ProfilePictureURL  string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture  bool   `json:"has_profile_picture"`
+	EmailNotifications bool   `json:"email_notifications"`
 }
 
 // Register handles user registration
@@ -132,6 +133,14 @@ func Register(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to create user")
 		return
 	}
+
+	// Check for achievements after user creation
+	go func() {
+		if _, err := utils.CheckAchievements(user.ID); err != nil {
+			// Log error but don't fail registration
+			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
+		}
+	}()
 
 	// Generate email confirmation token
 	confirmToken := utils.GenerateRandomString(32)
@@ -258,14 +267,15 @@ func Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:                user.ID.String(),
-			Username:          user.Username,
-			Email:             user.Email.String,
-			Role:              user.Role,
-			TwoFactorEnabled:  user.TwoFactorEnabled,
-			DisplayName:       user.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasProfilePicture: len(user.ProfilePicture) > 0,
+			ID:                 user.ID.String(),
+			Username:           user.Username,
+			Email:              user.Email.String,
+			Role:               user.Role,
+			TwoFactorEnabled:   user.TwoFactorEnabled,
+			DisplayName:        user.DisplayName,
+			ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture:  len(user.ProfilePicture) > 0,
+			EmailNotifications: user.EmailNotifications,
 		},
 	}
 
@@ -344,14 +354,15 @@ func RefreshTokens(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		User: UserInfo{
-			ID:                user.ID.String(),
-			Username:          user.Username,
-			Email:             user.Email.String,
-			Role:              user.Role,
-			TwoFactorEnabled:  user.TwoFactorEnabled,
-			DisplayName:       user.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasProfilePicture: len(user.ProfilePicture) > 0,
+			ID:                 user.ID.String(),
+			Username:           user.Username,
+			Email:              user.Email.String,
+			Role:               user.Role,
+			TwoFactorEnabled:   user.TwoFactorEnabled,
+			DisplayName:        user.DisplayName,
+			ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture:  len(user.ProfilePicture) > 0,
+			EmailNotifications: user.EmailNotifications,
 		},
 	}
 
@@ -384,9 +395,10 @@ func Logout(c *gin.Context) {
 
 // UpdateProfileRequest represents the request body for updating user profile
 type UpdateProfileRequest struct {
-	Email       string `json:"email,omitempty"`
-	Password    string `json:"password,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
+	Email              string `json:"email,omitempty"`
+	Password           string `json:"password,omitempty"`
+	DisplayName        string `json:"display_name,omitempty"`
+	EmailNotifications *bool  `json:"email_notifications,omitempty"`
 }
 
 // UpdateProfile handles updating current user profile
@@ -518,8 +530,13 @@ func UpdateProfile(c *gin.Context) {
 		user.DisplayName = req.DisplayName
 	}
 
-	// Save changes if password or display name was updated
-	if req.Password != "" || req.DisplayName != "" {
+	// Update email notifications preference if provided
+	if req.EmailNotifications != nil {
+		user.EmailNotifications = *req.EmailNotifications
+	}
+
+	// Save changes if password, display name, or email notifications was updated
+	if req.Password != "" || req.DisplayName != "" || req.EmailNotifications != nil {
 		if err := db.Save(&user).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to update profile")
 			return
@@ -550,14 +567,15 @@ func GetProfile(c *gin.Context) {
 	}
 
 	userInfo := UserInfo{
-		ID:                user.ID.String(),
-		Username:          user.Username,
-		Email:             user.Email.String,
-		Role:              user.Role,
-		TwoFactorEnabled:  user.TwoFactorEnabled,
-		DisplayName:       user.DisplayName,
-		ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasProfilePicture: len(user.ProfilePicture) > 0,
+		ID:                 user.ID.String(),
+		Username:           user.Username,
+		Email:              user.Email.String,
+		Role:               user.Role,
+		TwoFactorEnabled:   user.TwoFactorEnabled,
+		DisplayName:        user.DisplayName,
+		ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		HasProfilePicture:  len(user.ProfilePicture) > 0,
+		EmailNotifications: user.EmailNotifications,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)
