@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -538,19 +538,20 @@ const AdminUserManagement: React.FC = () => {
                     <Typography level="body-sm">
                       <strong>User ID:</strong> {userDetailsModal.user.id}
                     </Typography>
-                    <Typography level="body-sm">
-                      <strong>Email:</strong> {userDetailsModal.user.email || 'Not provided'}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography level="body-sm">
+                        <strong>Email:</strong> {userDetailsModal.user.email || 'Not provided'}
+                      </Typography>
                       {userDetailsModal.user.email && (
                         <Chip
                           size="sm"
                           color={userDetailsModal.user.email_confirmed ? "success" : "warning"}
                           variant="soft"
-                          sx={{ ml: 1 }}
                         >
                           {userDetailsModal.user.email_confirmed ? "Confirmed" : "Unconfirmed"}
                         </Chip>
                       )}
-                    </Typography>
+                    </Box>
                     <Typography level="body-sm">
                       <strong>Two-Factor Auth:</strong>{' '}
                       {userDetailsModal.user.two_factor_enabled ? 'Enabled' : 'Disabled'}
