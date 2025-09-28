@@ -544,3 +544,64 @@ export const likeComment = async (commentId: number): Promise<{ liked: boolean }
   const res = await api.post(`/comments/likes/${commentId}`);
   return res.data.data;
 };
+
+// Admin API functions
+export interface AdminStats {
+  total_users: number;
+  total_posts: number;
+  total_stations: number;
+  system_health: string;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email?: string;
+  role: string;
+  banned: boolean;
+  banned_at?: string;
+  email_confirmed: boolean;
+  two_factor_enabled: boolean;
+  display_name?: string;
+  profile_picture_url?: string;
+  has_profile_picture: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUserDetails extends AdminUser {
+  post_count: number;
+  station_count: number;
+}
+
+export const getAdminOverview = async (): Promise<AdminStats> => {
+  const res = await api.get("/admin/overview");
+  return res.data.data;
+};
+
+export const getAllUsers = async (): Promise<AdminUser[]> => {
+  const res = await api.get("/admin/users");
+  return res.data.data;
+};
+
+export const updateUserRole = async (userId: number, role: string): Promise<void> => {
+  await api.put(`/admin/users/${userId}/role`, { role });
+};
+
+export const deleteUser = async (userId: number): Promise<void> => {
+  await api.delete(`/admin/users/${userId}`);
+};
+
+export const banUser = async (userId: number, banned: boolean): Promise<void> => {
+  await api.put(`/admin/users/${userId}/ban`, { banned });
+};
+
+export const getUserDetails = async (userId: number): Promise<AdminUserDetails> => {
+  const res = await api.get(`/admin/users/${userId}`);
+  return res.data.data;
+};
+
+export const getAdminInvite = async (): Promise<any> => {
+  const res = await api.get("/admin/invite");
+  return res.data.data;
+};

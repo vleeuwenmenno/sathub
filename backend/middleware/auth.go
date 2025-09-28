@@ -35,6 +35,21 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 
+		// Check if user is banned
+		db := config.GetDB()
+		var user models.User
+		if err := db.Select("banned").First(&user, claims.UserID).Error; err != nil {
+			utils.UnauthorizedResponse(c, "User not found")
+			c.Abort()
+			return
+		}
+
+		if user.Banned {
+			utils.UnauthorizedResponse(c, "Your account has been banned")
+			c.Abort()
+			return
+		}
+
 		// Store user information in context for use in handlers
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
@@ -127,6 +142,21 @@ func OptionalAuth() gin.HandlerFunc {
 		token := tokenParts[1]
 		claims, err := utils.ValidateAccessToken(token)
 		if err != nil {
+			c.Next()
+			return
+		}
+
+		// Check if user is banned
+		db := config.GetDB()
+		var user models.User
+		if err := db.Select("banned").First(&user, claims.UserID).Error; err != nil {
+			// If user not found, treat as unauthenticated
+			c.Next()
+			return
+		}
+
+		if user.Banned {
+			// If user is banned, treat as unauthenticated
 			c.Next()
 			return
 		}

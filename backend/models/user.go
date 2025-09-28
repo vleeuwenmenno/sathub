@@ -16,6 +16,8 @@ type User struct {
 	EmailConfirmed     bool           `gorm:"default:false" json:"email_confirmed"`
 	Password           string         `gorm:"not null" json:"-"`
 	Role               string         `gorm:"default:user" json:"role"`
+	Banned             bool           `gorm:"default:false" json:"banned"`
+	BannedAt           sql.NullTime   `json:"banned_at,omitempty"`
 	TwoFactorEnabled   bool           `gorm:"default:false" json:"two_factor_enabled"`
 	TwoFactorSecret    string         `gorm:"size:128" json:"-"`  // Store encrypted
 	RecoveryCodes      string         `gorm:"type:text" json:"-"` // Store encrypted JSON array of recovery codes

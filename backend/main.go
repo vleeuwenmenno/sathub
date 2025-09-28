@@ -216,14 +216,18 @@ func main() {
 			stationHealth.POST("/health", handlers.StationHealth)
 		}
 
-		// Example protected routes (for future use)
-		protected := api.Group("/admin")
-		protected.Use(middleware.AuthRequired())
-		protected.Use(middleware.RequireRole("admin"))
+		// Admin routes (admin role required)
+		admin := api.Group("/admin")
+		admin.Use(middleware.AuthRequired())
+		admin.Use(middleware.RequireRole("admin"))
 		{
-			// Future admin endpoints can be added here
-			// protected.GET("/users", handlers.GetUsers)
-			// protected.DELETE("/posts/:id", handlers.DeletePost)
+			admin.GET("/overview", handlers.GetAdminOverview)
+			admin.GET("/users", handlers.GetAllUsers)
+			admin.GET("/users/:id", handlers.GetUserDetails)
+			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
+			admin.PUT("/users/:id/ban", handlers.BanUser)
+			admin.DELETE("/users/:id", handlers.DeleteUser)
+			admin.GET("/invite", handlers.GetAdminInvite)
 		}
 	}
 

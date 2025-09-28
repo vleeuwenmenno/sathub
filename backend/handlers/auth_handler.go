@@ -91,8 +91,8 @@ func Register(c *gin.Context) {
 	if role == "" {
 		role = "user"
 	}
-	if role != "user" && role != "admin" && role != "moderator" {
-		utils.ValidationErrorResponse(c, "Invalid role. Must be 'user', 'moderator', or 'admin'")
+	if role != "user" && role != "admin" {
+		utils.ValidationErrorResponse(c, "Invalid role. Must be 'user' or 'admin'")
 		return
 	}
 
@@ -177,6 +177,12 @@ func Login(c *gin.Context) {
 	// Check if email is confirmed
 	if !user.EmailConfirmed {
 		utils.UnauthorizedResponse(c, "Please confirm your email address before logging in")
+		return
+	}
+
+	// Check if user is banned
+	if user.Banned {
+		utils.UnauthorizedResponse(c, "Your account has been banned. Please contact an administrator.")
 		return
 	}
 
