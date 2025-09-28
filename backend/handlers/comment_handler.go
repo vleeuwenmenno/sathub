@@ -194,6 +194,40 @@ func CreateComment(c *gin.Context) {
 		"content_length": len(req.Content),
 	})
 
+	// Check for achievements after comment creation
+	go func() {
+		if _, err := utils.CheckAchievements(userID); err != nil {
+			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
+		}
+	}()
+
+	// Create notification for post owner if commenter is not the owner
+	if post.Station.UserID.String() != userIDStr {
+		go func() {
+			notification := models.Notification{
+				UserID:    post.Station.UserID,
+				Type:      "comment",
+				Message:   comment.User.Username + " commented on your post",
+				RelatedID: uuid.Nil, // We'll use post ID in message or store separately
+				IsRead:    false,
+			}
+
+			if err := db.Create(&notification).Error; err != nil {
+				fmt.Printf("Failed to create comment notification: %v\n", err)
+			}
+
+			// Send email notification if user has email notifications enabled
+			var postOwner models.User
+			if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
+				go func() {
+					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, comment.User.Username); err != nil {
+						fmt.Printf("Failed to send comment email notification: %v\n", err)
+					}
+				}()
+			}
+		}()
+	}
+
 	// Fetch the created comment with user info for response
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch created comment")

@@ -33,9 +33,11 @@ import {
   Menu as MenuIcon,
   Close,
   AdminPanelSettings,
+  EmojiEvents,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
+import NotificationDropdown from "./NotificationDropdown";
 import logo from "../assets/logo.svg";
 
 const Navbar: React.FC = () => {
@@ -64,6 +66,7 @@ const Navbar: React.FC = () => {
 
     fetchProfilePicture();
   }, [user]);
+
 
   const toggleColorScheme = () => {
     setMode(mode === "dark" ? "light" : "dark");
@@ -219,6 +222,8 @@ const Navbar: React.FC = () => {
             {mode === "dark" ? <LightMode /> : <DarkMode />}
           </IconButton>
 
+          {isAuthenticated && <NotificationDropdown />}
+
           {isAuthenticated ? (
             <Dropdown>
               <MenuButton
@@ -255,6 +260,10 @@ const Navbar: React.FC = () => {
                 <MenuItem onClick={() => handleNavigate(`/user/${user?.id}`)}>
                   <Person sx={{ mr: 1 }} />
                   Overview
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/user/achievements")}>
+                  <EmojiEvents sx={{ mr: 1 }} />
+                  Achievements
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/settings")}>
                   <Settings sx={{ mr: 1 }} />
@@ -423,6 +432,22 @@ const Navbar: React.FC = () => {
                           View Profile
                         </Typography>
                       </Box>
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={() => handleNavigate("/user/achievements")}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <EmojiEvents />
+                      </ListItemDecorator>
+                      Achievements
                     </ListItemButton>
                   </ListItem>
                   <ListItem>

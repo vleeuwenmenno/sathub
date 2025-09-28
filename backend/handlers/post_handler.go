@@ -282,6 +282,17 @@ func CreatePost(c *gin.Context) {
 		"has_cbor":       len(req.CBOR) > 0,
 	})
 
+	// Check for achievements after post creation
+	go func() {
+		// Get user ID from station
+		var station models.Station
+		if err := db.Where("id = ?", stationID).First(&station).Error; err == nil {
+			if _, err := utils.CheckAchievements(station.UserID); err != nil {
+				fmt.Printf("Failed to check achievements for user %s: %v\n", station.UserID, err)
+			}
+		}
+	}()
+
 	response := buildPostResponseWithUser(post, db, "") // New post, no likes yet
 	utils.SuccessResponse(c, http.StatusCreated, "Post created successfully", response)
 }

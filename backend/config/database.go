@@ -91,6 +91,9 @@ func InitDatabase() {
 		&models.PasswordResetToken{},
 		&models.EmailConfirmationToken{},
 		&models.EmailChangeToken{},
+		&models.Achievement{},
+		&models.UserAchievement{},
+		&models.Notification{},
 		&models.Setting{},
 		&models.AuditLog{},
 	)

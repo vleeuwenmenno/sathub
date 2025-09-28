@@ -388,11 +388,12 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:               user.ID.String(),
-			Username:         user.Username,
-			Email:            user.Email.String,
-			Role:             user.Role,
-			TwoFactorEnabled: user.TwoFactorEnabled,
+			ID:                 user.ID.String(),
+			Username:           user.Username,
+			Email:              user.Email.String,
+			Role:               user.Role,
+			TwoFactorEnabled:   user.TwoFactorEnabled,
+			EmailNotifications: user.EmailNotifications,
 		},
 	}
 
@@ -624,11 +625,12 @@ func VerifyRecoveryCode(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:               validUser.ID.String(),
-			Username:         validUser.Username,
-			Email:            validUser.Email.String,
-			Role:             validUser.Role,
-			TwoFactorEnabled: validUser.TwoFactorEnabled,
+			ID:                 validUser.ID.String(),
+			Username:           validUser.Username,
+			Email:              validUser.Email.String,
+			Role:               validUser.Role,
+			TwoFactorEnabled:   validUser.TwoFactorEnabled,
+			EmailNotifications: validUser.EmailNotifications,
 		},
 	}
 

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Someone Liked Your Post!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .like-info {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .liker {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .heart {
+            font-size: 24px;
+            color: #dc3545;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>❤️ Someone Liked Your Post!</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{.Username}},</p>
+
+        <p>Great news! Someone appreciated your post:</p>
+
+        <div class="like-info">
+            <p><span class="liker">{{.LikerUsername}}</span> <span class="heart">❤️</span> liked your post.</p>
+        </div>
+
+        <p>Keep sharing your satellite captures - the community loves them!</p>
+
+        <a href="#" class="action-button">View Your Post</a>
+
+        <p>Best regards,<br>The SatDump Team</p>
+    </div>
+    <div class="footer">
+        <p>This email was sent because you have email notifications enabled for likes.</p>
+        <p>You can change your notification preferences in your account settings.</p>
+    </div>
+</body>
+</html>
