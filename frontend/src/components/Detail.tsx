@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -109,6 +109,7 @@ const groupImagesByCategory = (images: DatabasePostDetail['images']): Record<str
 
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [detail, setDetail] = useState<DatabasePostDetail | null>(null);
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(true);
@@ -484,19 +485,64 @@ const Detail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Owner Info */}
+            {/* Station Owner */}
             {detail.station_user && (
-              <Card>
+              <Card
+                onClick={() => navigate(`/user/${detail.station_user!.id}`)}
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  cursor: "pointer",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "lg",
+                  },
+                }}
+              >
                 <CardContent>
-                  <Typography level="h3" sx={{ mb: 2 }}>Owner</Typography>
-                  <Stack spacing={1}>
-                    <Box>
-                      <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Username:</Typography>
-                      <Typography level="body-sm">{detail.station_user.username}</Typography>
+                  <Typography level="title-md" sx={{ mb: 2 }}>
+                    Station Owner
+                  </Typography>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        bgcolor: "neutral.softBg",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {detail.station_user.has_profile_picture && detail.station_user.profile_picture_url ? (
+                        <img
+                          src={`/api/${detail.station_user.profile_picture_url}`}
+                          alt={`${detail.station_user.username}'s profile`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <Typography level="h3" color="neutral">
+                          {detail.station_user.username.charAt(0).toUpperCase()}
+                        </Typography>
+                      )}
                     </Box>
                     <Box>
-                      <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>User ID:</Typography>
-                      <Typography level="body-sm">{detail.station_user.id}</Typography>
+                      <Typography level="body-lg" fontWeight="bold">
+                        {detail.station_user.display_name || detail.station_user.username}
+                      </Typography>
+                      {detail.station_user.display_name && (
+                        <Typography level="body-sm" color="neutral">
+                          @{detail.station_user.username}
+                        </Typography>
+                      )}
                     </Box>
                   </Stack>
                 </CardContent>

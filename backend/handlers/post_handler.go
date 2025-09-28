@@ -159,13 +159,22 @@ type PostDetailResponse struct {
 	ID            uint                `json:"id"`
 	StationID     string              `json:"station_id"`
 	StationName   string              `json:"station_name"`
-	StationUser   *UserResponse       `json:"station_user,omitempty"`
+	StationUser   *UserDetailResponse `json:"station_user,omitempty"`
 	Timestamp     string              `json:"timestamp"`
 	SatelliteName string              `json:"satellite_name"`
 	Metadata      string              `json:"metadata"`
 	Images        []PostImageResponse `json:"images"`
 	CreatedAt     string              `json:"created_at"`
 	UpdatedAt     string              `json:"updated_at"`
+}
+
+// UserDetailResponse represents user information with profile picture for post details
+type UserDetailResponse struct {
+	ID                uint   `json:"id"`
+	Username          string `json:"username"`
+	DisplayName       string `json:"display_name,omitempty"`
+	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture bool   `json:"has_profile_picture"`
 }
 
 // GetLatestPosts handles fetching the latest public posts
@@ -443,11 +452,14 @@ func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
 		}
 	}
 
-	var stationUser *UserResponse
+	var stationUser *UserDetailResponse
 	if post.Station.User.ID != 0 {
-		stationUser = &UserResponse{
-			ID:       post.Station.User.ID,
-			Username: post.Station.User.Username,
+		stationUser = &UserDetailResponse{
+			ID:                post.Station.User.ID,
+			Username:          post.Station.User.Username,
+			DisplayName:       post.Station.User.DisplayName,
+			ProfilePictureURL: generateProfilePictureURL(post.Station.User.ID, post.Station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture: len(post.Station.User.ProfilePicture) > 0,
 		}
 	}
 

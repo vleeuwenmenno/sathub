@@ -24,6 +24,9 @@ export interface DatabasePostDetail {
   station_user?: {
     id: number;
     username: string;
+    display_name?: string;
+    profile_picture_url?: string;
+    has_profile_picture: boolean;
   };
   timestamp: string;
   satellite_name: string;
