@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
 	"gorm.io/gorm"
 )
@@ -207,12 +208,19 @@ func DisableTwoFactor(c *gin.Context) {
 		return
 	}
 
+	// Parse userID to UUID
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
+		return
+	}
+
 	// Generate disable token for email confirmation
 	disableToken := utils.GenerateRandomString(32)
 
 	// Create a temporary token record (we'll use the existing email confirmation token model for this)
 	disableTokenRecord := models.EmailConfirmationToken{
-		UserID:    userID,
+		UserID:    userUUID,
 		Token:     disableToken,
 		ExpiresAt: time.Now().Add(24 * time.Hour), // 24 hours
 	}
@@ -304,8 +312,14 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDInterface.(uint)
+	userIDStr, ok := userIDInterface.(string)
 	if !ok {
+		utils.UnauthorizedResponse(c, "Invalid session")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.UnauthorizedResponse(c, "Invalid session")
 		return
 	}
@@ -319,7 +333,7 @@ func VerifyTwoFactorCode(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -337,7 +351,7 @@ func VerifyTwoFactorCode(c *gin.Context) {
 	}
 
 	// Generate access token
-	accessToken, err := utils.GenerateAccessToken(user.ID, user.Username, user.Role)
+	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Username, user.Role)
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate access token")
 		return
@@ -354,7 +368,7 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		return
 	}
 
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID)
+	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -368,7 +382,7 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:               user.ID,
+			ID:               user.ID.String(),
 			Username:         user.Username,
 			Email:            user.Email.String,
 			Role:             user.Role,
@@ -390,7 +404,7 @@ func GetTwoFactorStatus(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -415,7 +429,7 @@ func GenerateRecoveryCodes(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -573,7 +587,7 @@ func VerifyRecoveryCode(c *gin.Context) {
 	}
 
 	// Generate access token
-	accessToken, err := utils.GenerateAccessToken(validUser.ID, validUser.Username, validUser.Role)
+	accessToken, err := utils.GenerateAccessToken(validUser.ID.String(), validUser.Username, validUser.Role)
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate access token")
 		return
@@ -590,7 +604,7 @@ func VerifyRecoveryCode(c *gin.Context) {
 		return
 	}
 
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, validUser.ID)
+	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, validUser.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -604,7 +618,7 @@ func VerifyRecoveryCode(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:               validUser.ID,
+			ID:               validUser.ID.String(),
 			Username:         validUser.Username,
 			Email:            validUser.Email.String,
 			Role:             validUser.Role,

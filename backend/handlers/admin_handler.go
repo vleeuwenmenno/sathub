@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +25,7 @@ type AdminOverviewResponse struct {
 
 // AdminUserResponse represents user data for admin management
 type AdminUserResponse struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	Username          string `json:"username"`
 	Email             string `json:"email,omitempty"`
 	Role              string `json:"role"`
@@ -96,7 +97,7 @@ func GetAllUsers(c *gin.Context) {
 	var userResponses []AdminUserResponse
 	for _, user := range users {
 		userResponse := AdminUserResponse{
-			ID:                user.ID,
+			ID:                user.ID.String(),
 			Username:          user.Username,
 			Role:              user.Role,
 			Banned:            user.Banned,
@@ -120,7 +121,7 @@ func GetAllUsers(c *gin.Context) {
 
 		// Generate profile picture URL if exists
 		if len(user.ProfilePicture) > 0 {
-			userResponse.ProfilePictureURL = generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
+			userResponse.ProfilePictureURL = generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
 		}
 
 		userResponses = append(userResponses, userResponse)
@@ -138,8 +139,8 @@ func UpdateUserRole(c *gin.Context) {
 	}
 
 	// Parse user ID
-	var targetUserID uint
-	if _, err := fmt.Sscanf(userIDStr, "%d", &targetUserID); err != nil {
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
@@ -188,8 +189,8 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Parse user ID
-	var targetUserID uint
-	if _, err := fmt.Sscanf(userIDStr, "%d", &targetUserID); err != nil {
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
@@ -204,7 +205,7 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Prevent admin from deleting themselves
-	if currentUserID == targetUserID {
+	if currentUserID == targetUserID.String() {
 		utils.ValidationErrorResponse(c, "Cannot delete your own account")
 		return
 	}
@@ -243,8 +244,8 @@ func BanUser(c *gin.Context) {
 	}
 
 	// Parse user ID
-	var targetUserID uint
-	if _, err := fmt.Sscanf(userIDStr, "%d", &targetUserID); err != nil {
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
@@ -276,7 +277,7 @@ func BanUser(c *gin.Context) {
 	}
 
 	// Prevent admin from banning themselves
-	if currentUserID == targetUserID {
+	if currentUserID == targetUserID.String() {
 		utils.ValidationErrorResponse(c, "Cannot ban your own account")
 		return
 	}
@@ -319,8 +320,8 @@ func GetUserDetails(c *gin.Context) {
 	}
 
 	// Parse user ID
-	var targetUserID uint
-	if _, err := fmt.Sscanf(userIDStr, "%d", &targetUserID); err != nil {
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
@@ -358,7 +359,7 @@ func GetUserDetails(c *gin.Context) {
 		StationCount int64 `json:"station_count"`
 	}{
 		AdminUserResponse: AdminUserResponse{
-			ID:                user.ID,
+			ID:                user.ID.String(),
 			Username:          user.Username,
 			Role:              user.Role,
 			Banned:            user.Banned,
@@ -385,7 +386,7 @@ func GetUserDetails(c *gin.Context) {
 
 	// Generate profile picture URL if exists
 	if len(user.ProfilePicture) > 0 {
-		userDetails.ProfilePictureURL = generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
+		userDetails.ProfilePictureURL = generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "User details retrieved successfully", userDetails)

@@ -13,6 +13,7 @@ import (
 	"satdump-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -78,7 +79,7 @@ type StationRequest struct {
 
 // UserResponse represents user data in responses
 type UserResponse struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	Username          string `json:"username"`
 	DisplayName       string `json:"display_name,omitempty"`
 	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
@@ -88,7 +89,7 @@ type UserResponse struct {
 // StationResponse represents the station data in responses
 type StationResponse struct {
 	ID              string        `json:"id"`
-	UserID          uint          `json:"user_id,omitempty"`
+	UserID          string        `json:"user_id,omitempty"`
 	User            *UserResponse `json:"user,omitempty"`
 	Name            string        `json:"name"`
 	Location        string        `json:"location"`
@@ -163,7 +164,7 @@ func GetStation(c *gin.Context) {
 
 // CreateStation handles creating a new station
 func CreateStation(c *gin.Context) {
-	userID, exists := middleware.GetCurrentUserID(c)
+	userIDStr, exists := middleware.GetCurrentUserID(c)
 	if !exists {
 		utils.UnauthorizedResponse(c, "User not authenticated")
 		return
@@ -172,6 +173,13 @@ func CreateStation(c *gin.Context) {
 	var req StationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	// Parse userID to UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
 		return
 	}
 
@@ -562,17 +570,17 @@ func GetGlobalStations(c *gin.Context) {
 	response := make([]StationResponse, len(stations))
 	for i, station := range stations {
 		stationResponse := buildStationResponse(station)
-		stationResponse.UserID = station.UserID
+		stationResponse.UserID = station.UserID.String()
 
 		// Add user information if it exists
-		if station.User.ID != 0 {
+		if station.User.ID != uuid.Nil {
 			hasProfilePicture := len(station.User.ProfilePicture) > 0
 			profilePictureURL := ""
 			if hasProfilePicture {
-				profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+				profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
 			}
 			stationResponse.User = &UserResponse{
-				ID:                station.User.ID,
+				ID:                station.User.ID.String(),
 				Username:          station.User.Username,
 				DisplayName:       station.User.DisplayName,
 				ProfilePictureURL: profilePictureURL,
@@ -588,16 +596,22 @@ func GetGlobalStations(c *gin.Context) {
 
 // GetUserStations handles listing public stations for a specific user (public endpoint)
 func GetUserStations(c *gin.Context) {
-	userID, err := strconv.ParseUint(c.Param("userId"), 10, 32)
-	if err != nil {
+	userIDStr := c.Param("userId")
+	if userIDStr == "" {
 		utils.ValidationErrorResponse(c, "Invalid user ID")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
 
 	db := config.GetDB()
 	var stations []models.Station
 
-	if err := db.Joins("User").Where("user_id = ? AND is_public = ?", uint(userID), true).Find(&stations).Error; err != nil {
+	if err := db.Joins("User").Where("user_id = ? AND is_public = ?", userID, true).Find(&stations).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch stations")
 		return
 	}
@@ -607,14 +621,14 @@ func GetUserStations(c *gin.Context) {
 		stationResponse := buildStationResponse(station)
 
 		// Add user information if it exists
-		if station.User.ID != 0 {
+		if station.User.ID != uuid.Nil {
 			hasProfilePicture := len(station.User.ProfilePicture) > 0
 			profilePictureURL := ""
 			if hasProfilePicture {
-				profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+				profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
 			}
 			stationResponse.User = &UserResponse{
-				ID:                station.User.ID,
+				ID:                station.User.ID.String(),
 				Username:          station.User.Username,
 				DisplayName:       station.User.DisplayName,
 				ProfilePictureURL: profilePictureURL,
@@ -662,17 +676,17 @@ func GetStationDetails(c *gin.Context) {
 	}
 
 	response := buildStationResponse(station)
-	response.UserID = station.UserID
+	response.UserID = station.UserID.String()
 
 	// Add user information
-	if station.User.ID != 0 {
+	if station.User.ID != uuid.Nil {
 		hasProfilePicture := len(station.User.ProfilePicture) > 0
 		profilePictureURL := ""
 		if hasProfilePicture {
-			profilePictureURL = fmt.Sprintf("/api/users/%d/profile-picture", station.User.ID)
+			profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
 		}
 		response.User = &UserResponse{
-			ID:                station.User.ID,
+			ID:                station.User.ID.String(),
 			Username:          station.User.Username,
 			DisplayName:       station.User.DisplayName,
 			ProfilePictureURL: profilePictureURL,

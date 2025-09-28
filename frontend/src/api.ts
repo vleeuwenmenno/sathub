@@ -96,10 +96,10 @@ export const register = async (
 export const login = async (
   usernameOrEmail: string,
   password: string,
-): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: number; username: string }> => {
+): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: string; username: string }> => {
   const res = await api.post("/auth/login", { username: usernameOrEmail, password });
   const authData = res.data.data; // Extract from the nested data structure
-  
+
   // Check if 2FA is required
   if (authData.requires_two_factor) {
     return {
@@ -108,7 +108,7 @@ export const login = async (
       username: authData.username,
     };
   }
-  
+
   // Normal login response
   return {
     token: authData.access_token,
@@ -181,7 +181,7 @@ export interface Station {
   created_at: string;
   updated_at: string;
   user?: {
-    id: number;
+    id: string;
     username: string;
     display_name?: string;
     profile_picture_url?: string;
@@ -285,7 +285,7 @@ export const getGlobalStations = async (
   return res.data.data;
 };
 
-export const getUserStations = async (userId: number): Promise<Station[]> => {
+export const getUserStations = async (userId: string): Promise<Station[]> => {
   const res = await axios.get(`${API_BASE}/stations/user/${userId}`);
   return res.data.data;
 };
@@ -296,7 +296,7 @@ export const getLatestPosts = async (limit: number = 10, page: number = 1): Prom
   return res.data.data;
 };
 
-export const getUserPosts = async (userId: number): Promise<Post[]> => {
+export const getUserPosts = async (userId: string): Promise<Post[]> => {
   const res = await api.get(`/posts/user/${userId}`);
   return res.data.data;
 };
@@ -377,7 +377,7 @@ export const getStationDetails = async (
 
 // User types
 export interface UserSummary {
-  id: number;
+  id: string;
   username: string;
   display_name?: string;
   email?: string;
@@ -431,7 +431,7 @@ export const verifyTwoFactorSetup = async (code: string): Promise<void> => {
 };
 
 export const verifyTwoFactorCode = async (
-  userId: number,
+  userId: string,
   code: string,
 ): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-2fa", { user_id: userId, code });
@@ -505,7 +505,7 @@ export const likePost = async (postId: number): Promise<{ liked: boolean }> => {
 };
 
 export const getUserLikedPosts = async (
-  userId: number,
+  userId: string,
   page: number = 1,
   limit: number = 20
 ): Promise<{ posts: Post[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
@@ -554,7 +554,7 @@ export interface AdminStats {
 }
 
 export interface AdminUser {
-  id: number;
+  id: string;
   username: string;
   email?: string;
   role: string;
@@ -584,19 +584,19 @@ export const getAllUsers = async (): Promise<AdminUser[]> => {
   return res.data.data;
 };
 
-export const updateUserRole = async (userId: number, role: string): Promise<void> => {
+export const updateUserRole = async (userId: string, role: string): Promise<void> => {
   await api.put(`/admin/users/${userId}/role`, { role });
 };
 
-export const deleteUser = async (userId: number): Promise<void> => {
+export const deleteUser = async (userId: string): Promise<void> => {
   await api.delete(`/admin/users/${userId}`);
 };
 
-export const banUser = async (userId: number, banned: boolean): Promise<void> => {
+export const banUser = async (userId: string, banned: boolean): Promise<void> => {
   await api.put(`/admin/users/${userId}/ban`, { banned });
 };
 
-export const getUserDetails = async (userId: number): Promise<AdminUserDetails> => {
+export const getUserDetails = async (userId: string): Promise<AdminUserDetails> => {
   const res = await api.get(`/admin/users/${userId}`);
   return res.data.data;
 };

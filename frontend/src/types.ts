@@ -24,7 +24,7 @@ export interface DatabasePostDetail {
   station_id: string;
   station_name: string;
   station_user?: {
-    id: number;
+    id: string;
     username: string;
     display_name?: string;
     profile_picture_url?: string;
@@ -68,7 +68,7 @@ export interface PostDetail {
 }
 
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email?: string;
   role: string;
@@ -80,7 +80,7 @@ export interface User {
 
 export interface PostComment {
   id: number;
-  user_id: number;
+  user_id: string;
   username: string;
   display_name?: string;
   profile_picture_url?: string;

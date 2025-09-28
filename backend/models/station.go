@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Station struct {
 	ID              string     `gorm:"primaryKey" json:"id"`
-	UserID          uint       `gorm:"not null;index" json:"user_id"`
+	UserID          uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	User            User       `gorm:"foreignKey:UserID" json:"-"`
 	Name            string     `gorm:"not null" json:"name"`
 	Location        string     `gorm:"not null" json:"location"`

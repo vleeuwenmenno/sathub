@@ -10,14 +10,22 @@ import (
 	"satdump-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // LikePost handles liking/unliking a post (toggle functionality)
 func LikePost(c *gin.Context) {
-	userID, exists := middleware.GetCurrentUserID(c)
+	userIDStr, exists := middleware.GetCurrentUserID(c)
 	if !exists {
 		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	// Parse userID to UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
 		return
 	}
 
@@ -32,7 +40,7 @@ func LikePost(c *gin.Context) {
 	// Check if post exists and is accessible
 	var post models.Post
 	query := db.Preload("Station").Where("posts.id = ?", uint(postID))
-	if err := query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID).First(&post).Error; err != nil {
+	if err := query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userIDStr).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not accessible")
 			return
@@ -71,9 +79,15 @@ func LikePost(c *gin.Context) {
 
 // GetUserLikedPosts handles fetching posts liked by a specific user
 func GetUserLikedPosts(c *gin.Context) {
-	userID, err := strconv.ParseUint(c.Param("userId"), 10, 32)
-	if err != nil {
+	userIDStr := c.Param("userId")
+	if userIDStr == "" {
 		utils.ValidationErrorResponse(c, "Invalid user ID")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
 
@@ -96,7 +110,7 @@ func GetUserLikedPosts(c *gin.Context) {
 
 	// Get liked posts with post details
 	var likes []models.Like
-	if err := db.Preload("Post").Preload("Post.Station").Where("user_id = ?", uint(userID)).Order("created_at DESC").Limit(limit).Offset(offset).Find(&likes).Error; err != nil {
+	if err := db.Preload("Post").Preload("Post.Station").Where("user_id = ?", userID).Order("created_at DESC").Limit(limit).Offset(offset).Find(&likes).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch liked posts")
 		return
 	}
@@ -109,7 +123,7 @@ func GetUserLikedPosts(c *gin.Context) {
 
 	// Get total count for pagination
 	var totalCount int64
-	db.Model(&models.Like{}).Where("user_id = ?", uint(userID)).Count(&totalCount)
+	db.Model(&models.Like{}).Where("user_id = ?", userID).Count(&totalCount)
 
 	utils.SuccessResponse(c, http.StatusOK, "Liked posts retrieved successfully", gin.H{
 		"posts": response,

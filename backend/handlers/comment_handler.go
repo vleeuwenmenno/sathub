@@ -11,6 +11,7 @@ import (
 	"satdump-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +23,7 @@ type CommentRequest struct {
 // CommentResponse represents a comment in responses
 type CommentResponse struct {
 	ID                uint   `json:"id"`
-	UserID            uint   `json:"user_id"`
+	UserID            string `json:"user_id"`
 	Username          string `json:"username"`
 	DisplayName       string `json:"display_name,omitempty"`
 	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
@@ -108,10 +109,10 @@ func GetCommentsForPost(c *gin.Context) {
 
 		commentResp := CommentResponse{
 			ID:                comment.ID,
-			UserID:            comment.UserID,
+			UserID:            comment.UserID.String(),
 			Username:          comment.User.Username,
 			DisplayName:       comment.User.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ProfilePictureURL: generateProfilePictureURL(comment.User.ID.String(), comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 			Content:           comment.Content,
 			LikesCount:        likesCount,
@@ -127,9 +128,16 @@ func GetCommentsForPost(c *gin.Context) {
 
 // CreateComment handles creating a new comment
 func CreateComment(c *gin.Context) {
-	userID, exists := middleware.GetCurrentUserID(c)
+	userIDStr, exists := middleware.GetCurrentUserID(c)
 	if !exists {
 		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	// Parse userID to UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
 		return
 	}
 
@@ -150,7 +158,7 @@ func CreateComment(c *gin.Context) {
 	// Check if post exists and is accessible
 	var post models.Post
 	query := db.Preload("Station").Where("posts.id = ?", uint(postID))
-	query = query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID)
+	query = query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userIDStr)
 
 	if err := query.First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -188,10 +196,10 @@ func CreateComment(c *gin.Context) {
 
 	response := CommentResponse{
 		ID:                comment.ID,
-		UserID:            comment.UserID,
+		UserID:            comment.UserID.String(),
 		Username:          comment.User.Username,
 		DisplayName:       comment.User.DisplayName,
-		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		ProfilePictureURL: generateProfilePictureURL(comment.User.ID.String(), comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
 		LikesCount:        0,     // New comment has no likes yet
@@ -261,10 +269,10 @@ func UpdateComment(c *gin.Context) {
 
 	response := CommentResponse{
 		ID:                comment.ID,
-		UserID:            comment.UserID,
+		UserID:            comment.UserID.String(),
 		Username:          comment.User.Username,
 		DisplayName:       comment.User.DisplayName,
-		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		ProfilePictureURL: generateProfilePictureURL(comment.User.ID.String(), comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
 		LikesCount:        likesCount,

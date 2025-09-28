@@ -25,7 +25,7 @@ const AdminUserManagement: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
@@ -54,7 +54,7 @@ const AdminUserManagement: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const handleRoleChange = async (userId: number, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       setUpdatingUserId(userId);
       await updateUserRole(userId, newRole);
@@ -68,7 +68,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteUser = async (userId: string) => {
     try {
       await deleteUser(userId);
       // Remove from local state
@@ -80,7 +80,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleBanUser = async (userId: number, banned: boolean) => {
+  const handleBanUser = async (userId: string, banned: boolean) => {
     try {
       console.log(`Attempting to ${banned ? 'ban' : 'unban'} user ${userId}`);
       await banUser(userId, banned);
@@ -94,7 +94,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleViewUserDetails = async (userId: number) => {
+  const handleViewUserDetails = async (userId: string) => {
     try {
       setLoadingDetails(true);
       const userDetails = await getUserDetails(userId);
