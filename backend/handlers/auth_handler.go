@@ -163,6 +163,13 @@ func Register(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to send confirmation email")
 	}
 
+	// Log successful registration
+	utils.LogUserAction(c, models.ActionUserRegister, user.ID, models.AuditMetadata{
+		"username": user.Username,
+		"email":    user.Email.String,
+		"role":     user.Role,
+	})
+
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully. Please check your email to confirm your account.", nil)
 }
 
@@ -279,6 +286,11 @@ func Login(c *gin.Context) {
 		},
 	}
 
+	// Log successful login
+	utils.LogUserAction(c, models.ActionUserLogin, user.ID, models.AuditMetadata{
+		"username": user.Username,
+	})
+
 	utils.SuccessResponse(c, http.StatusOK, "Login successful", response)
 }
 
@@ -389,6 +401,20 @@ func Logout(c *gin.Context) {
 
 	// Delete refresh token from database
 	db.Where("id = ? AND token = ?", claims.TokenID, req.RefreshToken).Delete(&models.RefreshToken{})
+
+	// Get user information for logging
+	var user models.User
+	if err := db.Where("id = ?", claims.UserID).First(&user).Error; err == nil {
+		// Set user ID in context for audit logging
+		c.Set("user_id", user.ID.String())
+		// Log logout action with user information
+		utils.LogUserAction(c, models.ActionUserLogout, user.ID, models.AuditMetadata{
+			"username": user.Username,
+		})
+	} else {
+		// Fallback to system action if user lookup fails
+		utils.LogSystemAction(c, models.ActionUserLogout, models.AuditMetadata{})
+	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Logged out successfully", nil)
 }
@@ -508,6 +534,12 @@ func UpdateProfile(c *gin.Context) {
 			return
 		}
 
+		// Log email change request
+		utils.LogUserAction(c, models.ActionUserEmailChange, user.ID, models.AuditMetadata{
+			"old_email": currentEmail,
+			"new_email": req.Email,
+		})
+
 		utils.SuccessResponse(c, http.StatusOK, "Email change confirmation sent. Please check your new email address to confirm the change.", nil)
 		return
 	}
@@ -518,6 +550,8 @@ func UpdateProfile(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to process password")
 			return
 		}
+		// Log password change
+		utils.LogUserAction(c, models.ActionUserPasswordChange, user.ID, models.AuditMetadata{})
 	}
 
 	// Update display name if provided
@@ -527,7 +561,13 @@ func UpdateProfile(c *gin.Context) {
 			utils.ValidationErrorResponse(c, "Display name must be 100 characters or less")
 			return
 		}
+		oldDisplayName := user.DisplayName
 		user.DisplayName = req.DisplayName
+		// Log display name change
+		utils.LogUserAction(c, models.ActionUserDisplayNameChange, user.ID, models.AuditMetadata{
+			"old_display_name": oldDisplayName,
+			"new_display_name": req.DisplayName,
+		})
 	}
 
 	// Update email notifications preference if provided
@@ -668,6 +708,9 @@ func UploadProfilePicture(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to update profile picture")
 		return
 	}
+
+	// Log profile picture change
+	utils.LogUserAction(c, models.ActionUserProfilePicture, user.ID, models.AuditMetadata{})
 
 	response := map[string]interface{}{
 		"profile_picture_url": generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),

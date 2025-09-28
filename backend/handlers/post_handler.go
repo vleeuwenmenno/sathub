@@ -284,6 +284,15 @@ func CreatePost(c *gin.Context) {
 		}
 	}()
 
+	// Log post creation (system action since it's done by station token)
+	utils.LogSystemAction(c, models.ActionPostCreate, models.AuditMetadata{
+		"post_id":        post.ID,
+		"station_id":     stationID,
+		"satellite_name": req.SatelliteName,
+		"has_metadata":   req.Metadata != "",
+		"has_cbor":       len(req.CBOR) > 0,
+	})
+
 	response := buildPostResponseWithUser(post, db, "") // New post, no likes yet
 	utils.SuccessResponse(c, http.StatusCreated, "Post created successfully", response)
 }
@@ -357,6 +366,15 @@ func UploadPostImage(c *gin.Context) {
 		return
 	}
 
+	// Log image upload (system action since it's done by station token)
+	utils.LogSystemAction(c, models.ActionPostImageUpload, models.AuditMetadata{
+		"post_id":      postID,
+		"image_id":     postImage.ID,
+		"filename":     postImage.Filename,
+		"file_size":    len(fileData),
+		"content_type": contentType,
+	})
+
 	response := PostImageResponse{
 		ID:       postImage.ID,
 		Filename: postImage.Filename,
@@ -404,6 +422,12 @@ func DeletePost(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete post")
 		return
 	}
+
+	// Log post deletion
+	utils.LogPostAction(c, models.ActionPostDelete, post.ID, models.AuditMetadata{
+		"satellite_name": post.SatelliteName,
+		"station_id":     post.StationID,
+	})
 
 	utils.SuccessResponse(c, http.StatusOK, "Post deleted successfully", nil)
 }

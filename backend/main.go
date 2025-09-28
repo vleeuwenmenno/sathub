@@ -253,6 +253,7 @@ func main() {
 			admin.PUT("/settings/registration", handlers.UpdateRegistrationSettings)
 			admin.GET("/settings/approval", handlers.GetApprovalSettings)
 			admin.PUT("/settings/approval", handlers.UpdateApprovalSettings)
+			admin.GET("/audit-logs", handlers.GetAuditLogs)
 		}
 
 		// Public routes (no authentication required)

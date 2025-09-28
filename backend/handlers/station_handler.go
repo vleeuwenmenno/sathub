@@ -215,6 +215,13 @@ func CreateStation(c *gin.Context) {
 		}
 	}()
 
+	// Log station creation
+	utils.LogStationAction(c, models.ActionStationCreate, station.ID, models.AuditMetadata{
+		"name":      station.Name,
+		"location":  station.Location,
+		"is_public": station.IsPublic,
+	})
+
 	response := buildStationResponseWithToken(station)
 
 	utils.SuccessResponse(c, http.StatusCreated, "Station created successfully", response)
@@ -253,6 +260,12 @@ func UpdateStation(c *gin.Context) {
 		return
 	}
 
+	// Track changes for audit logging
+	oldName := station.Name
+	oldLocation := station.Location
+	oldIsPublic := station.IsPublic
+	oldOnlineThreshold := station.OnlineThreshold
+
 	// Update fields
 	station.Name = req.Name
 	station.Location = req.Location
@@ -270,6 +283,27 @@ func UpdateStation(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to update station")
 		return
 	}
+
+	// Log station update with changes
+	changes := models.AuditMetadata{}
+	if oldName != station.Name {
+		changes["old_name"] = oldName
+		changes["new_name"] = station.Name
+	}
+	if oldLocation != station.Location {
+		changes["old_location"] = oldLocation
+		changes["new_location"] = station.Location
+	}
+	if oldIsPublic != station.IsPublic {
+		changes["old_is_public"] = oldIsPublic
+		changes["new_is_public"] = station.IsPublic
+	}
+	if oldOnlineThreshold != station.OnlineThreshold {
+		changes["old_online_threshold"] = oldOnlineThreshold
+		changes["new_online_threshold"] = station.OnlineThreshold
+	}
+
+	utils.LogStationAction(c, models.ActionStationUpdate, station.ID, changes)
 
 	response := buildStationResponse(station)
 
@@ -308,6 +342,12 @@ func DeleteStation(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete station")
 		return
 	}
+
+	// Log station deletion
+	utils.LogStationAction(c, models.ActionStationDelete, stationID, models.AuditMetadata{
+		"station_name": station.Name,
+		"was_public":   station.IsPublic,
+	})
 
 	utils.SuccessResponse(c, http.StatusOK, "Station deleted successfully", nil)
 }
@@ -382,6 +422,11 @@ func RegenerateStationToken(c *gin.Context) {
 		return
 	}
 
+	// Log token regeneration
+	utils.LogStationAction(c, models.ActionStationTokenRegen, station.ID, models.AuditMetadata{
+		"station_name": station.Name,
+	})
+
 	response := gin.H{
 		"token": station.Token,
 	}
@@ -451,6 +496,13 @@ func UploadStationPicture(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to update station picture")
 		return
 	}
+
+	// Log picture upload
+	utils.LogStationAction(c, models.ActionStationPictureUpload, station.ID, models.AuditMetadata{
+		"station_name": station.Name,
+		"file_size":    len(fileData),
+		"content_type": contentType,
+	})
 
 	response := buildStationResponse(station)
 

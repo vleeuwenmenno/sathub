@@ -42,7 +42,7 @@ func EnableTwoFactor(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -129,7 +129,7 @@ func VerifyTwoFactorSetup(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -165,6 +165,9 @@ func VerifyTwoFactorSetup(c *gin.Context) {
 		return
 	}
 
+	// Log 2FA enable action
+	utils.LogUserAction(c, models.ActionUser2FAEnable, user.ID, models.AuditMetadata{})
+
 	utils.SuccessResponse(c, http.StatusOK, "Two-factor authentication enabled successfully", nil)
 }
 
@@ -185,7 +188,7 @@ func DisableTwoFactor(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}
@@ -293,6 +296,9 @@ func ConfirmDisableTwoFactor(c *gin.Context) {
 	// Mark token as used
 	disableTokenRecord.Used = true
 	db.Save(&disableTokenRecord)
+
+	// Log 2FA disable action
+	utils.LogUserAction(c, models.ActionUser2FADisable, user.ID, models.AuditMetadata{})
 
 	utils.SuccessResponse(c, http.StatusOK, "Two-factor authentication disabled successfully", nil)
 }
@@ -482,7 +488,7 @@ func RegenerateRecoveryCodes(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "User not found")
 		return
 	}

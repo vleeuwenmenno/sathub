@@ -65,6 +65,10 @@ func LikeComment(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to unlike comment")
 			return
 		}
+
+		// Log comment unlike
+		utils.LogCommentAction(c, models.ActionCommentUnlike, uint(commentID), models.AuditMetadata{})
+
 		utils.SuccessResponse(c, http.StatusOK, "Comment unliked successfully", gin.H{"liked": false})
 	} else if err == gorm.ErrRecordNotFound {
 		// User hasn't liked, so like (create the like)
@@ -84,6 +88,8 @@ func LikeComment(c *gin.Context) {
 			}
 		}()
 
+		// Log comment like
+		utils.LogCommentAction(c, models.ActionCommentLike, uint(commentID), models.AuditMetadata{})
 		utils.SuccessResponse(c, http.StatusCreated, "Comment liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")

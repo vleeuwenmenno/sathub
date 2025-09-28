@@ -278,11 +278,19 @@ func UpdateUserRole(c *gin.Context) {
 	}
 
 	// Update the role
+	oldRole := user.Role
 	user.Role = req.Role
 	if err := db.Save(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to update user role")
 		return
 	}
+
+	// Log role update
+	utils.LogUserAction(c, models.ActionAdminUserRoleUpdate, targetUserID, models.AuditMetadata{
+		"target_username": user.Username,
+		"old_role":        oldRole,
+		"new_role":        req.Role,
+	})
 
 	utils.SuccessResponse(c, http.StatusOK, "User role updated successfully", nil)
 }
@@ -500,6 +508,13 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Log user deletion
+	utils.LogUserAction(c, models.ActionAdminUserDelete, targetUserID, models.AuditMetadata{
+		"target_username":  user.Username,
+		"stations_deleted": len(stationIDs),
+		"posts_deleted":    len(postIDs),
+	})
+
 	utils.SuccessResponse(c, http.StatusOK, "User deleted successfully", nil)
 }
 
@@ -567,6 +582,15 @@ func BanUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to update user ban status")
 		return
 	}
+
+	// Log ban/unban action
+	auditAction := models.ActionAdminUserBan
+	if !req.Banned {
+		auditAction = models.ActionAdminUserUnban
+	}
+	utils.LogUserAction(c, auditAction, targetUserID, models.AuditMetadata{
+		"target_username": user.Username,
+	})
 
 	// If user is being banned, terminate all their active sessions and deactivate station APIs
 	if req.Banned {
@@ -816,6 +840,142 @@ func UpdateApprovalSettings(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Approval settings updated successfully", nil)
 }
 
+// AuditLogResponse represents an audit log entry in responses
+type AuditLogResponse struct {
+	ID         string                 `json:"id"`
+	UserID     string                 `json:"user_id,omitempty"`
+	Username   string                 `json:"username,omitempty"`
+	Action     string                 `json:"action"`
+	TargetType string                 `json:"target_type"`
+	TargetID   string                 `json:"target_id,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	IPAddress  string                 `json:"ip_address,omitempty"`
+	UserAgent  string                 `json:"user_agent,omitempty"`
+	CreatedAt  string                 `json:"created_at"`
+}
+
+// AuditLogsResponse represents paginated audit log data
+type AuditLogsResponse struct {
+	Logs       []AuditLogResponse `json:"logs"`
+	Pagination PaginationMeta     `json:"pagination"`
+}
+
+// GetAuditLogs handles fetching audit logs with filtering and pagination
+func GetAuditLogs(c *gin.Context) {
+	db := config.GetDB()
+
+	// Parse query parameters
+	page := 1
+	limit := 50
+	userID := c.Query("user_id")
+	action := c.Query("action")
+	targetType := c.Query("target_type")
+	targetID := c.Query("target_id")
+	search := c.Query("search")
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
+			page = 1
+		}
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || l != 1 {
+			limit = 50
+		}
+		// Cap limit at 200
+		if limit > 200 {
+			limit = 200
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	// Build query
+	query := db.Model(&models.AuditLog{}).Preload("User")
+
+	// Add filters
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+	if action != "" {
+		query = query.Where("action = ?", action)
+	}
+	if targetType != "" {
+		query = query.Where("target_type = ?", targetType)
+	}
+	if targetID != "" {
+		query = query.Where("target_id = ?", targetID)
+	}
+	if search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Joins("LEFT JOIN users ON audit_logs.user_id = users.id").
+			Where("users.username ILIKE ? OR audit_logs.action ILIKE ? OR audit_logs.target_type ILIKE ? OR audit_logs.target_id ILIKE ?",
+				searchTerm, searchTerm, searchTerm, searchTerm)
+	}
+	if dateFrom != "" {
+		query = query.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		query = query.Where("created_at <= ?", dateTo)
+	}
+
+	// Get total count
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count audit logs")
+		return
+	}
+
+	// Get paginated results
+	var auditLogs []models.AuditLog
+	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&auditLogs).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch audit logs")
+		return
+	}
+
+	// Convert to response format
+	logResponses := make([]AuditLogResponse, len(auditLogs))
+	for i, log := range auditLogs {
+		response := AuditLogResponse{
+			ID:         log.ID.String(),
+			Action:     string(log.Action),
+			TargetType: string(log.TargetType),
+			TargetID:   log.TargetID,
+			Metadata:   log.Metadata,
+			IPAddress:  log.IPAddress,
+			UserAgent:  log.UserAgent,
+			CreatedAt:  log.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+
+		if log.UserID != nil {
+			response.UserID = log.UserID.String()
+			if log.User.Username != "" {
+				response.Username = log.User.Username
+			}
+		}
+
+		logResponses[i] = response
+	}
+
+	// Calculate total pages
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	response := AuditLogsResponse{
+		Logs: logResponses,
+		Pagination: PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+			Pages: totalPages,
+		},
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Audit logs retrieved successfully", response)
+}
+
 // ApproveUserRequest represents the request to approve or reject a user
 type ApproveUserRequest struct {
 	Approved bool `json:"approved"`
@@ -861,6 +1021,15 @@ func ApproveUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to update user approval status")
 		return
 	}
+
+	// Log approval action
+	auditAction := models.ActionAdminUserApprove
+	if !req.Approved {
+		auditAction = models.ActionAdminUserReject
+	}
+	utils.LogUserAction(c, auditAction, targetUserID, models.AuditMetadata{
+		"target_username": user.Username,
+	})
 
 	// Send approval notification email if user was approved
 	if req.Approved && user.Email.Valid {
