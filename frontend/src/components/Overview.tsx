@@ -35,10 +35,16 @@ const Overview: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    getLatestPosts(limit, page).then((fetchedPosts) => {
-      setPosts(fetchedPosts);
-      setLoading(false);
-    });
+    getLatestPosts(limit, page)
+      .then((fetchedPosts) => {
+        setPosts(fetchedPosts || []);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch posts:", error);
+        setPosts([]);
+        setLoading(false);
+      });
   }, [limit, page]);
 
   return (
@@ -47,7 +53,7 @@ const Overview: React.FC = () => {
         Recent Posts
       </Typography>
 
-      {!loading && posts.length > 0 && isAuthenticated && (
+      {!loading && posts && posts.length > 0 && isAuthenticated && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
@@ -64,7 +70,7 @@ const Overview: React.FC = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {posts.map((post) => (
+          {posts && posts.map((post) => (
             <Grid key={post.id} xs={12} sm={6} lg={4} xl={3}>
               <Card
                 onClick={() => navigate(`/post/${post.id}`)}
@@ -141,7 +147,7 @@ const Overview: React.FC = () => {
         </Grid>
       )}
 
-      {!loading && posts.length > 0 && isAuthenticated && (
+      {!loading && posts && posts.length > 0 && isAuthenticated && (
         <PaginationControls
           limit={limit}
           setLimit={setLimit}
@@ -152,10 +158,18 @@ const Overview: React.FC = () => {
         />
       )}
 
-      {!loading && posts.length > 0 && !isAuthenticated && (
+      {!loading && posts && posts.length > 0 && !isAuthenticated && (
         <Box sx={{ mt: 3, textAlign: "center" }}>
           <Alert color="primary" variant="soft">
             Please login to browse further.
+          </Alert>
+        </Box>
+      )}
+
+      {!loading && (!posts || posts.length === 0) && (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Alert color="neutral" variant="soft">
+            No posts available yet.
           </Alert>
         </Box>
       )}

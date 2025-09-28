@@ -16,6 +16,10 @@ COPY . .
 # Build the application (skip strict TS checks for production)
 RUN npx vite build
 
+# Copy the entrypoint script and config template
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Create non-root user
 RUN addgroup -g 1001 appuser && \
   adduser -D -u 1001 -G appuser appuser && \
@@ -27,5 +31,6 @@ USER appuser
 # Expose port
 EXPOSE 4173
 
-# Use Vite's built-in preview server for production
+# Use our entrypoint script that configures runtime environment
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "4173"]

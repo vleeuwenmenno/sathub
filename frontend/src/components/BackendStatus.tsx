@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Alert, Box } from "@mui/joy";
 import axios from "axios";
+import { getApiBaseUrl } from "../config";
 
-const API_BASE = "https://api.sathub.local:9999";
+const API_BASE = `${getApiBaseUrl()}/api`;
 
 const BackendStatus: React.FC = () => {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);

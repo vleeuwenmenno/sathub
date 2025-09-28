@@ -5,27 +5,36 @@ services:
     restart: unless-stopped
     environment:
       - GIN_MODE=release
+      - FRONTEND_URL=${FRONTEND_URL:-https://sathub.de}
+      
+      # Database settings
       - DB_TYPE=postgres
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=${DB_USER:-sathub}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME:-sathub}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret}
-      - FRONTEND_URL=${FRONTEND_URL:-https://sathub.de}
-      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
-      - SMTP_PORT=${SMTP_PORT:-587}
+
+      # Security settings
+      - JWT_SECRET=${JWT_SECRET}
+      - TWO_FA_ENCRYPTION_KEY=${TWO_FA_ENCRYPTION_KEY}
+
+      # SMTP settings
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
-      - TWO_FA_ENCRYPTION_KEY=${TWO_FA_ENCRYPTION_KEY}
+
+      # MinIO settings
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_BUCKET=sathub-images
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_EXTERNAL_URL=https://obj.sathub.de
     networks:
       - sathub
+      - caddy_network
     depends_on:
       - postgres
 
@@ -38,7 +47,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME:-sathub}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - {{ sathub_data_dir }}/postgres:/var/lib/postgresql/data
     networks:
       - sathub
 
@@ -47,27 +56,11 @@ services:
     container_name: sathub-frontend
     restart: unless-stopped
     environment:
-      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-sathub.de,localhost,127.0.0.1}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.sathub.de}
+      - VITE_API_BASE_URL=${FRONTEND_API_BASE_URL:-https://api.sathub.de}
+      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-sathub.de,sathub.nl}
     networks:
       - sathub
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: sathub-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - sathub
-    depends_on:
-      - backend
-      - frontend
+      - caddy_network
 
   minio:
     image: minio/minio
@@ -77,20 +70,32 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
-      - minio_data:/data
+      - {{ sathub_data_dir }}/minio:/data
     command: server /data --console-address :9001
     networks:
       - sathub
+      - caddy_network
     depends_on:
       - postgres
 
-volumes:
-  postgres_data:
-  sathub_database:
-  caddy_data:
-  caddy_config:
-  minio_data:
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: sathub-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - REPO_USER=${GITHUB_USER}
+      - REPO_PASS=${GITHUB_PAT}
+    command: --interval 30 --cleanup --include-stopped=false sathub-backend sathub-frontend
+    networks:
+      - sathub
 
 networks:
   sathub:
     driver: bridge
+  caddy_network:
+    external: true
+    name: caddy_default

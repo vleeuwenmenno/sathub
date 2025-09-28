@@ -30,6 +30,7 @@ import {
   ContentCopy,
 } from "@mui/icons-material";
 import type { Station } from "../api";
+import { getApiBaseUrl } from "../config";
 import {
   getStations,
   deleteStation,
@@ -115,8 +116,8 @@ const StationsList: React.FC = () => {
   });
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
-  const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || "https://api.sathub.local:9999";
-  const isDevelopment = baseUrl.includes("sathub.local");
+  const baseUrl = getApiBaseUrl();
+  const isDevelopment = baseUrl.includes("sathub.local") || baseUrl.includes("localhost");
   const curlInsecureFlag = isDevelopment ? " --insecure" : "";
 
   const copyWithFeedback = async (text: string, itemId: string) => {

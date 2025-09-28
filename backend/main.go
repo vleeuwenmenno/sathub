@@ -72,6 +72,14 @@ func main() {
 	// API routes
 	api := r.Group("/api")
 	{
+		// Health check endpoint
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"status":  "ok",
+				"service": "sathub-ui-backend",
+			})
+		})
+
 		// Protected satellite data routes (authentication required)
 		posts := api.Group("/posts")
 		posts.Use(middleware.AuthRequired())
@@ -259,14 +267,6 @@ func main() {
 			public.GET("/settings/registration", handlers.GetRegistrationSettings)
 		}
 	}
-
-	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"service": "sathub-ui-backend",
-		})
-	})
 
 	// Get port from environment
 	port := os.Getenv("PORT")
