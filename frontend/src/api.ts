@@ -569,6 +569,18 @@ export interface AdminUser {
   updated_at: string;
 }
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  pagination: PaginationMeta;
+}
+
 export interface AdminUserDetails extends AdminUser {
   post_count: number;
   station_count: number;
@@ -579,8 +591,19 @@ export const getAdminOverview = async (): Promise<AdminStats> => {
   return res.data.data;
 };
 
-export const getAllUsers = async (): Promise<AdminUser[]> => {
-  const res = await api.get("/admin/users");
+export const getAllUsers = async (
+  page: number = 1,
+  limit: number = 20,
+  search: string = ""
+): Promise<AdminUsersResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  const res = await api.get(`/admin/users?${params}`);
   return res.data.data;
 };
 

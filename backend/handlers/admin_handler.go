@@ -39,6 +39,20 @@ type AdminUserResponse struct {
 	UpdatedAt         string `json:"updated_at"`
 }
 
+// AdminUsersResponse represents paginated user data for admin management
+type AdminUsersResponse struct {
+	Users      []AdminUserResponse `json:"users"`
+	Pagination PaginationMeta      `json:"pagination"`
+}
+
+// PaginationMeta represents pagination metadata
+type PaginationMeta struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+	Total int `json:"total"`
+	Pages int `json:"pages"`
+}
+
 // UpdateUserRoleRequest represents the request to update a user's role
 type UpdateUserRoleRequest struct {
 	Role string `json:"role" binding:"required"`
@@ -83,15 +97,59 @@ func GetAdminOverview(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Admin overview retrieved successfully", response)
 }
 
-// GetAllUsers returns a list of all users for admin management
+// GetAllUsers returns a paginated list of users for admin management with optional search
 func GetAllUsers(c *gin.Context) {
 	db := config.GetDB()
 
+	// Parse query parameters
+	page := 1
+	limit := 20
+	search := c.Query("search")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
+			page = 1
+		}
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || l != 1 {
+			limit = 20
+		}
+		// Cap limit at 100
+		if limit > 100 {
+			limit = 100
+		}
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Build query
+	query := db.Model(&models.User{})
+
+	// Add search filter if provided
+	if search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Where("username ILIKE ? OR email ILIKE ?", searchTerm, searchTerm)
+	}
+
+	// Get total count for pagination
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count users")
+		return
+	}
+
+	// Get paginated users
 	var users []models.User
-	if err := db.Find(&users).Error; err != nil {
+	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&users).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to retrieve users")
 		return
 	}
+
+	// Calculate total pages
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
 
 	var userResponses []AdminUserResponse
 	for _, user := range users {
@@ -126,7 +184,17 @@ func GetAllUsers(c *gin.Context) {
 		userResponses = append(userResponses, userResponse)
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Users retrieved successfully", userResponses)
+	response := AdminUsersResponse{
+		Users: userResponses,
+		Pagination: PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+			Pages: totalPages,
+		},
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Users retrieved successfully", response)
 }
 
 // UpdateUserRole updates a user's role (admin only)
