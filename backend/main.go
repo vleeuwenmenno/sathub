@@ -68,6 +68,11 @@ func main() {
 		c.JSON(200, gin.H{"captcha_id": id})
 	})
 
+	// Version endpoint (no authentication required)
+	r.GET("/api/version", func(c *gin.Context) {
+		c.JSON(200, gin.H{"version": VERSION})
+	})
+
 	// API routes
 	api := r.Group("/api")
 	{

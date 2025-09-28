@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,6 +11,17 @@ import (
 )
 
 func main() {
+	// Parse command line flags
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "Show version information")
+	flag.Parse()
+
+	// Handle version flag
+	if showVersion {
+		fmt.Printf("SatHub Data Client v%s\n", VERSION)
+		return
+	}
+
 	// Load configuration
 	config, err := LoadConfig()
 	if err != nil {
@@ -21,7 +34,7 @@ func main() {
 	}
 
 	logger := log.New(os.Stdout, "[CLIENT] ", log.LstdFlags)
-	logger.Printf("Starting SatHub Data Client")
+	logger.Printf("Starting SatHub Data Client v%s", VERSION)
 	logger.Printf("API URL: %s", config.APIURL)
 	logger.Printf("Watch paths: %v", config.WatchPaths)
 	logger.Printf("Processing delay: %v", config.ProcessDelay)

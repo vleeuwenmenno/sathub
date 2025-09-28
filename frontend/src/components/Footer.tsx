@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, IconButton, Link } from '@mui/joy';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import { VERSION } from '../version';
 
 const Footer: React.FC = () => {
   return (
@@ -18,6 +19,9 @@ const Footer: React.FC = () => {
     >
       <Typography level="body-sm" sx={{ mb: 1 }}>
         Built with ❤️ for the satellite community
+      </Typography>
+      <Typography level="body-xs" sx={{ mb: 2, color: 'text.tertiary' }}>
+        Version {VERSION}
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
         <IconButton
