@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment, Achievement, UserAchievement } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment, Achievement, UserAchievement, NotificationResponse } from "./types";
 
 const API_BASE = "/api";
 
@@ -148,6 +148,7 @@ export const updateProfile = async (data: {
   email?: string;
   password?: string;
   display_name?: string;
+  email_notifications?: boolean;
 }): Promise<User> => {
   const res = await api.put("/auth/profile", data);
   return res.data.data; // Extract from the nested data structure
@@ -637,5 +638,29 @@ export const getUserAchievements = async (): Promise<UserAchievement[]> => {
 
 export const getAllAchievements = async (): Promise<Achievement[]> => {
   const res = await api.get("/achievements/all");
+  return res.data.data;
+};
+
+// Notification API functions
+export const getNotifications = async (page: number = 1, limit: number = 20): Promise<NotificationResponse> => {
+  const res = await api.get(`/notifications?page=${page}&limit=${limit}`);
+  return res.data.data;
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+  await api.put(`/notifications/${notificationId}/read`);
+};
+
+export const markAllNotificationsAsRead = async (): Promise<{ updated_count: number }> => {
+  const res = await api.put("/notifications/read-all");
+  return res.data.data;
+};
+
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  await api.delete(`/notifications/${notificationId}`);
+};
+
+export const getUnreadNotificationCount = async (): Promise<{ unread_count: number }> => {
+  const res = await api.get("/notifications/unread-count");
   return res.data.data;
 };

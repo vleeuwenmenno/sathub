@@ -217,6 +217,18 @@ func main() {
 			achievements.GET("/all", handlers.GetAllAchievements)
 		}
 
+		// Notification routes (user authentication required)
+		notificationHandler := handlers.NewNotificationHandler(config.GetDB())
+		notifications := api.Group("/notifications")
+		notifications.Use(middleware.AuthRequired())
+		{
+			notifications.GET("", notificationHandler.GetNotifications)
+			notifications.PUT("/:id/read", notificationHandler.MarkAsRead)
+			notifications.PUT("/read-all", notificationHandler.MarkAllAsRead)
+			notifications.DELETE("/:id", notificationHandler.DeleteNotification)
+			notifications.GET("/unread-count", notificationHandler.GetUnreadCount)
+		}
+
 		// Station health routes (station token authentication required)
 		stationHealth := api.Group("/stations")
 		stationHealth.Use(middleware.StationTokenAuth())

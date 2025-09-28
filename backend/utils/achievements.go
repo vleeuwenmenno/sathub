@@ -81,6 +81,29 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				Icon:          achievement.Icon,
 				UnlockedAt:    userAchievement.UnlockedAt,
 			})
+
+			// Create notification for the achievement
+			notification := models.Notification{
+				UserID:    userID,
+				Type:      "achievement",
+				Message:   "You unlocked the achievement: " + achievement.Name,
+				RelatedID: achievement.ID,
+				IsRead:    false,
+			}
+
+			if err := db.Create(&notification).Error; err != nil {
+				log.Printf("Failed to create notification for achievement %s: %v", achievement.Name, err)
+			}
+
+			// Send email notification if user has email notifications enabled
+			var user models.User
+			if err := db.Where("id = ?", userID).First(&user).Error; err == nil && user.EmailNotifications {
+				go func() {
+					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievement.Name, achievement.Description); err != nil {
+						log.Printf("Failed to send achievement email notification: %v", err)
+					}
+				}()
+			}
 		}
 	}
 

@@ -11,6 +11,7 @@ import {
   Alert,
   Avatar,
   Stack,
+  Checkbox,
 } from "@mui/joy";
 import {
   updateProfile,
@@ -57,6 +58,9 @@ const UserSettings: React.FC = () => {
   const [disableCode, setDisableCode] = useState("");
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+
+  // Notification settings states
+  const [emailNotifications, setEmailNotifications] = useState(user?.email_notifications || false);
 
   useEffect(() => {
     const fetchTwoFactorStatus = async () => {
@@ -241,20 +245,34 @@ const UserSettings: React.FC = () => {
     try {
       setProfileLoading(true);
       clearMessages();
-      
+
       const result = await uploadProfilePicture(profilePictureFile);
-      
+
       // Update the profile picture URL immediately from the upload response
       if (result.profile_picture_url) {
         const blobUrl = await getProfilePictureBlob(result.profile_picture_url);
         setProfilePictureUrl(blobUrl);
       }
-      
+
       setProfileSuccess("Profile picture uploaded successfully");
       setProfilePictureFile(null);
       setProfilePicturePreview(null);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to upload profile picture");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleUpdateNotificationSettings = async () => {
+    try {
+      setProfileLoading(true);
+      clearMessages();
+
+      await updateProfile({ email_notifications: emailNotifications });
+      setProfileSuccess("Notification settings updated successfully");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to update notification settings");
     } finally {
       setProfileLoading(false);
     }
@@ -537,6 +555,32 @@ const UserSettings: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Notification Settings */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography level="h3" sx={{ mb: 2 }}>
+            Notification Settings
+          </Typography>
+          <Typography sx={{ mb: 2 }}>
+            Choose how you want to be notified about activity on your posts and achievements.
+          </Typography>
+          <FormControl>
+            <Checkbox
+              label="Receive email notifications for achievements, comments, and likes"
+              checked={emailNotifications}
+              onChange={(e) => setEmailNotifications(e.target.checked)}
+            />
+          </FormControl>
+          <Button
+            onClick={handleUpdateNotificationSettings}
+            loading={profileLoading}
+            sx={{ mt: 2 }}
+          >
+            Save Notification Settings
+          </Button>
+        </CardContent>
+      </Card>
 
       {showTwoFactorSetup && (
         <TwoFactorSetup

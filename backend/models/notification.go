@@ -1,0 +1,30 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type Notification struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	User      User      `gorm:"foreignKey:UserID" json:"-"`
+	Type      string    `gorm:"size:50;not null" json:"type"` // achievement, comment, like
+	Message   string    `gorm:"type:text;not null" json:"message"`
+	RelatedID uuid.UUID `gorm:"type:uuid" json:"related_id,omitempty"` // ID of related entity (achievement, post, etc.)
+	IsRead    bool      `gorm:"default:false" json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TableName returns the table name for Notification model
+func (Notification) TableName() string {
+	return "notifications"
+}
+
+// BeforeCreate is a GORM hook that runs before creating a notification
+func (n *Notification) BeforeCreate(tx *gorm.DB) error {
+	return nil
+}

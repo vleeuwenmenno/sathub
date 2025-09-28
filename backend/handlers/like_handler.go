@@ -79,6 +79,40 @@ func LikePost(c *gin.Context) {
 			}
 		}()
 
+		// Create notification for post owner if liker is not the owner
+		if post.Station.UserID.String() != userIDStr {
+			go func() {
+				// Get the liker's username
+				var liker models.User
+				if err := db.Where("id = ?", userID).First(&liker).Error; err != nil {
+					fmt.Printf("Failed to get liker info: %v\n", err)
+					return
+				}
+
+				notification := models.Notification{
+					UserID:    post.Station.UserID,
+					Type:      "like",
+					Message:   liker.Username + " liked your post",
+					RelatedID: uuid.Nil,
+					IsRead:    false,
+				}
+
+				if err := db.Create(&notification).Error; err != nil {
+					fmt.Printf("Failed to create like notification: %v\n", err)
+				}
+
+				// Send email notification if user has email notifications enabled
+				var postOwner models.User
+				if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
+					go func() {
+						if err := utils.SendLikeNotificationEmail(postOwner.Email.String, postOwner.Username, liker.Username); err != nil {
+							fmt.Printf("Failed to send like email notification: %v\n", err)
+						}
+					}()
+				}
+			}()
+		}
+
 		utils.SuccessResponse(c, http.StatusCreated, "Post liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")

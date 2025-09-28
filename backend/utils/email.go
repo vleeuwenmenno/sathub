@@ -67,6 +67,52 @@ func SendPasswordResetEmail(toEmail, username, resetToken string) error {
 	return SendEmail(data)
 }
 
+// SendCommentNotificationEmail sends a comment notification email
+func SendCommentNotificationEmail(toEmail, username, commenterUsername string) error {
+	data := EmailData{
+		Subject:  "New Comment on Your Post",
+		To:       toEmail,
+		Template: "comment_notification",
+		Data: map[string]interface{}{
+			"Username":          username,
+			"CommenterUsername": commenterUsername,
+		},
+	}
+
+	return SendEmail(data)
+}
+
+// SendLikeNotificationEmail sends a like notification email
+func SendLikeNotificationEmail(toEmail, username, likerUsername string) error {
+	data := EmailData{
+		Subject:  "Someone Liked Your Post!",
+		To:       toEmail,
+		Template: "like_notification",
+		Data: map[string]interface{}{
+			"Username":      username,
+			"LikerUsername": likerUsername,
+		},
+	}
+
+	return SendEmail(data)
+}
+
+// SendAchievementNotificationEmail sends an achievement notification email
+func SendAchievementNotificationEmail(toEmail, username, achievementName, achievementDescription string) error {
+	data := EmailData{
+		Subject:  "Achievement Unlocked!",
+		To:       toEmail,
+		Template: "achievement_notification",
+		Data: map[string]interface{}{
+			"Username":               username,
+			"AchievementName":        achievementName,
+			"AchievementDescription": achievementDescription,
+		},
+	}
+
+	return SendEmail(data)
+}
+
 // SendEmailConfirmationEmail sends an email confirmation email
 func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
 	appConfig := config.GetAppConfig()

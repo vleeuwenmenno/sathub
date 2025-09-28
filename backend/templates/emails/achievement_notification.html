@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Unlocked!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .achievement {
+            background-color: #fff;
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .achievement-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .achievement-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .achievement-description {
+            color: #666;
+            font-style: italic;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 Achievement Unlocked!</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{.Username}},</p>
+
+        <p>Congratulations! You've unlocked a new achievement in SatDump:</p>
+
+        <div class="achievement">
+            <div class="achievement-icon">🏆</div>
+            <div class="achievement-name">{{.AchievementName}}</div>
+            <div class="achievement-description">{{.AchievementDescription}}</div>
+        </div>
+
+        <p>Keep up the great work exploring and contributing to the satellite community!</p>
+
+        <p>Best regards,<br>The SatDump Team</p>
+    </div>
+    <div class="footer">
+        <p>This email was sent because you have email notifications enabled for achievements.</p>
+        <p>You can change your notification preferences in your account settings.</p>
+    </div>
+</body>
+</html>

@@ -76,6 +76,7 @@ export interface User {
   display_name?: string;
   profile_picture_url?: string;
   has_profile_picture: boolean;
+  email_notifications?: boolean;
 }
 
 export interface PostComment {
@@ -113,6 +114,26 @@ export interface Achievement {
 export interface UserAchievement {
   achievement: Achievement;
   unlocked_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'achievement' | 'comment' | 'like';
+  message: string;
+  related_id: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationResponse {
+  notifications: Notification[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }
 
 export interface AuthState {

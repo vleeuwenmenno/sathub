@@ -37,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
+import NotificationDropdown from "./NotificationDropdown";
 import logo from "../assets/logo.svg";
 
 const Navbar: React.FC = () => {
@@ -65,6 +66,7 @@ const Navbar: React.FC = () => {
 
     fetchProfilePicture();
   }, [user]);
+
 
   const toggleColorScheme = () => {
     setMode(mode === "dark" ? "light" : "dark");
@@ -219,6 +221,8 @@ const Navbar: React.FC = () => {
           >
             {mode === "dark" ? <LightMode /> : <DarkMode />}
           </IconButton>
+
+          {isAuthenticated && <NotificationDropdown />}
 
           {isAuthenticated ? (
             <Dropdown>
