@@ -2,4 +2,4 @@
 // Do not modify manually
 package main
 
-const VERSION = "0.2.0"
+const VERSION = "0.2.1"
