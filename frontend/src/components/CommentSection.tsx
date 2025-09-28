@@ -17,7 +17,6 @@ import {
   Textarea,
 } from '@mui/joy';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ReplyIcon from '@mui/icons-material/Reply';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,180 +38,93 @@ interface CommentSectionProps {
 
 const CommentItem: React.FC<{
   comment: Comment;
-  onReply: (parentId: number) => void;
   onEdit: (comment: Comment) => void;
   onDelete: (commentId: number) => void;
   currentUserId?: number;
-  level: number;
-  replyingTo: number | null;
-  replyText: string;
-  onReplyTextChange: (text: string) => void;
-  onSubmitReply: () => void;
-  onCancelReply: () => void;
-  submittingReply: boolean;
 }> = ({
   comment,
-  onReply,
   onEdit,
   onDelete,
-  currentUserId,
-  level,
-  replyingTo,
-  replyText,
-  onReplyTextChange,
-  onSubmitReply,
-  onCancelReply,
-  submittingReply
+  currentUserId
 }) => {
-  const [showReplyForm, setShowReplyForm] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const isOwner = currentUserId === comment.user_id;
-  const maxIndentation = 3; // Limit nesting depth for UI
-  const indentLevel = Math.min(level, maxIndentation);
 
   return (
-    <Box sx={{ ml: indentLevel * 3 }}>
-      <Card variant="outlined" sx={{ mb: 2 }}>
-        <CardContent>
-          <Stack direction="row" spacing={2} alignItems="flex-start">
-            <Avatar size="sm">
-              {comment.has_profile_picture && comment.profile_picture_url ? (
-                <img
-                  src={`/api/${comment.profile_picture_url}`}
-                  alt={`${comment.username}'s profile`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '50%'
-                  }}
-                />
-              ) : (
-                <Typography level="body-sm">
-                  {(comment.display_name || comment.username).charAt(0).toUpperCase()}
-                </Typography>
-              )}
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <Typography level="body-sm" fontWeight="bold">
-                  {comment.username}
-                </Typography>
-                <Typography level="body-xs" color="neutral">
-                  {formatDate(comment.created_at)}
-                </Typography>
-                {isOwner && (
-                  <>
-                    <IconButton
-                      size="sm"
-                      onClick={(e) => setMenuAnchor(e.currentTarget)}
-                      sx={{ ml: 'auto' }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                      anchorEl={menuAnchor}
-                      open={Boolean(menuAnchor)}
-                      onClose={() => setMenuAnchor(null)}
-                    >
-                      <MenuItem
-                        onClick={() => {
-                          onEdit(comment);
-                          setMenuAnchor(null);
-                        }}
-                      >
-                        <EditIcon sx={{ mr: 1 }} />
-                        Edit
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          onDelete(comment.id);
-                          setMenuAnchor(null);
-                        }}
-                        color="danger"
-                      >
-                        <DeleteIcon sx={{ mr: 1 }} />
-                        Delete
-                      </MenuItem>
-                    </Menu>
-                  </>
-                )}
-              </Stack>
-              <Typography level="body-md" sx={{ mb: 1 }}>
-                {comment.content}
-              </Typography>
-              {level < maxIndentation && (
-                <Button
-                  size="sm"
-                  variant="plain"
-                  startDecorator={<ReplyIcon />}
-                  onClick={() => onReply(comment.id)}
-                  sx={{ p: 0, fontSize: '0.75rem' }}
-                >
-                  Reply
-                </Button>
-              )}
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Inline Reply Form */}
-      {replyingTo === comment.id && (
-        <Box sx={{ ml: indentLevel * 3 + 2, mt: 1, mb: 2 }}>
-          <Card variant="outlined" sx={{ p: 2 }}>
-            <form onSubmit={(e) => { e.preventDefault(); onSubmitReply(); }}>
-              <Textarea
-                placeholder="Write a reply..."
-                value={replyText}
-                onChange={(e) => onReplyTextChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    onSubmitReply();
-                  }
+    <Card variant="outlined" sx={{ mb: 2 }}>
+      <CardContent>
+        <Stack direction="row" spacing={2} alignItems="flex-start">
+          <Avatar size="sm">
+            {comment.has_profile_picture && comment.profile_picture_url ? (
+              <img
+                src={`/api/${comment.profile_picture_url}`}
+                alt={`${comment.username}'s profile`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
                 }}
-                minRows={2}
-                maxRows={4}
               />
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Button
-                  size="sm"
-                  type="submit"
-                  loading={submittingReply}
-                  disabled={!replyText.trim()}
-                >
-                  Reply
-                </Button>
-                <Button size="sm" variant="plain" onClick={onCancelReply}>
-                  Cancel
-                </Button>
-              </Stack>
-            </form>
-          </Card>
-        </Box>
-      )}
-
-      {/* Replies */}
-      {comment.replies && comment.replies.map((reply) => (
-        <CommentItem
-          key={reply.id}
-          comment={reply}
-          onReply={onReply}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          currentUserId={currentUserId}
-          level={level + 1}
-          replyingTo={replyingTo}
-          replyText={replyText}
-          onReplyTextChange={onReplyTextChange}
-          onSubmitReply={onSubmitReply}
-          onCancelReply={onCancelReply}
-          submittingReply={submittingReply}
-        />
-      ))}
-    </Box>
+            ) : (
+              <Typography level="body-sm">
+                {(comment.display_name || comment.username).charAt(0).toUpperCase()}
+              </Typography>
+            )}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Typography level="body-sm" fontWeight="bold">
+                {comment.username}
+              </Typography>
+              <Typography level="body-xs" color="neutral">
+                {formatDate(comment.created_at)}
+              </Typography>
+              {isOwner && (
+                <>
+                  <IconButton
+                    size="sm"
+                    onClick={(e) => setMenuAnchor(e.currentTarget)}
+                    sx={{ ml: 'auto' }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                  <Menu
+                    anchorEl={menuAnchor}
+                    open={Boolean(menuAnchor)}
+                    onClose={() => setMenuAnchor(null)}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        onEdit(comment);
+                        setMenuAnchor(null);
+                      }}
+                    >
+                      <EditIcon sx={{ mr: 1 }} />
+                      Edit
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        onDelete(comment.id);
+                        setMenuAnchor(null);
+                      }}
+                      color="danger"
+                    >
+                      <DeleteIcon sx={{ mr: 1 }} />
+                      Delete
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
+            </Stack>
+            <Typography level="body-md" sx={{ mb: 1 }}>
+              {comment.content}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -230,11 +142,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState('');
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submittingReply, setSubmittingReply] = useState(false);
 
   useEffect(() => {
     loadComments();
@@ -305,52 +214,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     }
   };
 
-  const startReply = (parentId: number) => {
-    setReplyingTo(parentId);
-    setReplyText('');
-    setEditingComment(null);
-    setNewComment('');
-  };
-
-  const handleReplyTextChange = (text: string) => {
-    setReplyText(text);
-  };
-
-  const handleSubmitReply = async () => {
-    if (!replyText.trim() || !user || !replyingTo) return;
-
-    try {
-      setSubmittingReply(true);
-      const commentData = {
-        content: replyText.trim(),
-        parent_id: replyingTo,
-      };
-
-      await createComment(postId, commentData);
-      setReplyText('');
-      setReplyingTo(null);
-      await loadComments();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post reply');
-    } finally {
-      setSubmittingReply(false);
-    }
-  };
-
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-    setReplyText('');
-  };
 
   const startEdit = (comment: Comment) => {
     setEditingComment(comment);
-    setReplyingTo(null);
     setNewComment(comment.content);
   };
 
   const cancelAction = () => {
-    setReplyingTo(null);
-    setReplyText('');
     setEditingComment(null);
     setNewComment('');
   };
@@ -395,7 +265,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                     }
                   }}
                   minRows={3}
-                  maxRows={6}
+                  autosize={true}
                 />
                 <Stack direction="row" spacing={1}>
                   <Button
@@ -434,17 +304,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
             <CommentItem
               key={comment.id}
               comment={comment}
-              onReply={startReply}
               onEdit={startEdit}
               onDelete={handleDeleteComment}
               currentUserId={user?.id}
-              level={0}
-              replyingTo={replyingTo}
-              replyText={replyText}
-              onReplyTextChange={handleReplyTextChange}
-              onSubmitReply={handleSubmitReply}
-              onCancelReply={handleCancelReply}
-              submittingReply={submittingReply}
             />
           ))
         )}

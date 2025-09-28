@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -15,23 +16,20 @@ import (
 
 // CommentRequest represents the request body for creating/updating a comment
 type CommentRequest struct {
-	Content  string `json:"content" binding:"required,min=1,max=1000"`
-	ParentID *uint  `json:"parent_id,omitempty"` // Optional for replies
+	Content string `json:"content" binding:"required,min=1,max=1000"`
 }
 
 // CommentResponse represents a comment in responses
 type CommentResponse struct {
-	ID                uint              `json:"id"`
-	UserID            uint              `json:"user_id"`
-	Username          string            `json:"username"`
-	DisplayName       string            `json:"display_name,omitempty"`
-	ProfilePictureURL string            `json:"profile_picture_url,omitempty"`
-	HasProfilePicture bool              `json:"has_profile_picture"`
-	Content           string            `json:"content"`
-	ParentID          *uint             `json:"parent_id,omitempty"`
-	Replies           []CommentResponse `json:"replies,omitempty"`
-	CreatedAt         string            `json:"created_at"`
-	UpdatedAt         string            `json:"updated_at"`
+	ID                uint   `json:"id"`
+	UserID            uint   `json:"user_id"`
+	Username          string `json:"username"`
+	DisplayName       string `json:"display_name,omitempty"`
+	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture bool   `json:"has_profile_picture"`
+	Content           string `json:"content"`
+	CreatedAt         string `json:"created_at"`
+	UpdatedAt         string `json:"updated_at"`
 }
 
 // GetCommentsForPost handles fetching all comments for a specific post
@@ -70,10 +68,8 @@ func GetCommentsForPost(c *gin.Context) {
 		return
 	}
 
-	// Organize comments into tree structure
-	commentMap := make(map[uint]*CommentResponse)
-
-	// First pass: create all comment objects
+	// Convert to response format
+	var commentResponses []CommentResponse
 	for _, comment := range comments {
 		commentResp := CommentResponse{
 			ID:                comment.ID,
@@ -83,32 +79,13 @@ func GetCommentsForPost(c *gin.Context) {
 			ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 			Content:           comment.Content,
-			ParentID:          comment.ParentID,
-			Replies:           []CommentResponse{},
 			CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
-
-		commentMap[comment.ID] = &commentResp
+		commentResponses = append(commentResponses, commentResp)
 	}
 
-	// Second pass: build the tree
-	var rootComments []CommentResponse
-	for _, comment := range comments {
-		commentResp := commentMap[comment.ID]
-
-		if comment.ParentID == nil {
-			// Top-level comment
-			rootComments = append(rootComments, *commentResp)
-		} else {
-			// Reply - add to parent's replies
-			if parent, exists := commentMap[*comment.ParentID]; exists {
-				parent.Replies = append(parent.Replies, *commentResp)
-			}
-		}
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Comments retrieved successfully", rootComments)
+	utils.SuccessResponse(c, http.StatusOK, "Comments retrieved successfully", commentResponses)
 }
 
 // CreateComment handles creating a new comment
@@ -147,27 +124,24 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	// If parent_id is provided, check if parent comment exists and belongs to the same post
-	if req.ParentID != nil {
-		var parentComment models.Comment
-		if err := db.Where("id = ? AND post_id = ?", *req.ParentID, uint(postID)).First(&parentComment).Error; err != nil {
-			utils.NotFoundResponse(c, "Parent comment not found")
-			return
-		}
-	}
-
 	// Create the comment
 	comment := models.Comment{
-		UserID:   userID,
-		PostID:   uint(postID),
-		ParentID: req.ParentID,
-		Content:  req.Content,
+		UserID:  userID,
+		PostID:  uint(postID),
+		Content: req.Content,
 	}
 
+	// Debug logging
+	fmt.Printf("Creating comment: UserID=%d, PostID=%d, Content=%s\n",
+		userID, uint(postID), req.Content)
+
 	if err := db.Create(&comment).Error; err != nil {
+		fmt.Printf("Failed to create comment: %v\n", err)
 		utils.InternalErrorResponse(c, "Failed to create comment")
 		return
 	}
+
+	fmt.Printf("Comment created successfully with ID: %d\n", comment.ID)
 
 	// Fetch the created comment with user info for response
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
@@ -183,8 +157,6 @@ func CreateComment(c *gin.Context) {
 		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
-		ParentID:          comment.ParentID,
-		Replies:           []CommentResponse{}, // New comment has no replies yet
 		CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
@@ -246,7 +218,6 @@ func UpdateComment(c *gin.Context) {
 		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
-		ParentID:          comment.ParentID,
 		CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
@@ -278,12 +249,6 @@ func DeleteComment(c *gin.Context) {
 			return
 		}
 		utils.InternalErrorResponse(c, "Failed to fetch comment")
-		return
-	}
-
-	// Delete all replies first (cascade delete)
-	if err := db.Where("parent_id = ?", uint(commentID)).Delete(&models.Comment{}).Error; err != nil {
-		utils.InternalErrorResponse(c, "Failed to delete comment replies")
 		return
 	}
 

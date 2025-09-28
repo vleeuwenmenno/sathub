@@ -12,7 +12,6 @@ type Comment struct {
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
 	PostID    uint      `gorm:"not null;index" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
-	ParentID  *uint     `gorm:"index" json:"parent_id,omitempty"` // Nullable for top-level comments
 	Content   string    `gorm:"not null;type:text" json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
