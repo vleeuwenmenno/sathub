@@ -170,6 +170,13 @@ func Register(c *gin.Context) {
 		"role":     user.Role,
 	})
 
+	// Check for achievements after comment creation
+	go func() {
+		if _, err := utils.CheckAchievements(user.ID); err != nil {
+			fmt.Printf("Failed to check achievements for user %s: %v\n", user.ID, err)
+		}
+	}()
+
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully. Please check your email to confirm your account.", nil)
 }
 
