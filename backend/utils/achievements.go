@@ -126,12 +126,12 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 
 	case "posts_created":
 		var count int64
-		db.Model(&models.Post{}).Where("user_id = ?", userID).Count(&count)
+		db.Model(&models.Post{}).Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
 		return count >= int64(criteria.Value)
 
 	case "likes_received":
 		var count int64
-		db.Model(&models.Like{}).Joins("JOIN posts ON likes.post_id = posts.id").Where("posts.user_id = ?", userID).Count(&count)
+		db.Model(&models.Like{}).Joins("JOIN posts ON likes.post_id = posts.id").Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
 		return count >= int64(criteria.Value)
 
 	case "comments_created":
@@ -147,7 +147,7 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 	case "successful_transmissions":
 		// For now, count posts as transmissions (each post represents a successful transmission)
 		var count int64
-		db.Model(&models.Post{}).Where("user_id = ?", userID).Count(&count)
+		db.Model(&models.Post{}).Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
 		return count >= int64(criteria.Value)
 
 	case "account_age_days":
@@ -160,7 +160,7 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 
 	case "unique_satellites":
 		var count int64
-		db.Model(&models.Post{}).Where("user_id = ? AND station_id IN (SELECT id FROM stations WHERE user_id = ?)", userID, userID).Distinct("satellite_name").Count(&count)
+		db.Model(&models.Post{}).Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Distinct("satellite_name").Count(&count)
 		return count >= int64(criteria.Value)
 
 	case "unique_locations":
@@ -170,7 +170,7 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 
 	case "comments_received":
 		var count int64
-		db.Model(&models.Comment{}).Joins("JOIN posts ON comments.post_id = posts.id").Where("posts.user_id = ?", userID).Count(&count)
+		db.Model(&models.Comment{}).Joins("JOIN posts ON comments.post_id = posts.id").Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
 		return count >= int64(criteria.Value)
 
 	default:
