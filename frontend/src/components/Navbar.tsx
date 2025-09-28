@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -48,6 +48,7 @@ const Navbar: React.FC = () => {
   const isDetailPage = location.pathname.includes("/post/");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   useEffect(() => {
     const fetchProfilePicture = async () => {
@@ -66,6 +67,19 @@ const Navbar: React.FC = () => {
 
     fetchProfilePicture();
   }, [user]);
+
+  // Handle responsive sidebar visibility
+  const checkViewportWidth = useCallback(() => {
+    const width = window.innerWidth;
+    // Hide sidebar if viewport is too narrow (less than 900px)
+    setSidebarHidden(width < 900);
+  }, []);
+
+  useEffect(() => {
+    checkViewportWidth();
+    window.addEventListener('resize', checkViewportWidth);
+    return () => window.removeEventListener('resize', checkViewportWidth);
+  }, [checkViewportWidth]);
 
 
   const toggleColorScheme = () => {
@@ -125,7 +139,7 @@ const Navbar: React.FC = () => {
             size="sm"
             onClick={() => setMobileMenuOpen(true)}
             sx={{
-              display: { xs: "flex", md: "none" },
+              display: { xs: "flex", sm: sidebarHidden ? "flex" : "none" },
               borderRadius: "50%",
             }}
           >
@@ -178,30 +192,6 @@ const Navbar: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Desktop Navigation */}
-          <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1, ml: 3 }}>
-            {navigationItems
-              .filter((item) => item.show)
-              .map((item) => (
-                <Button
-                  key={item.path}
-                  variant={isActive(item.path) ? "solid" : "plain"}
-                  size="sm"
-                  onClick={() => handleNavigate(item.path)}
-                  startDecorator={item.icon}
-                  sx={{
-                    borderRadius: "lg",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: "sm",
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-          </Box>
         </Box>
 
         {/* Right side - Theme and Account */}
@@ -306,13 +296,215 @@ const Navbar: React.FC = () => {
         </Box>
       </Box>
 
+      {/* Permanent Sidebar */}
+      {!sidebarHidden && (
+        <Box
+          sx={{
+            display: { xs: "none", sm: "block" },
+            position: "fixed",
+            top: "5.5rem", // Account for navbar height + padding
+            left: 0,
+            width: 280,
+            height: "calc(100vh - 5rem)",
+            background: `linear-gradient(135deg, ${mode === "dark" ? "#0f0f23" : "#f8fafc"} 0%, ${mode === "dark" ? "#1a1a2e" : "#ffffff"} 100%)`,
+            borderRight: "1px solid",
+            borderTop: "none",
+            borderColor: "divider",
+            boxShadow: "sm",
+            zIndex: 1000,
+          }}
+        >
+          <Box
+            sx={{
+              width: 280,
+              p: 2,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Sidebar Header - Hidden on desktop since logo is in navbar */}
+            <Box sx={{ display: { xs: "flex", sm: "none" }, alignItems: "center", gap: 1, mb: 2 }}>
+              <img
+                src={logo}
+                alt="SatHub Logo"
+                style={{ width: "1.5rem", height: "1.5rem" }}
+              />
+              <Typography level="h4" sx={{ fontWeight: "bold" }}>
+                SatHub
+              </Typography>
+            </Box>
+
+            <Divider sx={{ mb: 2, display: { xs: "block", sm: "none" } }} />
+
+            {/* Navigation Items */}
+            <List sx={{ gap: 1, mb: 2 }}>
+              {navigationItems
+                .filter((item) => item.show)
+                .map((item) => (
+                  <ListItem key={item.path}>
+                    <ListItemButton
+                      onClick={() => handleNavigate(item.path)}
+                      selected={isActive(item.path)}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>{item.icon}</ListItemDecorator>
+                      {item.label}
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+            </List>
+
+            {/* Admin Section */}
+            {isAuthenticated && user?.role === "admin" && (
+              <>
+                <Divider sx={{ mb: 2 }} />
+                <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold", color: "primary.main" }}>
+                  Admin
+                </Typography>
+                <List sx={{ gap: 1, mb: 2 }}>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={() => handleNavigate("/admin")}
+                      selected={isActive("/admin")}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <AdminPanelSettings />
+                      </ListItemDecorator>
+                      Admin Panel
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+              </>
+            )}
+
+            {/* User Section */}
+            {isAuthenticated && (
+              <>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ mt: "auto" }}>
+                  <List sx={{ gap: 1 }}>
+                    <ListItem>
+                      <ListItemButton
+                        onClick={() => handleNavigate(`/user/${user?.id}`)}
+                        sx={{
+                          borderRadius: "lg",
+                          "&:hover": {
+                            backgroundColor: "primary.softHoverBg",
+                          },
+                        }}
+                      >
+                        <ListItemDecorator>
+                          <Avatar
+                            size="sm"
+                            src={profilePictureUrl || undefined}
+                          >
+                            {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </ListItemDecorator>
+                        <Box sx={{ overflow: "hidden" }}>
+                          <Typography level="body-sm" sx={{ fontWeight: "medium", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {user?.display_name || user?.username}
+                          </Typography>
+                          <Typography level="body-xs" sx={{ color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            View Profile
+                          </Typography>
+                        </Box>
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem>
+                      <ListItemButton
+                        onClick={() => handleNavigate("/user/achievements")}
+                        sx={{
+                          borderRadius: "lg",
+                          "&:hover": {
+                            backgroundColor: "primary.softHoverBg",
+                          },
+                        }}
+                      >
+                        <ListItemDecorator>
+                          <EmojiEvents />
+                        </ListItemDecorator>
+                        Achievements
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem>
+                      <ListItemButton
+                        onClick={() => handleNavigate("/user/settings")}
+                        sx={{
+                          borderRadius: "lg",
+                          "&:hover": {
+                            backgroundColor: "primary.softHoverBg",
+                          },
+                        }}
+                      >
+                        <ListItemDecorator>
+                          <Settings />
+                        </ListItemDecorator>
+                        Settings
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem>
+                      <ListItemButton
+                        onClick={handleLogout}
+                        sx={{
+                          borderRadius: "lg",
+                          color: "danger.main",
+                          "&:hover": {
+                            backgroundColor: "danger.softHoverBg",
+                          },
+                        }}
+                      >
+                        <ListItemDecorator>
+                          <Logout />
+                        </ListItemDecorator>
+                        Logout
+                      </ListItemButton>
+                    </ListItem>
+                  </List>
+                </Box>
+              </>
+            )}
+
+            {/* Login Button for Non-authenticated Users */}
+            {!isAuthenticated && (
+              <Box sx={{ mt: "auto", p: 2 }}>
+                <Button
+                  variant="solid"
+                  fullWidth
+                  onClick={() => handleNavigate("/login")}
+                  startDecorator={<Person />}
+                  sx={{
+                    borderRadius: "lg",
+                    py: 1.5,
+                  }}
+                >
+                  Login
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      )}
+
       {/* Mobile Drawer */}
       <Drawer
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         anchor="left"
         sx={{
-          display: { xs: "block", md: "none" },
+          display: { xs: "block", sm: sidebarHidden ? "block" : "none" },
         }}
       >
         <Box
