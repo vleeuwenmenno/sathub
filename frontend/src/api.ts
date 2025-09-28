@@ -512,3 +512,29 @@ export const getUserLikedPosts = async (
   const res = await api.get(`/likes/user/${userId}?page=${page}&limit=${limit}`);
   return res.data.data;
 };
+
+// Comment API functions
+export const getCommentsForPost = async (postId: string): Promise<Comment[]> => {
+  const res = await api.get(`/comments/post/${postId}`);
+  return res.data.data || [];
+};
+
+export const createComment = async (
+  postId: string,
+  data: { content: string; parent_id?: number }
+): Promise<Comment> => {
+  const res = await api.post(`/comments/post/${postId}`, data);
+  return res.data.data;
+};
+
+export const updateComment = async (
+  commentId: number,
+  data: { content: string }
+): Promise<Comment> => {
+  const res = await api.put(`/comments/${commentId}`, data);
+  return res.data.data;
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+  await api.delete(`/comments/${commentId}`);
+};

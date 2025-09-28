@@ -18,6 +18,7 @@ import type { DatabasePostDetail } from '../types';
 import type { Station } from '../api';
 import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob } from '../api';
 import LikeButton from './LikeButton';
+import CommentSection from './CommentSection';
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -595,6 +596,9 @@ const Detail: React.FC = () => {
           </Stack>
         </Grid>
       </Grid>
+
+      {/* Comments Section */}
+      <CommentSection postId={detail.id.toString()} />
     </Box>
   );
 };
