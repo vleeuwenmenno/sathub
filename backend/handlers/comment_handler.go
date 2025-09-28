@@ -188,6 +188,13 @@ func CreateComment(c *gin.Context) {
 
 	fmt.Printf("Comment created successfully with ID: %d\n", comment.ID)
 
+	// Check for achievements after comment creation
+	go func() {
+		if _, err := utils.CheckAchievements(userID); err != nil {
+			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
+		}
+	}()
+
 	// Fetch the created comment with user info for response
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch created comment")

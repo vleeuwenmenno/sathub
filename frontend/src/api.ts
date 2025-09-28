@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment, Achievement, UserAchievement } from "./types";
 
 const API_BASE = "/api";
 
@@ -626,5 +626,16 @@ export const getUserDetails = async (userId: string): Promise<AdminUserDetails> 
 
 export const getAdminInvite = async (): Promise<any> => {
   const res = await api.get("/admin/invite");
+  return res.data.data;
+};
+
+// Achievement API functions
+export const getUserAchievements = async (): Promise<UserAchievement[]> => {
+  const res = await api.get("/achievements");
+  return res.data.data;
+};
+
+export const getAllAchievements = async (): Promise<Achievement[]> => {
+  const res = await api.get("/achievements/all");
   return res.data.data;
 };

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -70,6 +71,14 @@ func LikePost(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to like post")
 			return
 		}
+
+		// Check for achievements after liking
+		go func() {
+			if _, err := utils.CheckAchievements(userID); err != nil {
+				fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
+			}
+		}()
+
 		utils.SuccessResponse(c, http.StatusCreated, "Post liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")

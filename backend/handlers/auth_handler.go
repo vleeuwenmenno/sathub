@@ -116,6 +116,14 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Check for achievements after user creation
+	go func() {
+		if _, err := utils.CheckAchievements(user.ID); err != nil {
+			// Log error but don't fail registration
+			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
+		}
+	}()
+
 	// Generate email confirmation token
 	confirmToken := utils.GenerateRandomString(32)
 

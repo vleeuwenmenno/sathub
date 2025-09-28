@@ -33,6 +33,7 @@ import {
   Menu as MenuIcon,
   Close,
   AdminPanelSettings,
+  EmojiEvents,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
@@ -256,6 +257,10 @@ const Navbar: React.FC = () => {
                   <Person sx={{ mr: 1 }} />
                   Overview
                 </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/user/achievements")}>
+                  <EmojiEvents sx={{ mr: 1 }} />
+                  Achievements
+                </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/settings")}>
                   <Settings sx={{ mr: 1 }} />
                   Settings
@@ -423,6 +428,22 @@ const Navbar: React.FC = () => {
                           View Profile
                         </Typography>
                       </Box>
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem>
+                    <ListItemButton
+                      onClick={() => handleNavigate("/user/achievements")}
+                      sx={{
+                        borderRadius: "lg",
+                        "&:hover": {
+                          backgroundColor: "primary.softHoverBg",
+                        },
+                      }}
+                    >
+                      <ListItemDecorator>
+                        <EmojiEvents />
+                      </ListItemDecorator>
+                      Achievements
                     </ListItemButton>
                   </ListItem>
                   <ListItem>

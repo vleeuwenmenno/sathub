@@ -208,6 +208,13 @@ func CreateStation(c *gin.Context) {
 		return
 	}
 
+	// Check for achievements after station creation
+	go func() {
+		if _, err := utils.CheckAchievements(userID); err != nil {
+			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
+		}
+	}()
+
 	response := buildStationResponseWithToken(station)
 
 	utils.SuccessResponse(c, http.StatusCreated, "Station created successfully", response)

@@ -103,6 +103,18 @@ export interface UpdateCommentRequest {
   content: string;
 }
 
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export interface UserAchievement {
+  achievement: Achievement;
+  unlocked_at: string;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;

@@ -209,6 +209,14 @@ func main() {
 			protectedComments.POST("/likes/:commentId", handlers.LikeComment)
 		}
 
+		// Achievement routes (user authentication required)
+		achievements := api.Group("/achievements")
+		achievements.Use(middleware.AuthRequired())
+		{
+			achievements.GET("", handlers.GetUserAchievements)
+			achievements.GET("/all", handlers.GetAllAchievements)
+		}
+
 		// Station health routes (station token authentication required)
 		stationHealth := api.Group("/stations")
 		stationHealth.Use(middleware.StationTokenAuth())

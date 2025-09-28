@@ -24,6 +24,7 @@ import ConfirmDisableTwoFactor from "./components/ConfirmDisableTwoFactor";
 import AdminOverview from "./components/AdminOverview";
 import AdminUserManagement from "./components/AdminUserManagement";
 import AdminInvite from "./components/AdminInvite";
+import Achievements from "./components/Achievements";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -74,6 +75,7 @@ function App() {
                 <Route path="/users/global" element={<GlobalUsers />} />
                 <Route path="/user/:id" element={<UserOverview />} />
                 <Route path="/user/settings" element={<UserSettings />} />
+                <Route path="/user/achievements" element={<Achievements />} />
                 <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
                 <Route
                   path="/confirm-disable-2fa"

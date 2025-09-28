@@ -20,7 +20,7 @@ import {
   Input,
   IconButton,
 } from "@mui/joy";
-import { useMediaQuery, useTheme, Pagination } from "@mui/material";
+import { useMediaQuery, useTheme } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
 import { getAllUsers, updateUserRole, deleteUser, banUser, getUserDetails } from "../api";
 import type { AdminUser, AdminUserDetails } from "../api";
