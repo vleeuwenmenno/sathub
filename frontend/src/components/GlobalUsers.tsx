@@ -7,7 +7,6 @@ import {
   Grid,
   Box,
   Stack,
-  Chip,
   Select,
   Option,
   FormControl,
@@ -204,56 +203,75 @@ const GlobalUsers: React.FC = () => {
                 }}
                 onClick={() => navigate(`/user/${user.id}`)}
               >
-                <CardContent
-                  sx={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: { xs: "column", md: "row" },
-                    alignItems: { xs: "center", md: "flex-start" },
-                    gap: { xs: 2, md: 3 },
-                    textAlign: { xs: "center", md: "left" }
-                  }}
-                >
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1, flex: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0, width: "100%" }}>
-                      <Avatar
-                        src={profilePictureUrls[user.id] || undefined}
-                        sx={{ width: { xs: 80, md: 60 }, height: { xs: 80, md: 60 }, flexShrink: 0 }}
+                <CardContent sx={{ p: 2 }}>
+                  {/* Top Section: Avatar and User Info */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                    <Avatar
+                      src={profilePictureUrls[user.id] || undefined}
+                      sx={{ width: 48, height: 48, flexShrink: 0 }}
+                    >
+                      {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography 
+                        level="title-md" 
+                        sx={{ 
+                          mb: 0.25, 
+                          wordBreak: "break-word",
+                          hyphens: "auto"
+                        }}
                       >
-                        {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography level="h5" sx={{ mb: 0.5 }}>
-                          {user.display_name || user.username}
+                        {user.display_name || user.username}
+                      </Typography>
+                      {user.display_name && (
+                        <Typography 
+                          level="body-sm" 
+                          sx={{ 
+                            color: "text.tertiary",
+                            wordBreak: "break-word",
+                            hyphens: "auto"
+                          }}
+                        >
+                          @{user.username}
                         </Typography>
-                        {user.display_name && (
-                          <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
-                            @{user.username}
-                          </Typography>
-                        )}
-                      </Box>
+                      )}
                     </Box>
-                    <Typography level="body-sm" sx={{ color: "text.tertiary", width: "100%" }}>
-                      <span>📅</span> Joined {formatDate(user.created_at)}
-                    </Typography>
                   </Box>
 
-                  <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: { xs: "center", md: "flex-end" } }}>
-                    <Stack spacing={1} sx={{ textAlign: { xs: "center", md: "right" } }}>
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>📡</span>}
-                      >
-                        {user.public_stations} Public Station{user.public_stations !== 1 ? 's' : ''}
-                      </Typography>
-                      <Typography
-                        level="body-sm"
-                        startDecorator={<span>📊</span>}
-                      >
-                        {user.public_posts} Public Post{user.public_posts !== 1 ? 's' : ''}
-                      </Typography>
+                  {/* Bottom Section: Join Date and Statistics */}
+                  <Stack spacing={1.5}>
+                    <Typography 
+                      level="body-sm" 
+                      sx={{ 
+                        color: "text.secondary",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5
+                      }}
+                    >
+                      <span>📅</span> 
+                      Joined {formatDate(user.created_at)}
+                    </Typography>
+
+                    <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between" }}>
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography level="title-sm" color="primary">
+                          {user.public_stations}
+                        </Typography>
+                        <Typography level="body-xs" color="neutral">
+                          Station{user.public_stations !== 1 ? 's' : ''}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography level="title-sm" color="primary">
+                          {user.public_posts}
+                        </Typography>
+                        <Typography level="body-xs" color="neutral">
+                          Post{user.public_posts !== 1 ? 's' : ''}
+                        </Typography>
+                      </Box>
                     </Stack>
-                  </Box>
+                  </Stack>
                 </CardContent>
               </Card>
             </Grid>
