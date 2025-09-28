@@ -11,7 +11,7 @@ type Like struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
-	PostID    uint      `gorm:"not null;index" json:"post_id"`
+	PostID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 }

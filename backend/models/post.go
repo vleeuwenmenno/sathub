@@ -6,7 +6,7 @@ import (
 
 type Post struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
-	StationID     string    `gorm:"not null;index" json:"station_id"`
+	StationID     string    `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"station_id"`
 	Station       Station   `gorm:"foreignKey:StationID" json:"-"`
 	Timestamp     time.Time `gorm:"not null" json:"timestamp"`
 	SatelliteName string    `gorm:"not null" json:"satellite_name"`
@@ -23,7 +23,7 @@ func (Post) TableName() string {
 
 type PostImage struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	PostID    uint      `gorm:"not null;index" json:"post_id"`
+	PostID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
 	ImageData []byte    `json:"-"`                // Binary image data
 	ImageType string    `gorm:"size:50" json:"-"` // MIME type of the image
