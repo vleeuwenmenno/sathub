@@ -1,3 +1,4 @@
+name: development-sathub
 services:
   backend:
     build: ./backend
@@ -5,7 +6,6 @@ services:
       - "4001:4001"
     volumes:
       - ./backend:/app
-      - ./data:/app/../data
     environment:
       - GIN_MODE=debug
       - DB_TYPE=postgres
