@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Alert, Box } from "@mui/joy";
 import axios from "axios";
 
+const API_BASE = "https://api.sathub.local:9999";
+
 const BackendStatus: React.FC = () => {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
@@ -9,7 +11,7 @@ const BackendStatus: React.FC = () => {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await axios.get("/health");
+        const response = await axios.get(`${API_BASE}/health`);
         if (response.status === 200) {
           setBackendOnline(true);
         } else {

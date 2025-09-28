@@ -25,8 +25,8 @@ type PostImage struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	PostID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
-	ImageData []byte    `json:"-"`                // Binary image data
-	ImageType string    `gorm:"size:50" json:"-"` // MIME type of the image
+	ImageURL  string    `gorm:"not null" json:"image_url"` // URL to image in storage
+	ImageType string    `gorm:"size:50" json:"-"`          // MIME type of the image
 	Filename  string    `gorm:"not null" json:"filename"`
 	CreatedAt time.Time `json:"created_at"`
 }

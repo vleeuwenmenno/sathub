@@ -28,7 +28,7 @@ The current version is displayed in the footer of the application (see `frontend
 ### Backend API
 The version is available via the `/api/version` endpoint:
 ```bash
-curl http://localhost:8080/api/version
+curl http://localhost:8888/api/version
 # Returns: {"version": "0.1.2"}
 ```
 

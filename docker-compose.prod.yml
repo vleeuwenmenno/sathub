@@ -19,6 +19,11 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
       - TWO_FA_ENCRYPTION_KEY=${TWO_FA_ENCRYPTION_KEY}
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_EXTERNAL_URL=https://obj.sathub.de
     networks:
       - sathub
     depends_on:
@@ -43,6 +48,7 @@ services:
     restart: unless-stopped
     environment:
       - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-sathub.de,localhost,127.0.0.1}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.sathub.de}
     networks:
       - sathub
 
@@ -63,11 +69,27 @@ services:
       - backend
       - frontend
 
+  minio:
+    image: minio/minio
+    container_name: sathub-minio
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address :9001
+    networks:
+      - sathub
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
   sathub_database:
   caddy_data:
   caddy_config:
+  minio_data:
 
 networks:
   sathub:

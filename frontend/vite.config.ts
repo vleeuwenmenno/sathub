@@ -7,17 +7,8 @@ export default defineConfig({
   base: "/",
   server: {
     host: "0.0.0.0",
+    allowedHosts: ["sathub.local", "localhost", "127.0.0.1"],
     proxy: {
-      "/api": {
-        target: "http://backend:4001",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/health": {
-        target: "http://backend:4001",
-        changeOrigin: true,
-        secure: false,
-      },
       "/captcha": {
         target: "http://backend:4001",
         changeOrigin: true,

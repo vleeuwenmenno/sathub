@@ -356,25 +356,9 @@ func Database() error {
 			fmt.Printf("Created post: %s - %s (ID: %d, Station: %s)\n",
 				post.SatelliteName, timestamp.Format("2006-01-02 15:04"), post.ID, station.Name)
 
-			// Create 1-3 images per post
-			numImages := 1 + rand.Intn(3) // 1 to 3 images
-
-			for j := 0; j < numImages; j++ {
-				imageData := createTestImageData()
-
-				postImage := models.PostImage{
-					PostID:    post.ID,
-					ImageData: imageData,
-					ImageType: "image/png",
-					Filename:  fmt.Sprintf("%s_%s_%d.png", post.SatelliteName, timestamp.Format("20060102_150405"), j+1),
-				}
-
-				if err := db.Create(&postImage).Error; err != nil {
-					return fmt.Errorf("failed to create image for post %d: %w", post.ID, err)
-				}
-
-				fmt.Printf("  Created image: %s (ID: %d)\n", postImage.Filename, postImage.ID)
-			}
+			// Note: Images are not seeded since they require MinIO storage to be running
+			// In a real environment, images would be uploaded via the API after seeding
+			fmt.Printf("  Note: Images not created during seeding (requires MinIO)\n")
 		}
 	}
 

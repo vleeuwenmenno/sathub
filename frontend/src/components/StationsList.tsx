@@ -115,7 +115,9 @@ const StationsList: React.FC = () => {
   });
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
-  const baseUrl = window.location.origin;
+  const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || "https://api.sathub.local:9999";
+  const isDevelopment = baseUrl.includes("sathub.local");
+  const curlInsecureFlag = isDevelopment ? " --insecure" : "";
 
   const copyWithFeedback = async (text: string, itemId: string) => {
     try {
@@ -555,7 +557,7 @@ const StationsList: React.FC = () => {
                       pr: 4,
                     }}
                   >
-{`curl -X POST \\
+{`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -578,7 +580,7 @@ const StationsList: React.FC = () => {
                       backgroundColor: "background.surface",
                       "&:hover": { backgroundColor: "background.level2" },
                     }}
-                    onClick={() => copyWithFeedback(`curl -X POST \\
+                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -624,7 +626,7 @@ const StationsList: React.FC = () => {
                       pr: 4,
                     }}
                   >
-{`curl -X POST \\
+{`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -F "image=@/path/to/image.png" \\
   ${baseUrl}/api/posts/123/images`}
@@ -638,7 +640,7 @@ const StationsList: React.FC = () => {
                       backgroundColor: "background.surface",
                       "&:hover": { backgroundColor: "background.level2" },
                     }}
-                    onClick={() => copyWithFeedback(`curl -X POST \\
+                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -F "image=@/path/to/image.png" \\
   ${baseUrl}/api/posts/123/images`, 'images-curl')}
@@ -678,7 +680,7 @@ const StationsList: React.FC = () => {
                       pr: 4,
                     }}
                   >
-{`curl -X POST \\
+{`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
                   </Box>
@@ -691,7 +693,7 @@ const StationsList: React.FC = () => {
                       backgroundColor: "background.surface",
                       "&:hover": { backgroundColor: "background.level2" },
                     }}
-                    onClick={() => copyWithFeedback(`curl -X POST \\
+                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`, 'health-curl')}
                   >
@@ -714,7 +716,7 @@ const StationsList: React.FC = () => {
                       pr: 4,
                     }}
                   >
-{`*/5 * * * * curl -X POST \\
+{`*/5 * * * * curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
                   </Box>
@@ -727,7 +729,7 @@ const StationsList: React.FC = () => {
                       backgroundColor: "background.surface",
                       "&:hover": { backgroundColor: "background.level2" },
                     }}
-                    onClick={() => copyWithFeedback(`*/5 * * * * curl -X POST \\
+                    onClick={() => copyWithFeedback(`*/5 * * * * curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`, 'health-cron')}
                   >
@@ -740,6 +742,48 @@ const StationsList: React.FC = () => {
               </AccordionDetails>
             </Accordion>
           </AccordionGroup>
+
+          <Typography level="title-md" sx={{ mb: 1 }}>
+            Environment Variables (Bash)
+          </Typography>
+          <Typography level="body-sm" sx={{ mb: 1 }}>
+            Copy these export statements to set up your station scripts:
+          </Typography>
+          <Box sx={{ position: "relative", mb: 2 }}>
+            <Box
+              component="pre"
+              sx={{
+                backgroundColor: "background.level1",
+                padding: 1,
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                overflow: "auto",
+                mb: 1,
+                pr: 4,
+              }}
+            >
+{`export STATION_TOKEN="${tokenDialog.token}"
+export API_BASE_URL="${baseUrl}/api"
+export HEALTH_CHECK_INTERVAL="300"
+export PROCESS_DELAY="10"`}
+            </Box>
+            <IconButton
+              size="sm"
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                backgroundColor: "background.surface",
+                "&:hover": { backgroundColor: "background.level2" },
+              }}
+              onClick={() => copyWithFeedback(`export STATION_TOKEN="${tokenDialog.token}"
+export API_BASE_URL="${baseUrl}/api"
+export HEALTH_CHECK_INTERVAL="300"
+export PROCESS_DELAY="10"`, 'env-vars')}
+            >
+              {copiedItems.has('env-vars') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+            </IconButton>
+          </Box>
 
           <Typography level="title-md" sx={{ mb: 1 }}>
             Authentication

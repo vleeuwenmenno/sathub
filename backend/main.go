@@ -9,9 +9,9 @@ import (
 	"sathub-ui-backend/handlers"
 	"sathub-ui-backend/middleware"
 	"sathub-ui-backend/seed"
+	"sathub-ui-backend/utils"
 
 	"github.com/dchest/captcha"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -29,6 +29,9 @@ func main() {
 	// Initialize database
 	config.InitDatabase()
 	defer config.CloseDatabase()
+
+	// Initialize storage
+	utils.InitStorage()
 
 	// Run seeding if flag is provided
 	if *seedFlag {
@@ -51,15 +54,8 @@ func main() {
 	// Set maximum multipart memory to 32MB (prevents large file attacks)
 	r.MaxMultipartMemory = 32 << 20 // 32 MiB
 
-	// Configure CORS
-	appConfig := config.GetAppConfig()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{appConfig.FrontendURL, "http://localhost:5173", "http://localhost:3000", "http://localhost:4001"}, // Frontend URLs + backend for proxy
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
-		AllowCredentials: true,
-		ExposeHeaders:    []string{"Content-Length"},
-	}))
+	// CORS is handled by Caddy reverse proxy, so we disable backend CORS
+	// to avoid conflicts between Caddy and Gin CORS middleware
 
 	// Captcha routes
 	r.GET("/captcha/*path", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))

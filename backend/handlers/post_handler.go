@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"sathub-ui-backend/config"
@@ -354,16 +355,23 @@ func UploadPostImage(c *gin.Context) {
 		return
 	}
 
+	// Upload image to storage
+	imageURL, err := utils.UploadImage(fileData, file.Filename, contentType, uint(postID))
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to upload image to storage")
+		return
+	}
+
 	// Create post image record
 	postImage := models.PostImage{
 		PostID:    uint(postID),
-		ImageData: fileData,
+		ImageURL:  imageURL,
 		ImageType: contentType,
 		Filename:  file.Filename,
 	}
 
 	if err := db.Create(&postImage).Error; err != nil {
-		utils.InternalErrorResponse(c, "Failed to save image")
+		utils.InternalErrorResponse(c, "Failed to save image record")
 		return
 	}
 
@@ -430,7 +438,22 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	// Delete associated images
+	// Delete associated images from storage and database
+	var images []models.PostImage
+	if err := db.Where("post_id = ?", uint(postID)).Find(&images).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch post images")
+		return
+	}
+
+	// Delete images from storage
+	for _, img := range images {
+		if err := utils.DeleteImage(img.ImageURL); err != nil {
+			// Log error but continue with deletion
+			fmt.Printf("Failed to delete image from storage: %v\n", err)
+		}
+	}
+
+	// Delete image records from database
 	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post images")
 		return
@@ -488,14 +511,34 @@ func GetPostImage(c *gin.Context) {
 		return
 	}
 
-	// Set appropriate content type
-	contentType := image.ImageType
-	if contentType == "" {
-		contentType = "image/jpeg" // default
+	// Convert internal MinIO URL to external Caddy URL
+	// image.ImageURL is like: http://minio:9000/sathub-images/images/filename.jpg
+	// We need: https://obj.sathub.local:9999/sathub-images/images/filename.jpg
+
+	cfg := config.GetStorageConfig()
+	// Extract the path part after the endpoint and bucket
+	// URL format: http://minio:9000/bucket/path/to/image
+	parts := strings.Split(image.ImageURL, "/")
+	if len(parts) >= 4 {
+		// Find bucket index and reconstruct path
+		bucketIndex := -1
+		for i, part := range parts {
+			if part == cfg.Bucket {
+				bucketIndex = i
+				break
+			}
+		}
+		if bucketIndex >= 0 && bucketIndex < len(parts)-1 {
+			pathPart := strings.Join(parts[bucketIndex:], "/")
+			cfg := config.GetStorageConfig()
+			externalURL := fmt.Sprintf("%s/%s", cfg.ExternalURL, pathPart)
+			c.Redirect(http.StatusFound, externalURL)
+			return
+		}
 	}
 
-	c.Header("Content-Type", contentType)
-	c.Data(http.StatusOK, contentType, image.ImageData)
+	// Fallback to original URL if parsing fails
+	c.Redirect(http.StatusFound, image.ImageURL)
 }
 
 // buildPostDetailResponse builds a PostDetailResponse from a Post model
