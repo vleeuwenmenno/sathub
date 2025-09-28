@@ -16,7 +16,7 @@ logs:
 
 # Seed the database (requires backend container running)
 seed:
-	docker compose exec backend go run main.go --seed
+	docker compose exec backend go run . --seed
 
 # Clean up generated files and containers
 clean: down

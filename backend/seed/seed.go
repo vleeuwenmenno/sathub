@@ -12,6 +12,14 @@ import (
 	"satdump-ui-backend/models"
 )
 
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // Test data constants
 var (
 	testUsers = []struct {
@@ -51,6 +59,29 @@ var (
 		"Antarctic Region", "European Continent", "North American Continent",
 		"South American Continent", "Asian Continent", "African Continent",
 		"Australian Continent",
+	}
+
+	commentTexts = []string{
+		"Great capture! The image quality is excellent.",
+		"Nice work on this pass. Signal strength looks good.",
+		"Beautiful false color image. Love the detail in the clouds.",
+		"Impressive setup! What equipment did you use for this?",
+		"Perfect timing on this satellite pass.",
+		"Excellent processing. The colors really pop.",
+		"Very clear image. You can see all the geographical features.",
+		"Well done! This is one of the best captures I've seen.",
+		"Amazing detail in the water vapor patterns.",
+		"Outstanding work. Keep up the great captures!",
+		"The contrast and brightness are spot on.",
+		"Fantastic image! The resolution is incredible.",
+		"Nice job on the tracking. Very stable pass.",
+		"Beautiful composition. The framing is perfect.",
+		"Excellent signal processing. Very clean image.",
+		"Impressive work! The details are amazing.",
+		"Great capture of the weather patterns.",
+		"Perfect exposure and color balance.",
+		"Outstanding technical achievement.",
+		"Beautiful image. Really shows the power of satellite imagery.",
 	}
 )
 
@@ -202,8 +233,92 @@ func Database() error {
 		}
 	}
 
+	// Seed comments
+	fmt.Println("\nSeeding comments...")
+	var allPosts []models.Post
+	if err := db.Find(&allPosts).Error; err != nil {
+		return fmt.Errorf("failed to fetch posts for comments: %w", err)
+	}
+
+	commentCount := 0
+	for _, post := range allPosts {
+		// Create 0-5 comments per post (some posts will have no comments)
+		numComments := rand.Intn(6) // 0 to 5 comments
+
+		for i := 0; i < numComments; i++ {
+			// Random user from the test users
+			randomUser := users[rand.Intn(len(users))]
+
+			// Generate random timestamp after the post was created
+			hoursAfterPost := rand.Intn(48) // Within 48 hours after post
+			commentTime := post.CreatedAt.Add(time.Hour * time.Duration(hoursAfterPost))
+
+			comment := models.Comment{
+				UserID:    randomUser.ID,
+				PostID:    post.ID,
+				Content:   commentTexts[rand.Intn(len(commentTexts))],
+				CreatedAt: commentTime,
+				UpdatedAt: commentTime,
+			}
+
+			if err := db.Create(&comment).Error; err != nil {
+				return fmt.Errorf("failed to create comment for post %d: %w", post.ID, err)
+			}
+
+			commentCount++
+			fmt.Printf("Created comment on post %d by %s: %s\n", post.ID, randomUser.Username, comment.Content[:min(50, len(comment.Content))]+"...")
+		}
+	}
+
+	// Seed comment likes
+	fmt.Println("\nSeeding comment likes...")
+	var allComments []models.Comment
+	if err := db.Find(&allComments).Error; err != nil {
+		return fmt.Errorf("failed to fetch comments for likes: %w", err)
+	}
+
+	likeCount := 0
+	for _, comment := range allComments {
+		// 30% chance of having likes, with 1-3 likes per comment
+		if rand.Float32() < 0.3 {
+			numLikes := 1 + rand.Intn(3)      // 1 to 3 likes
+			likedUsers := make(map[uint]bool) // Track who already liked to avoid duplicates
+
+			for i := 0; i < numLikes; i++ {
+				// Random user who didn't already like this comment
+				var liker models.User
+				maxAttempts := 10
+				for attempts := 0; attempts < maxAttempts; attempts++ {
+					randomUser := users[rand.Intn(len(users))]
+					if !likedUsers[randomUser.ID] && randomUser.ID != comment.UserID { // Don't let users like their own comments
+						liker = randomUser
+						likedUsers[randomUser.ID] = true
+						break
+					}
+				}
+
+				if liker.ID == 0 {
+					continue // Skip if we couldn't find a suitable user
+				}
+
+				commentLike := models.CommentLike{
+					UserID:    liker.ID,
+					CommentID: comment.ID,
+				}
+
+				if err := db.Create(&commentLike).Error; err != nil {
+					return fmt.Errorf("failed to create like for comment %d: %w", comment.ID, err)
+				}
+
+				likeCount++
+				fmt.Printf("User %s liked comment %d\n", liker.Username, comment.ID)
+			}
+		}
+	}
+
 	fmt.Println("\nSeeding completed successfully!")
-	fmt.Printf("Created: %d users, %d stations, and posts with images\n", len(users), len(stations))
+	fmt.Printf("Created: %d users, %d stations, posts with images, %d comments, and %d comment likes\n",
+		len(users), len(stations), commentCount, likeCount)
 
 	return nil
 }
