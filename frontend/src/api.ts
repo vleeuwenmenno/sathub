@@ -548,6 +548,7 @@ export const likeComment = async (commentId: number): Promise<{ liked: boolean }
 // Admin API functions
 export interface AdminStats {
   total_users: number;
+  pending_users: number;
   total_posts: number;
   total_stations: number;
   system_health: string;
@@ -558,6 +559,7 @@ export interface AdminUser {
   username: string;
   email?: string;
   role: string;
+  approved: boolean;
   banned: boolean;
   banned_at?: string;
   email_confirmed: boolean;
@@ -594,7 +596,9 @@ export const getAdminOverview = async (): Promise<AdminStats> => {
 export const getAllUsers = async (
   page: number = 1,
   limit: number = 20,
-  search: string = ""
+  search: string = "",
+  approved?: boolean,
+  banned?: boolean
 ): Promise<AdminUsersResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -602,6 +606,12 @@ export const getAllUsers = async (
   });
   if (search.trim()) {
     params.set("search", search.trim());
+  }
+  if (approved !== undefined) {
+    params.set("approved", approved.toString());
+  }
+  if (banned !== undefined) {
+    params.set("banned", banned.toString());
   }
   const res = await api.get(`/admin/users?${params}`);
   return res.data.data;
@@ -619,6 +629,10 @@ export const banUser = async (userId: string, banned: boolean): Promise<void> =>
   await api.put(`/admin/users/${userId}/ban`, { banned });
 };
 
+export const approveUser = async (userId: string, approved: boolean): Promise<void> => {
+  await api.put(`/admin/users/${userId}/approve`, { approved });
+};
+
 export const getUserDetails = async (userId: string): Promise<AdminUserDetails> => {
   const res = await api.get(`/admin/users/${userId}`);
   return res.data.data;
@@ -626,5 +640,38 @@ export const getUserDetails = async (userId: string): Promise<AdminUserDetails> 
 
 export const getAdminInvite = async (): Promise<any> => {
   const res = await api.get("/admin/invite");
+  return res.data.data;
+};
+
+// Admin Settings API functions
+export interface RegistrationSettings {
+  disabled: boolean;
+}
+
+export interface ApprovalSettings {
+  required: boolean;
+}
+
+export const getRegistrationSettings = async (): Promise<RegistrationSettings> => {
+  const res = await api.get("/admin/settings/registration");
+  return res.data.data;
+};
+
+export const updateRegistrationSettings = async (disabled: boolean): Promise<void> => {
+  await api.put("/admin/settings/registration", { disabled });
+};
+
+export const getApprovalSettings = async (): Promise<ApprovalSettings> => {
+  const res = await api.get("/admin/settings/approval");
+  return res.data.data;
+};
+
+export const updateApprovalSettings = async (required: boolean): Promise<void> => {
+  await api.put("/admin/settings/approval", { required });
+};
+
+// Public Settings API functions (no authentication required)
+export const getPublicRegistrationSettings = async (): Promise<RegistrationSettings> => {
+  const res = await axios.get(`${API_BASE}/settings/registration`);
   return res.data.data;
 };

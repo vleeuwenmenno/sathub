@@ -20,9 +20,9 @@ import {
   Input,
   IconButton,
 } from "@mui/joy";
-import { useMediaQuery, useTheme, Pagination } from "@mui/material";
+import { useMediaQuery, useTheme } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
-import { getAllUsers, updateUserRole, deleteUser, banUser, getUserDetails } from "../api";
+import { getAllUsers, updateUserRole, deleteUser, banUser, approveUser, getUserDetails } from "../api";
 import type { AdminUser, AdminUserDetails } from "../api";
 
 const AdminUserManagement: React.FC = () => {
@@ -40,6 +40,8 @@ const AdminUserManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [approvedFilter, setApprovedFilter] = useState<string>('all'); // 'all', 'true', 'false'
+  const [bannedFilter, setBannedFilter] = useState<string>('all'); // 'all', 'true', 'false'
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
@@ -50,10 +52,10 @@ const AdminUserManagement: React.FC = () => {
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const fetchUsers = async (page: number = 1, search: string = '') => {
+  const fetchUsers = async (page: number = 1, search: string = '', approved?: boolean, banned?: boolean) => {
     try {
       setLoading(true);
-      const response = await getAllUsers(page, pagination.limit, search);
+      const response = await getAllUsers(page, pagination.limit, search, approved, banned);
       setUsers(response.users.sort((a, b) => a.username.localeCompare(b.username)));
       setPagination(response.pagination);
       setError(null);
@@ -70,14 +72,25 @@ const AdminUserManagement: React.FC = () => {
     fetchUsers(pagination.page, searchQuery);
   }, []);
 
+  // Fetch users when filters change
+  useEffect(() => {
+    const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+    const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+    fetchUsers(1, searchQuery, approved, banned);
+  }, [approvedFilter, bannedFilter]);
+
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when searching
-    fetchUsers(1, searchQuery);
+    const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+    const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+    fetchUsers(1, searchQuery, approved, banned);
   };
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
-    fetchUsers(newPage, searchQuery);
+    const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+    const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+    fetchUsers(newPage, searchQuery, approved, banned);
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
@@ -85,7 +98,9 @@ const AdminUserManagement: React.FC = () => {
       setUpdatingUserId(userId);
       await updateUserRole(userId, newRole);
       // Refresh the current page to get updated data from server
-      await fetchUsers(pagination.page, searchQuery);
+      const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+      const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+      await fetchUsers(pagination.page, searchQuery, approved, banned);
     } catch (err) {
       setError("Failed to update user role");
       console.error("Error updating user role:", err);
@@ -106,7 +121,9 @@ const AdminUserManagement: React.FC = () => {
         handlePageChange(pagination.page - 1);
       } else {
         // Otherwise, refresh the current page
-        await fetchUsers(pagination.page, searchQuery);
+        const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+        const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+        await fetchUsers(pagination.page, searchQuery, approved, banned);
       }
     } catch (err) {
       setError("Failed to delete user");
@@ -120,11 +137,29 @@ const AdminUserManagement: React.FC = () => {
       await banUser(userId, banned);
       console.log(`Successfully ${banned ? 'banned' : 'unbanned'} user ${userId}`);
       // Refresh the current page to get updated data from server
-      await fetchUsers(pagination.page, searchQuery);
+      const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+      const bannedFilterValue = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+      await fetchUsers(pagination.page, searchQuery, approved, bannedFilterValue);
       console.log(`Refreshed user list after ${banned ? 'ban' : 'unban'} operation`);
     } catch (err) {
       console.error(`Error ${banned ? 'banning' : 'unbanning'} user:`, err);
       setError(`Failed to ${banned ? 'ban' : 'unban'} user`);
+    }
+  };
+
+  const handleApproveUser = async (userId: string, approved: boolean) => {
+    try {
+      console.log(`Attempting to ${approved ? 'approve' : 'reject'} user ${userId}`);
+      await approveUser(userId, approved);
+      console.log(`Successfully ${approved ? 'approved' : 'rejected'} user ${userId}`);
+      // Refresh the current page to get updated data from server
+      const approvedFilterValue = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
+      const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
+      await fetchUsers(pagination.page, searchQuery, approvedFilterValue, banned);
+      console.log(`Refreshed user list after ${approved ? 'approve' : 'reject'} operation`);
+    } catch (err) {
+      console.error(`Error ${approved ? 'approving' : 'rejecting'} user:`, err);
+      setError(`Failed to ${approved ? 'approve' : 'reject'} user`);
     }
   };
 
@@ -172,40 +207,73 @@ const AdminUserManagement: React.FC = () => {
       {/* Search and Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Input
-                key="search-input" // Stable key to prevent recreation
-                placeholder="Search by username or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
+          <Stack spacing={2}>
+            <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Input
+                  key="search-input" // Stable key to prevent recreation
+                  placeholder="Search by username or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                  startDecorator={<SearchIcon />}
+                  endDecorator={
+                    searchQuery && (
+                      <IconButton
+                        size="sm"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    )
                   }
-                }}
+                  sx={{ width: '100%' }}
+                />
+              </Box>
+              <Button
+                variant="solid"
+                onClick={handleSearch}
                 startDecorator={<SearchIcon />}
-                endDecorator={
-                  searchQuery && (
-                    <IconButton
-                      size="sm"
-                      onClick={() => setSearchQuery('')}
-                    >
-                      <ClearIcon />
-                    </IconButton>
-                  )
-                }
-                sx={{ width: '100%' }}
-              />
-            </Box>
-            <Button
-              variant="solid"
-              onClick={handleSearch}
-              startDecorator={<SearchIcon />}
-              sx={{ minWidth: isMobile ? '100%' : 'auto' }}
-            >
-              Search
-            </Button>
+                sx={{ minWidth: isMobile ? '100%' : 'auto' }}
+              >
+                Search
+              </Button>
+            </Stack>
+
+            {/* Filters */}
+            <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography level="body-sm" sx={{ mb: 1 }}>Approval Status:</Typography>
+                <Select
+                  size="sm"
+                  value={approvedFilter}
+                  onChange={(_, value) => setApprovedFilter(value || 'all')}
+                  sx={{ minWidth: 140 }}
+                >
+                  <Option value="all">All Users</Option>
+                  <Option value="true">Approved</Option>
+                  <Option value="false">Pending</Option>
+                </Select>
+              </Box>
+
+              <Box sx={{ minWidth: 0 }}>
+                <Typography level="body-sm" sx={{ mb: 1 }}>Ban Status:</Typography>
+                <Select
+                  size="sm"
+                  value={bannedFilter}
+                  onChange={(_, value) => setBannedFilter(value || 'all')}
+                  sx={{ minWidth: 140 }}
+                >
+                  <Option value="all">All Users</Option>
+                  <Option value="true">Banned</Option>
+                  <Option value="false">Active</Option>
+                </Select>
+              </Box>
+            </Stack>
           </Stack>
         </CardContent>
       </Card>
@@ -274,11 +342,20 @@ const AdminUserManagement: React.FC = () => {
                             <Option value="admin">Admin</Option>
                           </Select>
                         </Box>
-                        {user.two_factor_enabled && (
-                          <Chip size="sm" color="success" variant="outlined">
-                            2FA
+                        <Stack direction="row" spacing={1}>
+                          <Chip
+                            size="sm"
+                            color={user.approved ? "success" : "warning"}
+                            variant="soft"
+                          >
+                            {user.approved ? "Approved" : "Pending"}
                           </Chip>
-                        )}
+                          {user.two_factor_enabled && (
+                            <Chip size="sm" color="success" variant="outlined">
+                              2FA
+                            </Chip>
+                          )}
+                        </Stack>
                       </Box>
 
                       {/* Created date */}
@@ -289,6 +366,28 @@ const AdminUserManagement: React.FC = () => {
                       {/* Action buttons */}
                       <Box onClick={(e) => e.stopPropagation()}>
                         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                          {!user.approved && (
+                            <Button
+                              size="sm"
+                              color="success"
+                              variant="soft"
+                              onClick={() => handleApproveUser(user.id, true)}
+                              fullWidth
+                            >
+                              Approve
+                            </Button>
+                          )}
+                          {user.approved && (
+                            <Button
+                              size="sm"
+                              color="warning"
+                              variant="soft"
+                              onClick={() => handleApproveUser(user.id, false)}
+                              fullWidth
+                            >
+                              Reject
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             color={user.banned ? "success" : "warning"}
@@ -322,9 +421,9 @@ const AdminUserManagement: React.FC = () => {
                   <th>Username</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Approval</th>
                   <th>Status</th>
                   <th>Created</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -371,10 +470,16 @@ const AdminUserManagement: React.FC = () => {
                       </Select>
                     </td>
                     <td>
+                      <Chip
+                        size="sm"
+                        color={user.approved ? "success" : "warning"}
+                        variant="soft"
+                      >
+                        {user.approved ? "Approved" : "Pending"}
+                      </Chip>
+                    </td>
+                    <td>
                       <Stack spacing={0.5}>
-                        <Chip size="sm" color={getRoleColor(user.role)} variant="soft">
-                          {user.role}
-                        </Chip>
                         {user.two_factor_enabled && (
                           <Chip size="sm" color="success" variant="outlined">
                             2FA
@@ -393,26 +498,6 @@ const AdminUserManagement: React.FC = () => {
                       <Typography level="body-sm">
                         {new Date(user.created_at).toLocaleDateString('de-DE')}
                       </Typography>
-                    </td>
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          size="sm"
-                          color={user.banned ? "success" : "warning"}
-                          variant="soft"
-                          onClick={() => handleBanUser(user.id, !user.banned)}
-                        >
-                          {user.banned ? "Unban" : "Ban"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="danger"
-                          variant="soft"
-                          onClick={() => setDeleteDialog({ open: true, user })}
-                        >
-                          Delete
-                        </Button>
-                      </Stack>
                     </td>
                   </tr>
                 ))}
@@ -523,6 +608,13 @@ const AdminUserManagement: React.FC = () => {
                       </Chip>
                       <Chip
                         size="sm"
+                        color={userDetailsModal.user.approved ? "success" : "warning"}
+                        variant="soft"
+                      >
+                        {userDetailsModal.user.approved ? "Approved" : "Pending"}
+                      </Chip>
+                      <Chip
+                        size="sm"
                         color={userDetailsModal.user.banned ? "danger" : "success"}
                         variant="soft"
                       >
@@ -588,7 +680,31 @@ const AdminUserManagement: React.FC = () => {
                 <Divider />
 
                 {/* Actions */}
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  {!userDetailsModal.user.approved && (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      onClick={() => {
+                        handleApproveUser(userDetailsModal.user!.id, true);
+                        setUserDetailsModal({ open: false, user: null });
+                      }}
+                    >
+                      Approve User
+                    </Button>
+                  )}
+                  {userDetailsModal.user.approved && (
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      onClick={() => {
+                        handleApproveUser(userDetailsModal.user!.id, false);
+                        setUserDetailsModal({ open: false, user: null });
+                      }}
+                    >
+                      Reject User
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     color={userDetailsModal.user.banned ? "success" : "warning"}

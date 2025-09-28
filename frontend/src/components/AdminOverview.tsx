@@ -10,10 +10,12 @@ import {
   Alert,
   Stack,
 } from "@mui/joy";
-import { getAdminOverview } from "../api";
+import { getAdminOverview, getApprovalSettings } from "../api";
+import AdminRegistrationSettings from "./AdminRegistrationSettings";
 
 interface AdminStats {
   total_users: number;
+  pending_users: number;
   total_posts: number;
   total_stations: number;
   system_health: string;
@@ -21,26 +23,31 @@ interface AdminStats {
 
 const AdminOverview: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [approvalRequired, setApprovalRequired] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getAdminOverview();
-        setStats(data);
+        const [statsData, approvalData] = await Promise.all([
+          getAdminOverview(),
+          getApprovalSettings()
+        ]);
+        setStats(statsData);
+        setApprovalRequired(approvalData.required);
         setError(null);
       } catch (err) {
-        setError("Failed to load admin statistics");
-        console.error("Error fetching admin overview:", err);
+        setError("Failed to load admin data");
+        console.error("Error fetching admin data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, []);
 
   if (loading) {
@@ -68,7 +75,7 @@ const AdminOverview: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={4} lg={2.4}>
           <Card
             onClick={() => navigate('/admin/users')}
             sx={{
@@ -99,7 +106,40 @@ const AdminOverview: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        {approvalRequired && (
+          <Grid xs={12} sm={6} md={4} lg={2.4}>
+            <Card
+              onClick={() => navigate('/admin/pending-users')}
+              sx={{
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'lg',
+                },
+              }}
+            >
+              <CardContent>
+                <Stack spacing={1}>
+                  <Typography level="h4" color="warning">
+                    ⏳ Pending
+                  </Typography>
+                  <Typography level="h1">
+                    {stats?.pending_users.toLocaleString() || 0}
+                  </Typography>
+                  <Typography level="body-sm" color="neutral">
+                    Users awaiting approval
+                  </Typography>
+                  <Typography level="body-xs" color="warning" sx={{ mt: 1 }}>
+                    Click to review →
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        <Grid xs={12} sm={6} md={4} lg={2.4}>
           <Card>
             <CardContent>
               <Stack spacing={1}>
@@ -117,7 +157,7 @@ const AdminOverview: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={4} lg={2.4}>
           <Card>
             <CardContent>
               <Stack spacing={1}>
@@ -134,35 +174,10 @@ const AdminOverview: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-
-        <Grid xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Stack spacing={1}>
-                <Typography level="h4" color="primary">
-                  ❤️ System Health
-                </Typography>
-                <Typography
-                  level="h3"
-                  color={stats?.system_health === "healthy" ? "success" : "warning"}
-                >
-                  {stats?.system_health || "Unknown"}
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  Current system status
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
 
       <Box sx={{ mt: 4 }}>
-        <Alert color="primary" variant="soft">
-          <Typography level="body-sm">
-            Welcome to the admin panel. Use the navigation above to manage users, view system statistics, and configure invites.
-          </Typography>
-        </Alert>
+        <AdminRegistrationSettings />
       </Box>
     </Box>
   );
