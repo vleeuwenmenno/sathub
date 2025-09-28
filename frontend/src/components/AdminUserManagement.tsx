@@ -283,7 +283,7 @@ const AdminUserManagement: React.FC = () => {
 
                       {/* Created date */}
                       <Typography level="body-xs" color="neutral">
-                        Created: {new Date(user.created_at).toLocaleDateString()}
+                        Created: {new Date(user.created_at).toLocaleDateString('de-DE')}
                       </Typography>
 
                       {/* Action buttons */}
@@ -396,7 +396,7 @@ const AdminUserManagement: React.FC = () => {
                     </td>
                     <td>
                       <Typography level="body-sm">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString('de-DE')}
                       </Typography>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
@@ -502,7 +502,7 @@ const AdminUserManagement: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     size="lg"
-                    src={userDetailsModal.user.profile_picture_url}
+                    src={userDetailsModal.user.profile_picture_url ? `/api/${userDetailsModal.user.profile_picture_url}` : undefined}
                     sx={{ width: 80, height: 80 }}
                   >
                     {userDetailsModal.user.display_name?.charAt(0) || userDetailsModal.user.username.charAt(0)}
@@ -556,11 +556,11 @@ const AdminUserManagement: React.FC = () => {
                       {userDetailsModal.user.two_factor_enabled ? 'Enabled' : 'Disabled'}
                     </Typography>
                     <Typography level="body-sm">
-                      <strong>Created:</strong> {new Date(userDetailsModal.user.created_at).toLocaleString()}
+                      <strong>Created:</strong> {new Date(userDetailsModal.user.created_at).toLocaleDateString('de-DE')}
                     </Typography>
                     {userDetailsModal.user.banned && userDetailsModal.user.banned_at && (
                       <Typography level="body-sm">
-                        <strong>Banned At:</strong> {new Date(userDetailsModal.user.banned_at).toLocaleString()}
+                        <strong>Banned At:</strong> {new Date(userDetailsModal.user.banned_at).toLocaleDateString('de-DE')}
                       </Typography>
                     )}
                   </Stack>
