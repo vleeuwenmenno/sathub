@@ -28,6 +28,8 @@ type CommentResponse struct {
 	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
 	HasProfilePicture bool   `json:"has_profile_picture"`
 	Content           string `json:"content"`
+	LikesCount        int64  `json:"likes_count"`
+	IsLiked           bool   `json:"is_liked"`
 	CreatedAt         string `json:"created_at"`
 	UpdatedAt         string `json:"updated_at"`
 }
@@ -68,9 +70,24 @@ func GetCommentsForPost(c *gin.Context) {
 		return
 	}
 
+	// Get current user ID for like status (userID already declared above)
+	userID, isAuthenticated = middleware.GetCurrentUserID(c)
+
 	// Convert to response format
 	var commentResponses []CommentResponse
 	for _, comment := range comments {
+		// Count likes for this comment
+		var likesCount int64
+		db.Model(&models.CommentLike{}).Where("comment_id = ?", comment.ID).Count(&likesCount)
+
+		// Check if current user liked this comment
+		var isLiked bool
+		if isAuthenticated {
+			var like models.CommentLike
+			err := db.Where("user_id = ? AND comment_id = ?", userID, comment.ID).First(&like).Error
+			isLiked = err == nil
+		}
+
 		commentResp := CommentResponse{
 			ID:                comment.ID,
 			UserID:            comment.UserID,
@@ -79,6 +96,8 @@ func GetCommentsForPost(c *gin.Context) {
 			ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 			Content:           comment.Content,
+			LikesCount:        likesCount,
+			IsLiked:           isLiked,
 			CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
@@ -157,6 +176,8 @@ func CreateComment(c *gin.Context) {
 		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
+		LikesCount:        0,     // New comment has no likes yet
+		IsLiked:           false, // Creator hasn't liked their own comment yet
 		CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
@@ -210,6 +231,16 @@ func UpdateComment(c *gin.Context) {
 		return
 	}
 
+	// Count likes for this comment
+	var likesCount int64
+	db.Model(&models.CommentLike{}).Where("comment_id = ?", comment.ID).Count(&likesCount)
+
+	// Check if current user liked this comment
+	var isLiked bool
+	var like models.CommentLike
+	err = db.Where("user_id = ? AND comment_id = ?", userID, comment.ID).First(&like).Error
+	isLiked = err == nil
+
 	response := CommentResponse{
 		ID:                comment.ID,
 		UserID:            comment.UserID,
@@ -218,6 +249,8 @@ func UpdateComment(c *gin.Context) {
 		ProfilePictureURL: generateProfilePictureURL(comment.User.ID, comment.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(comment.User.ProfilePicture) > 0,
 		Content:           comment.Content,
+		LikesCount:        likesCount,
+		IsLiked:           isLiked,
 		CreatedAt:         comment.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:         comment.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}

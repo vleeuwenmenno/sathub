@@ -17,8 +17,10 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../contexts/AuthContext';
-import { getCommentsForPost, createComment, updateComment, deleteComment } from '../api';
+import { getCommentsForPost, createComment, updateComment, deleteComment, likeComment } from '../api';
 import type { PostComment } from '../types';
 
 const MAX_COMMENT_LENGTH = 2000;
@@ -42,6 +44,7 @@ const CommentItem: React.FC<{
   onDelete: (commentId: number) => void;
   onSaveEdit: (commentId: number, content: string) => Promise<void>;
   onCancelEdit: () => void;
+  onLikeChange?: (commentId: number, liked: boolean, likesCount: number) => void;
   currentUserId?: number;
   isEditing?: boolean;
   editContent?: string;
@@ -54,6 +57,7 @@ const CommentItem: React.FC<{
   onDelete,
   onSaveEdit,
   onCancelEdit,
+  onLikeChange,
   currentUserId,
   isEditing = false,
   editContent = '',
@@ -62,6 +66,9 @@ const CommentItem: React.FC<{
   isNewlyPosted = false,
 }) => {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [isLiked, setIsLiked] = useState(comment.is_liked);
+  const [likesCount, setLikesCount] = useState(comment.likes_count);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
 
   const isOwner = currentUserId === comment.user_id;
 
@@ -73,6 +80,37 @@ const CommentItem: React.FC<{
 
   const handleCancelEdit = () => {
     onCancelEdit();
+  };
+
+  const handleLikeClick = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (isLikeLoading || !currentUserId) return;
+
+    setIsLikeLoading(true);
+    const previousIsLiked = isLiked;
+    const previousLikesCount = likesCount;
+
+    // Optimistic update
+    setIsLiked(!isLiked);
+    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+
+    try {
+      const result = await likeComment(comment.id);
+      setIsLiked(result.liked);
+      // Update count based on server response
+      setLikesCount(result.liked ? previousLikesCount + 1 : previousLikesCount - 1);
+
+      if (onLikeChange) {
+        onLikeChange(comment.id, result.liked, result.liked ? previousLikesCount + 1 : previousLikesCount - 1);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setIsLiked(previousIsLiked);
+      setLikesCount(previousLikesCount);
+      console.error("Failed to toggle comment like:", error);
+    } finally {
+      setIsLikeLoading(false);
+    }
   };
 
   return (
@@ -196,9 +234,44 @@ const CommentItem: React.FC<{
                   </Stack>
                 </Box>
               ) : (
-                <Typography level="body-md" sx={{ mb: 1 }}>
-                  {comment.content}
-                </Typography>
+                <Box>
+                  <Typography level="body-md" sx={{ mb: 1 }}>
+                    {comment.content}
+                  </Typography>
+                  {/* Like button */}
+                  {currentUserId && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <IconButton
+                        size="sm"
+                        onClick={handleLikeClick}
+                        disabled={isLikeLoading}
+                        sx={{
+                          color: isLiked ? "#ef4444" : "neutral.400",
+                          transition: "all 0.2s ease",
+                          p: 0.5,
+                          "&:hover": {
+                            color: isLiked ? "#dc2626" : "danger.500",
+                            transform: "scale(1.1)",
+                          },
+                        }}
+                      >
+                        {isLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                      </IconButton>
+                      <Typography
+                        level="body-xs"
+                        sx={{
+                          color: isLiked ? "#ef4444" : "neutral.500",
+                          fontWeight: isLiked ? "bold" : "normal",
+                          transition: "all 0.2s ease",
+                          minWidth: '20px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        {likesCount}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               )}
             </Box>
           </Stack>
@@ -427,6 +500,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
               onDelete={handleDeleteComment}
               onSaveEdit={handleSaveEdit}
               onCancelEdit={handleCancelEdit}
+              onLikeChange={(commentId, liked, likesCount) => {
+                // Update the comment in the local state
+                setComments(prevComments =>
+                  prevComments.map(c =>
+                    c.id === commentId
+                      ? { ...c, is_liked: liked, likes_count: likesCount }
+                      : c
+                  )
+                );
+              }}
               currentUserId={user?.id}
               isEditing={editingCommentId === comment.id}
               editContent={editContent}

@@ -206,6 +206,7 @@ func main() {
 			protectedComments.POST("/post/:postId", handlers.CreateComment)
 			protectedComments.PUT("/:commentId", handlers.UpdateComment)
 			protectedComments.DELETE("/:commentId", handlers.DeleteComment)
+			protectedComments.POST("/likes/:commentId", handlers.LikeComment)
 		}
 
 		// Station health routes (station token authentication required)

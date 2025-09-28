@@ -88,6 +88,8 @@ export interface PostComment {
   content: string;
   parent_id?: number;
   replies?: PostComment[];
+  likes_count: number;
+  is_liked: boolean;
   created_at: string;
   updated_at: string;
 }
