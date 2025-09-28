@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"satdump-ui-backend/models"
+	"sathub-ui-backend/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -68,7 +68,7 @@ func InitDatabase() {
 		// SQLite connection (default)
 		dbPath := os.Getenv("DB_PATH")
 		if dbPath == "" {
-			dbPath = "./satdump.db"
+			dbPath = "./sathub.db"
 		}
 
 		DB, err = gorm.Open(sqlite.Open(dbPath), config)

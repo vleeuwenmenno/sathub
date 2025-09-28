@@ -104,7 +104,7 @@ Images stored as blobs in database, served via dedicated endpoints:
 ## Common Gotchas
 
 - **Docker Required**: Local development without Docker missing Mailpit + potential gcc issues
-- Backend restarts automatically when `satdump.db` file changes
+- Backend restarts automatically when `sathub.db` file changes
 - Seeding (`make seed`) requires backend container running first
 - Frontend proxy to backend configured in `vite.config.ts`
 - Station tokens are sensitive - only show once after generation/regeneration

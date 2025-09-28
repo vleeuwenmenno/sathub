@@ -119,9 +119,9 @@ uploads/
 build/
 dist/
 data/
-backend/satdump-ui-backend
+backend/sathub-ui-backend
 client/bin/
-client/satdump-ui-client
+client/sathub-ui-client
 
 # Go Debug files
 __debug*

@@ -1,4 +1,4 @@
-module satdump-ui-backend
+module sathub-ui-backend
 
 go 1.21
 

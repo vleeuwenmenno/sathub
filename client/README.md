@@ -1,11 +1,11 @@
 # SatHub Data Client
 
-A standalone binary that monitors directories for satellite data from satdump and automatically pushes complete satellite passes to the SatHub API.
+A standalone binary that monitors directories for satellite data from sathub and automatically pushes complete satellite passes to the SatHub API.
 
 ## Features
 
-- **Directory Monitoring**: Watches for complete satellite pass directories from satdump
-- **Processing Delay**: Configurable delay before processing to allow satdump to complete
+- **Directory Monitoring**: Watches for complete satellite pass directories from sathub
+- **Processing Delay**: Configurable delay before processing to allow sathub to complete
 - **Complete Pass Processing**: Handles all data from a satellite pass (metadata, CBOR, images)
 - **Multi-Platform**: Binaries for Linux, Windows, and macOS
 - **Station Health**: Sends periodic health checks to keep station online
@@ -43,7 +43,7 @@ The client is configured via environment variables:
 
 ## Data Format
 
-The client processes complete satellite pass directories from satdump output. Each directory should contain:
+The client processes complete satellite pass directories from sathub output. Each directory should contain:
 
 ### Required Files:
 - `dataset.json` - Main metadata file with satellite information
@@ -105,7 +105,7 @@ All PNG images from product directories are automatically uploaded as post image
 ### Basic Setup
 
 1. **Get your station token** from the SatHub web interface
-2. **Configure satdump** to output to a monitored directory (e.g., `./data`)
+2. **Configure sathub** to output to a monitored directory (e.g., `./data`)
 3. **Set environment variables** and run the client
 
 ### Example Usage
@@ -134,10 +134,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=satdump
+User=sathub
 Environment=STATION_TOKEN=your_token_here
 Environment=API_URL=http://your-sathub-server:4001
-Environment=WATCH_PATHS=/home/satdump/data
+Environment=WATCH_PATHS=/home/sathub/data
 ExecStart=/path/to/sathub-client
 Restart=always
 RestartSec=10
@@ -156,7 +156,7 @@ sudo systemctl status sathub-client
 ## Directory Processing
 
 1. **Directory Detection**: New satellite pass directories are detected
-2. **Processing Delay**: Client waits for configured delay to allow satdump to complete
+2. **Processing Delay**: Client waits for configured delay to allow sathub to complete
 3. **Validation**: Checks for required files (`dataset.json`, product directories with `product.cbor`)
 4. **Data Processing**: Parses metadata, reads CBOR data, collects all PNG images
 5. **API Upload**: Creates post with metadata and CBOR, uploads all images

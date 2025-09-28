@@ -152,7 +152,7 @@ sudo systemctl start sathub-client
 #### What the Client Does
 
 The client:
-- Monitors your satdump output folders
+- Monitors your SatDump output folders
 - Waits for complete satellite passes to finish processing
 - Automatically extracts metadata and images
 - Uploads everything to your station
@@ -243,7 +243,7 @@ If you forget your password:
 - Check the client logs for error messages
 - Verify your station token is correct
 - Make sure the watch folder path exists
-- Confirm satdump is saving files in the expected format
+- Confirm sathub is saving files in the expected format
 
 ### Upload Problems?
 - Check your internet connection

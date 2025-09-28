@@ -133,7 +133,7 @@ const Login: React.FC = () => {
             }}
           />
           <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
-            SatDump
+            SatHub
           </Typography>
           <Typography level="body-sm" sx={{ opacity: 0.9 }}>
             Satellite Data Management
@@ -258,7 +258,7 @@ const Login: React.FC = () => {
                 {/* Register Link */}
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                    New to SatDump?{' '}
+                    New to SatHub?{' '}
                     <Link
                       to="/register"
                       style={{

@@ -70,7 +70,7 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 graph TD
     A[Web Browser] --> B[Frontend React App<br/>Port 5173]
     B --> C[Backend Go API<br/>Port 4001]
-    C --> D[(SQLite Database<br/>satdump.db)]
+    C --> D[(SQLite Database<br/>sathub.db)]
     E[Satellite Stations] -->|HTTP POST<br/>with Station Token| C
     C -->|JWT Auth| B
 ```
@@ -103,7 +103,7 @@ For local development without Docker:
 
 5. Seed the database with test data: (If you have the backend running, it will automatically restart due to the database file being changed, so no need to stop/start the backend manually)
    ```bash
-   rm backend/satdump.db  
+   rm backend/sathub.db  
    docker compose exec backend go run main.go --seed
    ```
 

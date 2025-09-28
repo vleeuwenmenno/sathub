@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"satdump-ui-backend/config"
+	"sathub-ui-backend/config"
 
 	"gopkg.in/gomail.v2"
 )
@@ -119,7 +119,7 @@ func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
 	confirmURL := fmt.Sprintf("%s/confirm-email?token=%s", appConfig.FrontendURL, confirmToken)
 
 	data := EmailData{
-		Subject:  "Confirm Your SatDump Account",
+		Subject:  "Confirm Your SatHub Account",
 		To:       toEmail,
 		Template: "email_confirmation",
 		Data: map[string]interface{}{
@@ -177,7 +177,7 @@ func SendApprovalNotificationEmail(toEmail, username string) error {
 	loginURL := fmt.Sprintf("%s/login", appConfig.FrontendURL)
 
 	data := EmailData{
-		Subject:  "Your SatDump Account Has Been Approved",
+		Subject:  "Your SatHub Account Has Been Approved",
 		To:       toEmail,
 		Template: "approval_notification",
 		Data: map[string]interface{}{

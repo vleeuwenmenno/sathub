@@ -68,7 +68,7 @@ const ForgotPassword: React.FC = () => {
             }}
           >
             <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
-              SatDump
+              SatHub
             </Typography>
             <Typography level="body-sm" sx={{ opacity: 0.9 }}>
               Email Sent
@@ -152,7 +152,7 @@ const ForgotPassword: React.FC = () => {
           }}
         >
           <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
-            SatDump
+            SatHub
           </Typography>
           <Typography level="body-sm" sx={{ opacity: 0.9 }}>
             Password Recovery

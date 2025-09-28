@@ -42,7 +42,7 @@ The seed script creates:
 ```bash
 cd backend
 go run seed.go
-# Creates database at ./satdump.db (or path specified by DB_PATH env var)
+# Creates database at ./sathub.db (or path specified by DB_PATH env var)
 ```
 
 ### Method 2: Build and run
@@ -51,7 +51,7 @@ go run seed.go
 cd backend
 go build -o seed seed.go
 ./seed
-# Creates database at ./satdump.db (or path specified by DB_PATH env var)
+# Creates database at ./sathub.db (or path specified by DB_PATH env var)
 ```
 
 ### Method 3: Using the shell script
@@ -60,7 +60,7 @@ go build -o seed seed.go
 cd backend
 chmod +x seed.sh
 ./seed.sh
-# Creates database at ./satdump.db (or path specified by DB_PATH env var)
+# Creates database at ./sathub.db (or path specified by DB_PATH env var)
 ```
 
 ## Sample data details
@@ -98,9 +98,9 @@ Or simply drop and recreate the database.
 
 The seed script will create a database file at:
 
-- `./satdump.db` (default when running locally)
+- `./sathub.db` (default when running locally)
 - Path specified by `DB_PATH` environment variable
-- When running in Docker: uses the mounted volume path (typically `../data/satdump.db`)
+- When running in Docker: uses the mounted volume path (typically `../data/sathub.db`)
 
 ## Notes
 

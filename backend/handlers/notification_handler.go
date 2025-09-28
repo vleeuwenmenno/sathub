@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"satdump-ui-backend/models"
-	"satdump-ui-backend/utils"
+	"sathub-ui-backend/models"
+	"sathub-ui-backend/utils"
 )
 
 type NotificationHandler struct {

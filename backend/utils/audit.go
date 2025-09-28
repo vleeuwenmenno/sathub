@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/models"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

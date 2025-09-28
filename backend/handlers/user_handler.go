@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/models"
-	"satdump-ui-backend/utils"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/models"
+	"sathub-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )

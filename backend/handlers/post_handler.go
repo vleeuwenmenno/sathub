@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/middleware"
-	"satdump-ui-backend/models"
-	"satdump-ui-backend/utils"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/middleware"
+	"sathub-ui-backend/models"
+	"sathub-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

@@ -8,4 +8,4 @@ services:
       - ../data:/app/../data
     environment:
       - GIN_MODE=debug
-      - DB_PATH=./satdump.db
+      - DB_PATH=./sathub.db

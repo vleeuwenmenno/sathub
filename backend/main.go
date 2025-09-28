@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/handlers"
-	"satdump-ui-backend/middleware"
-	"satdump-ui-backend/seed"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/handlers"
+	"sathub-ui-backend/middleware"
+	"sathub-ui-backend/seed"
 
 	"github.com/dchest/captcha"
 	"github.com/gin-contrib/cors"
@@ -267,7 +267,7 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"service": "satdump-ui-backend",
+			"service": "sathub-ui-backend",
 		})
 	})
 

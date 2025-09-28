@@ -115,7 +115,7 @@ func (fw *FileWatcher) handleDirectoryEvent(dirPath string) {
 
 	fw.logger.Printf("Detected new satellite pass directory: %s", dirPath)
 
-	// Wait for the configured delay to allow satdump to complete processing
+	// Wait for the configured delay to allow sathub to complete processing
 	fw.logger.Printf("Waiting %v before processing...", fw.config.ProcessDelay)
 	time.Sleep(fw.config.ProcessDelay)
 

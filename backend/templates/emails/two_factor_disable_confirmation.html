@@ -1,86 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Confirm Two-Factor Authentication Disable</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #dc3545;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 0 0 5px 5px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #dc3545;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
-        .warning {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 3px;
-            margin: 10px 0;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #dc3545;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-radius: 5px 5px 0 0;
+      }
+      .content {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 0 0 5px 5px;
+      }
+      .button {
+        display: inline-block;
+        background-color: #dc3545;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+      .warning {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 3px;
+        margin: 10px 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="header">
-        <h1>Confirm Two-Factor Authentication Disable</h1>
+      <h1>Confirm Two-Factor Authentication Disable</h1>
     </div>
     <div class="content">
-        <p>Hello {{.Username}},</p>
+      <p>Hello {{.Username}},</p>
 
-        <p>You have requested to disable two-factor authentication for your SatDump account.</p>
+      <p>
+        You have requested to disable two-factor authentication for your SatHub
+        account.
+      </p>
 
-        <div class="warning">
-            <strong>Security Warning:</strong> Disabling two-factor authentication will make your account less secure. We strongly recommend keeping 2FA enabled.
-        </div>
+      <div class="warning">
+        <strong>Security Warning:</strong> Disabling two-factor authentication
+        will make your account less secure. We strongly recommend keeping 2FA
+        enabled.
+      </div>
 
-        <p>Click the button below to confirm disabling two-factor authentication:</p>
+      <p>
+        Click the button below to confirm disabling two-factor authentication:
+      </p>
 
-        <a href="{{.ConfirmURL}}" class="button">Disable Two-Factor Authentication</a>
+      <a href="{{.ConfirmURL}}" class="button"
+        >Disable Two-Factor Authentication</a
+      >
 
-        <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-        <p><a href="{{.ConfirmURL}}">{{.ConfirmURL}}</a></p>
+      <p>
+        If the button doesn't work, you can copy and paste this link into your
+        browser:
+      </p>
+      <p><a href="{{.ConfirmURL}}">{{.ConfirmURL}}</a></p>
 
-        <p><strong>Security Note:</strong> This link will expire in 24 hours for your security.</p>
+      <p>
+        <strong>Security Note:</strong> This link will expire in 24 hours for
+        your security.
+      </p>
 
-        <div class="warning">
-            <strong>Important:</strong> If you didn't request to disable two-factor authentication, please ignore this email. Your 2FA settings will remain unchanged.
-        </div>
+      <div class="warning">
+        <strong>Important:</strong> If you didn't request to disable two-factor
+        authentication, please ignore this email. Your 2FA settings will remain
+        unchanged.
+      </div>
 
-        <p>Best regards,<br>The SatDump Team</p>
+      <p>Best regards,<br />The SatHub Team</p>
     </div>
     <div class="footer">
-        <p>This email was sent to you because a two-factor authentication disable request was made for your account.</p>
-        <p>If you have any questions, please contact our support team.</p>
+      <p>
+        This email was sent to you because a two-factor authentication disable
+        request was made for your account.
+      </p>
+      <p>If you have any questions, please contact our support team.</p>
     </div>
-</body>
+  </body>
 </html>

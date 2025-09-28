@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/seed"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/seed"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 
 	// Set database path for seeding (use local path if not set)
 	if os.Getenv("DB_PATH") == "" {
-		os.Setenv("DB_PATH", "./satdump.db")
+		os.Setenv("DB_PATH", "./sathub.db")
 	}
 
 	// Initialize database

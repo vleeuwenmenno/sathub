@@ -3,8 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"log"
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/models"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/models"
 	"time"
 
 	"github.com/google/uuid"

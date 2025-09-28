@@ -24,8 +24,8 @@ func GetSMTPConfig() *SMTPConfig {
 			Port:      getEnvAsInt("SMTP_PORT", 1025),
 			Username:  getEnv("SMTP_USERNAME", ""),
 			Password:  getEnv("SMTP_PASSWORD", ""),
-			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@satdump.local"),
-			FromName:  getEnv("SMTP_FROM_NAME", "SatDump"),
+			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@sathub.local"),
+			FromName:  getEnv("SMTP_FROM_NAME", "SatHub"),
 		}
 	}
 	return smtpConfig

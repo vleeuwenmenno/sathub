@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"satdump-ui-backend/middleware"
-	"satdump-ui-backend/utils"
+	"sathub-ui-backend/middleware"
+	"sathub-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

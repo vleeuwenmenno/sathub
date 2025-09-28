@@ -1,80 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>New Comment on Your Post</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 0 0 5px 5px;
-        }
-        .comment-info {
-            background-color: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        .commenter {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .action-button {
-            display: inline-block;
-            background-color: #28a745;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-radius: 5px 5px 0 0;
+      }
+      .content {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 0 0 5px 5px;
+      }
+      .comment-info {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .commenter {
+        font-weight: bold;
+        color: #007bff;
+      }
+      .action-button {
+        display: inline-block;
+        background-color: #28a745;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 15px 0;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="header">
-        <h1>💬 New Comment</h1>
+      <h1>💬 New Comment</h1>
     </div>
     <div class="content">
-        <p>Hello {{.Username}},</p>
+      <p>Hello {{.Username}},</p>
 
-        <p>Someone has commented on one of your posts!</p>
+      <p>Someone has commented on one of your posts!</p>
 
-        <div class="comment-info">
-            <p><span class="commenter">{{.CommenterUsername}}</span> left a comment on your post.</p>
-        </div>
+      <div class="comment-info">
+        <p>
+          <span class="commenter">{{.CommenterUsername}}</span> left a comment
+          on your post.
+        </p>
+      </div>
 
-        <p>Check out the conversation and respond if you'd like!</p>
+      <p>Check out the conversation and respond if you'd like!</p>
 
-        <a href="#" class="action-button">View Comment</a>
+      <a href="#" class="action-button">View Comment</a>
 
-        <p>Best regards,<br>The SatDump Team</p>
+      <p>Best regards,<br />The SatHub Team</p>
     </div>
     <div class="footer">
-        <p>This email was sent because you have email notifications enabled for comments.</p>
-        <p>You can change your notification preferences in your account settings.</p>
+      <p>
+        This email was sent because you have email notifications enabled for
+        comments.
+      </p>
+      <p>
+        You can change your notification preferences in your account settings.
+      </p>
     </div>
-</body>
+  </body>
 </html>

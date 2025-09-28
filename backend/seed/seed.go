@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"satdump-ui-backend/config"
-	"satdump-ui-backend/models"
+	"sathub-ui-backend/config"
+	"sathub-ui-backend/models"
 
 	"github.com/google/uuid"
 )
