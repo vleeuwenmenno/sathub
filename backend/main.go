@@ -10,8 +10,10 @@ import (
 	"sathub-ui-backend/middleware"
 	"sathub-ui-backend/seed"
 	"sathub-ui-backend/utils"
+	"strings"
 
 	"github.com/dchest/captcha"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -54,8 +56,34 @@ func main() {
 	// Set maximum multipart memory to 32MB (prevents large file attacks)
 	r.MaxMultipartMemory = 32 << 20 // 32 MiB
 
-	// CORS is handled by Caddy reverse proxy, so we disable backend CORS
-	// to avoid conflicts between Caddy and Gin CORS middleware
+	// Configure CORS for cross-origin requests
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	
+	// Get additional allowed origins from environment
+	additionalOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	
+	corsConfig := cors.DefaultConfig()
+	allowedOrigins := []string{frontendURL}
+	
+	// Add additional origins from environment variable (comma-separated)
+	if additionalOrigins != "" {
+		for _, origin := range strings.Split(additionalOrigins, ",") {
+			origin = strings.TrimSpace(origin)
+			if origin != "" && origin != frontendURL {
+				allowedOrigins = append(allowedOrigins, origin)
+			}
+		}
+	}
+	
+	corsConfig.AllowOrigins = allowedOrigins
+	corsConfig.AllowCredentials = true
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
+	
+	r.Use(cors.New(corsConfig))
 
 	// Captcha routes
 	r.GET("/captcha/*path", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))

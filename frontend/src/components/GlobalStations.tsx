@@ -93,22 +93,6 @@ const GlobalStations: React.FC = () => {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-
-  // Show loading while checking authentication
-  if (authLoading) {
-    return <Typography>Loading...</Typography>;
-  }
-
-  // Don't render if not authenticated (will redirect)
-  if (!isAuthenticated) {
-    return null;
-  }
-
   const loadStations = async () => {
     try {
       setLoading(true);
@@ -138,41 +122,59 @@ const GlobalStations: React.FC = () => {
     }
   };
 
+  const loadImages = async () => {
+    if (!stations.length) return;
+
+    const newImageBlobs: Record<string, string> = {};
+
+    for (const station of stations) {
+      if (station.has_picture && station.picture_url) {
+        try {
+          const blobUrl = await getStationPictureBlob(station.picture_url);
+          newImageBlobs[`${station.id}-picture`] = blobUrl;
+        } catch (error) {
+          console.error(
+            "Failed to load image for station",
+            station.id,
+            error,
+          );
+        }
+      }
+    }
+
+    setImageBlobs(newImageBlobs);
+  };
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated || authLoading) return;
+    loadStations();
+  }, [limit, page, sort, order, search, isAuthenticated, authLoading]);
+
+  useEffect(() => {
+    if (!isAuthenticated || authLoading) return;
+    loadImages();
+  }, [stations, isAuthenticated, authLoading]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   const handleSearch = () => {
     setSearch(searchInput);
     setPage(1); // Reset to first page when searching
   };
-
-  useEffect(() => {
-    loadStations();
-  }, [limit, page, sort, order, search]);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      if (!stations.length) return;
-
-      const newImageBlobs: Record<string, string> = {};
-
-      for (const station of stations) {
-        if (station.has_picture && station.picture_url) {
-          try {
-            const blobUrl = await getStationPictureBlob(station.picture_url);
-            newImageBlobs[`${station.id}-picture`] = blobUrl;
-          } catch (error) {
-            console.error(
-              "Failed to load image for station",
-              station.id,
-              error,
-            );
-          }
-        }
-      }
-
-      setImageBlobs(newImageBlobs);
-    };
-
-    loadImages();
-  }, [stations]);
 
   if (loading) return <Typography>Loading stations...</Typography>;
   if (error) return <Typography color="danger">Error: {error}</Typography>;

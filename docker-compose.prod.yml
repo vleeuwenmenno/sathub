@@ -6,7 +6,8 @@ services:
     environment:
       - GIN_MODE=release
       - FRONTEND_URL=${FRONTEND_URL:-https://sathub.de}
-      
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://sathub.nl,https://api.sathub.de,https://obj.sathub.de}
+
       # Database settings
       - DB_TYPE=postgres
       - DB_HOST=postgres
