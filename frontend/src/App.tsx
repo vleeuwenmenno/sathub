@@ -28,6 +28,7 @@ import AdminInvite from "./components/AdminInvite";
 import AdminAuditLogs from "./components/AdminAuditLogs";
 import Achievements from "./components/Achievements";
 import Notifications from "./components/Notifications";
+import AdminAuditLogs from "./components/AdminAuditLogs";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {

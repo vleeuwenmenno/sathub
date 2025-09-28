@@ -293,6 +293,15 @@ func CreatePost(c *gin.Context) {
 		}
 	}()
 
+	// Log post creation (system action since it's done by station token)
+	utils.LogSystemAction(c, models.ActionPostCreate, models.AuditMetadata{
+		"post_id":        post.ID,
+		"station_id":     stationID,
+		"satellite_name": req.SatelliteName,
+		"has_metadata":   req.Metadata != "",
+		"has_cbor":       len(req.CBOR) > 0,
+	})
+
 	response := buildPostResponseWithUser(post, db, "") // New post, no likes yet
 	utils.SuccessResponse(c, http.StatusCreated, "Post created successfully", response)
 }

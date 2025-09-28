@@ -228,6 +228,12 @@ func CreateComment(c *gin.Context) {
 		}()
 	}
 
+	// Log comment creation
+	utils.LogCommentAction(c, models.ActionCommentCreate, comment.ID, models.AuditMetadata{
+		"post_id":        postID,
+		"content_length": len(req.Content),
+	})
+
 	// Fetch the created comment with user info for response
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch created comment")

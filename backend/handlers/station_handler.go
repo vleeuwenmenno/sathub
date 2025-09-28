@@ -222,6 +222,13 @@ func CreateStation(c *gin.Context) {
 		}
 	}()
 
+	// Log station creation
+	utils.LogStationAction(c, models.ActionStationCreate, station.ID, models.AuditMetadata{
+		"name":      station.Name,
+		"location":  station.Location,
+		"is_public": station.IsPublic,
+	})
+
 	response := buildStationResponseWithToken(station)
 
 	utils.SuccessResponse(c, http.StatusCreated, "Station created successfully", response)

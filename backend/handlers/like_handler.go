@@ -120,6 +120,8 @@ func LikePost(c *gin.Context) {
 			}()
 		}
 
+		// Log post like
+		utils.LogPostAction(c, models.ActionPostLike, uint(postID), models.AuditMetadata{})
 		utils.SuccessResponse(c, http.StatusCreated, "Post liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")
