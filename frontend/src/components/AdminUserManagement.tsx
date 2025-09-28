@@ -54,7 +54,7 @@ const AdminUserManagement: React.FC = () => {
     try {
       setLoading(true);
       const response = await getAllUsers(page, pagination.limit, search);
-      setUsers(response.users);
+      setUsers(response.users.sort((a, b) => a.username.localeCompare(b.username)));
       setPagination(response.pagination);
       setError(null);
     } catch (err) {
