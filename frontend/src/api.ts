@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment, Achievement, UserAchievement, NotificationResponse } from "./types";
 
-const API_BASE = "https://api.sathub.local:9999/api";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL || "https://api.sathub.local:9999"}/api`;
 
 // Create axios instance with interceptors for token handling
 const api = axios.create({
