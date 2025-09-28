@@ -10,14 +10,22 @@ import (
 	"satdump-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // LikeComment handles liking/unliking a comment (toggle functionality)
 func LikeComment(c *gin.Context) {
-	userID, exists := middleware.GetCurrentUserID(c)
+	userIDStr, exists := middleware.GetCurrentUserID(c)
 	if !exists {
 		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	// Parse userID to UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
 		return
 	}
 

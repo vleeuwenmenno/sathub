@@ -96,10 +96,10 @@ export const register = async (
 export const login = async (
   usernameOrEmail: string,
   password: string,
-): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: number; username: string }> => {
+): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: string; username: string }> => {
   const res = await api.post("/auth/login", { username: usernameOrEmail, password });
   const authData = res.data.data; // Extract from the nested data structure
-  
+
   // Check if 2FA is required
   if (authData.requires_two_factor) {
     return {
@@ -108,7 +108,7 @@ export const login = async (
       username: authData.username,
     };
   }
-  
+
   // Normal login response
   return {
     token: authData.access_token,
@@ -181,7 +181,7 @@ export interface Station {
   created_at: string;
   updated_at: string;
   user?: {
-    id: number;
+    id: string;
     username: string;
     display_name?: string;
     profile_picture_url?: string;
@@ -285,7 +285,7 @@ export const getGlobalStations = async (
   return res.data.data;
 };
 
-export const getUserStations = async (userId: number): Promise<Station[]> => {
+export const getUserStations = async (userId: string): Promise<Station[]> => {
   const res = await axios.get(`${API_BASE}/stations/user/${userId}`);
   return res.data.data;
 };
@@ -296,7 +296,7 @@ export const getLatestPosts = async (limit: number = 10, page: number = 1): Prom
   return res.data.data;
 };
 
-export const getUserPosts = async (userId: number): Promise<Post[]> => {
+export const getUserPosts = async (userId: string): Promise<Post[]> => {
   const res = await api.get(`/posts/user/${userId}`);
   return res.data.data;
 };
@@ -377,7 +377,7 @@ export const getStationDetails = async (
 
 // User types
 export interface UserSummary {
-  id: number;
+  id: string;
   username: string;
   display_name?: string;
   email?: string;
@@ -431,7 +431,7 @@ export const verifyTwoFactorSetup = async (code: string): Promise<void> => {
 };
 
 export const verifyTwoFactorCode = async (
-  userId: number,
+  userId: string,
   code: string,
 ): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-2fa", { user_id: userId, code });
@@ -505,7 +505,7 @@ export const likePost = async (postId: number): Promise<{ liked: boolean }> => {
 };
 
 export const getUserLikedPosts = async (
-  userId: number,
+  userId: string,
   page: number = 1,
   limit: number = 20
 ): Promise<{ posts: Post[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
@@ -542,5 +542,136 @@ export const deleteComment = async (commentId: number): Promise<void> => {
 // Comment Like API functions
 export const likeComment = async (commentId: number): Promise<{ liked: boolean }> => {
   const res = await api.post(`/comments/likes/${commentId}`);
+  return res.data.data;
+};
+
+// Admin API functions
+export interface AdminStats {
+  total_users: number;
+  pending_users: number;
+  total_posts: number;
+  total_stations: number;
+  system_health: string;
+}
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  email?: string;
+  role: string;
+  approved: boolean;
+  banned: boolean;
+  banned_at?: string;
+  email_confirmed: boolean;
+  two_factor_enabled: boolean;
+  display_name?: string;
+  profile_picture_url?: string;
+  has_profile_picture: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  pagination: PaginationMeta;
+}
+
+export interface AdminUserDetails extends AdminUser {
+  post_count: number;
+  station_count: number;
+}
+
+export const getAdminOverview = async (): Promise<AdminStats> => {
+  const res = await api.get("/admin/overview");
+  return res.data.data;
+};
+
+export const getAllUsers = async (
+  page: number = 1,
+  limit: number = 20,
+  search: string = "",
+  approved?: boolean,
+  banned?: boolean
+): Promise<AdminUsersResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  if (approved !== undefined) {
+    params.set("approved", approved.toString());
+  }
+  if (banned !== undefined) {
+    params.set("banned", banned.toString());
+  }
+  const res = await api.get(`/admin/users?${params}`);
+  return res.data.data;
+};
+
+export const updateUserRole = async (userId: string, role: string): Promise<void> => {
+  await api.put(`/admin/users/${userId}/role`, { role });
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  await api.delete(`/admin/users/${userId}`);
+};
+
+export const banUser = async (userId: string, banned: boolean): Promise<void> => {
+  await api.put(`/admin/users/${userId}/ban`, { banned });
+};
+
+export const approveUser = async (userId: string, approved: boolean): Promise<void> => {
+  await api.put(`/admin/users/${userId}/approve`, { approved });
+};
+
+export const getUserDetails = async (userId: string): Promise<AdminUserDetails> => {
+  const res = await api.get(`/admin/users/${userId}`);
+  return res.data.data;
+};
+
+export const getAdminInvite = async (): Promise<any> => {
+  const res = await api.get("/admin/invite");
+  return res.data.data;
+};
+
+// Admin Settings API functions
+export interface RegistrationSettings {
+  disabled: boolean;
+}
+
+export interface ApprovalSettings {
+  required: boolean;
+}
+
+export const getRegistrationSettings = async (): Promise<RegistrationSettings> => {
+  const res = await api.get("/admin/settings/registration");
+  return res.data.data;
+};
+
+export const updateRegistrationSettings = async (disabled: boolean): Promise<void> => {
+  await api.put("/admin/settings/registration", { disabled });
+};
+
+export const getApprovalSettings = async (): Promise<ApprovalSettings> => {
+  const res = await api.get("/admin/settings/approval");
+  return res.data.data;
+};
+
+export const updateApprovalSettings = async (required: boolean): Promise<void> => {
+  await api.put("/admin/settings/approval", { required });
+};
+
+// Public Settings API functions (no authentication required)
+export const getPublicRegistrationSettings = async (): Promise<RegistrationSettings> => {
+  const res = await axios.get(`${API_BASE}/settings/registration`);
   return res.data.data;
 };

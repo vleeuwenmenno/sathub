@@ -14,7 +14,7 @@ import (
 
 // UserSummary represents user data for global listing
 type UserSummary struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	Username          string `json:"username"`
 	DisplayName       string `json:"display_name,omitempty"`
 	Email             string `json:"email,omitempty"`
@@ -90,7 +90,7 @@ func GetGlobalUsers(c *gin.Context) {
 	query = query.Order(sortField + " " + order).Limit(limit).Offset(offset)
 
 	var results []struct {
-		ID                uint   `json:"id"`
+		ID                string `json:"id"`
 		Username          string `json:"username"`
 		DisplayName       string `json:"display_name"`
 		Email             string `json:"email"`

@@ -21,6 +21,10 @@ import BackendStatus from "./components/BackendStatus";
 import Footer from "./components/Footer";
 import TwoFactorVerify from "./components/TwoFactorVerify";
 import ConfirmDisableTwoFactor from "./components/ConfirmDisableTwoFactor";
+import AdminOverview from "./components/AdminOverview";
+import AdminUserManagement from "./components/AdminUserManagement";
+import AdminPendingUsers from "./components/AdminPendingUsers";
+import AdminInvite from "./components/AdminInvite";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -76,6 +80,10 @@ function App() {
                   path="/confirm-disable-2fa"
                   element={<ConfirmDisableTwoFactor />}
                 />
+                <Route path="/admin" element={<AdminOverview />} />
+                <Route path="/admin/users" element={<AdminUserManagement />} />
+                <Route path="/admin/pending-users" element={<AdminPendingUsers />} />
+                <Route path="/admin/invite" element={<AdminInvite />} />
               </Routes>
             </Box>
             <Footer />

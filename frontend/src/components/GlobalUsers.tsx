@@ -42,7 +42,7 @@ const GlobalUsers: React.FC = () => {
   const [order, setOrder] = useState("desc");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [profilePictureUrls, setProfilePictureUrls] = useState<Record<number, string>>({});
+  const [profilePictureUrls, setProfilePictureUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -70,7 +70,7 @@ const GlobalUsers: React.FC = () => {
         });
 
       const pictureResults = await Promise.all(picturePromises);
-      const newProfilePictureUrls: Record<number, string> = {};
+      const newProfilePictureUrls: Record<string, string> = {};
 
       pictureResults.forEach(result => {
         if (result) {

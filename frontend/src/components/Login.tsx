@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Box,
@@ -20,7 +20,7 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { resendConfirmationEmail } from '../api';
+import { resendConfirmationEmail, getPublicRegistrationSettings } from '../api';
 import logo from '../assets/logo.svg';
 
 const Login: React.FC = () => {
@@ -31,8 +31,23 @@ const Login: React.FC = () => {
   const [resendLoading, setResendLoading] = useState(false);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [registrationDisabled, setRegistrationDisabled] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkRegistrationSettings = async () => {
+      try {
+        const settings = await getPublicRegistrationSettings();
+        setRegistrationDisabled(settings.disabled);
+      } catch (err) {
+        // If we can't fetch settings, assume registration is enabled
+        console.error('Failed to fetch registration settings:', err);
+      }
+    };
+
+    checkRegistrationSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,28 +247,32 @@ const Login: React.FC = () => {
               </Link>
             </Box>
 
-            <Divider sx={{ my: 1 }}>
-              <Chip variant="soft" size="sm">
-                or
-              </Chip>
-            </Divider>
+            {!registrationDisabled && (
+              <>
+                <Divider sx={{ my: 1 }}>
+                  <Chip variant="soft" size="sm">
+                    or
+                  </Chip>
+                </Divider>
 
-            {/* Register Link */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                New to SatDump?{' '}
-                <Link
-                  to="/register"
-                  style={{
-                    color: 'var(--joy-palette-primary-main)',
-                    textDecoration: 'none',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Create an account
-                </Link>
-              </Typography>
-            </Box>
+                {/* Register Link */}
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+                    New to SatDump?{' '}
+                    <Link
+                      to="/register"
+                      style={{
+                        color: 'var(--joy-palette-primary-main)',
+                        textDecoration: 'none',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      Create an account
+                    </Link>
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Stack>
         </CardContent>
       </Card>

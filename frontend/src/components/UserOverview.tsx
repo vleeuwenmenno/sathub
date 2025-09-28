@@ -85,16 +85,10 @@ const UserOverview: React.FC = () => {
 
       try {
         setLoading(true);
-        const userId = parseInt(id, 10);
-        if (isNaN(userId)) {
-          setError("Invalid user ID");
-          return;
-        }
-
         const [postsData, stationsData, likedPostsData] = await Promise.all([
-          getUserPosts(userId),
-          getUserStations(userId),
-          getUserLikedPosts(userId, 1, 20),
+          getUserPosts(id),
+          getUserStations(id),
+          getUserLikedPosts(id, 1, 20),
         ]);
 
         setPosts(postsData);

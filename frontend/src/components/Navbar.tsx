@@ -32,6 +32,7 @@ import {
   Build,
   Menu as MenuIcon,
   Close,
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
@@ -86,6 +87,7 @@ const Navbar: React.FC = () => {
     { path: "/stations/global", label: "Stations", icon: <Router />, show: isAuthenticated },
     { path: "/users/global", label: "Users", icon: <Group />, show: isAuthenticated },
     { path: "/stations", label: "My Stations", icon: <Build />, show: isAuthenticated },
+    { path: "/admin", label: "Admin", icon: <AdminPanelSettings />, show: isAuthenticated && user?.role === "admin" },
   ];
 
   return (
@@ -258,6 +260,16 @@ const Navbar: React.FC = () => {
                   <Settings sx={{ mr: 1 }} />
                   Settings
                 </MenuItem>
+                {user?.role === "admin" && (
+                  <>
+                    <Divider />
+                    <MenuItem onClick={() => handleNavigate("/admin")}>
+                      <AdminPanelSettings sx={{ mr: 1 }} />
+                      Admin Panel
+                    </MenuItem>
+                  </>
+                )}
+                <Divider />
                 <MenuItem onClick={handleLogout}>
                   <Logout sx={{ mr: 1 }} />
                   Logout
@@ -349,6 +361,35 @@ const Navbar: React.FC = () => {
                 </ListItem>
               ))}
           </List>
+
+          {/* Admin Section */}
+          {isAuthenticated && user?.role === "admin" && (
+            <>
+              <Divider sx={{ mb: 2 }} />
+              <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold", color: "primary.main" }}>
+                Admin
+              </Typography>
+              <List sx={{ gap: 1, mb: 2 }}>
+                <ListItem>
+                  <ListItemButton
+                    onClick={() => handleNavigate("/admin")}
+                    selected={isActive("/admin")}
+                    sx={{
+                      borderRadius: "lg",
+                      "&:hover": {
+                        backgroundColor: "primary.softHoverBg",
+                      },
+                    }}
+                  >
+                    <ListItemDecorator>
+                      <AdminPanelSettings />
+                    </ListItemDecorator>
+                    Admin Panel
+                  </ListItemButton>
+                </ListItem>
+              </List>
+            </>
+          )}
 
           {/* User Section */}
           {isAuthenticated && (

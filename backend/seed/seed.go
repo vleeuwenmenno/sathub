@@ -10,6 +10,8 @@ import (
 
 	"satdump-ui-backend/config"
 	"satdump-ui-backend/models"
+
+	"github.com/google/uuid"
 )
 
 // min returns the minimum of two integers
@@ -147,7 +149,7 @@ func Database() error {
 		}
 
 		users = append(users, user)
-		fmt.Printf("Created user: %s (ID: %d)\n", user.Username, user.ID)
+		fmt.Printf("Created user: %s (ID: %s)\n", user.Username, user.ID.String())
 	}
 
 	// Seed stations
@@ -281,8 +283,8 @@ func Database() error {
 	for _, comment := range allComments {
 		// 30% chance of having likes, with 1-3 likes per comment
 		if rand.Float32() < 0.3 {
-			numLikes := 1 + rand.Intn(3)      // 1 to 3 likes
-			likedUsers := make(map[uint]bool) // Track who already liked to avoid duplicates
+			numLikes := 1 + rand.Intn(3)        // 1 to 3 likes
+			likedUsers := make(map[string]bool) // Track who already liked to avoid duplicates
 
 			for i := 0; i < numLikes; i++ {
 				// Random user who didn't already like this comment
@@ -290,14 +292,15 @@ func Database() error {
 				maxAttempts := 10
 				for attempts := 0; attempts < maxAttempts; attempts++ {
 					randomUser := users[rand.Intn(len(users))]
-					if !likedUsers[randomUser.ID] && randomUser.ID != comment.UserID { // Don't let users like their own comments
+					userIDStr := randomUser.ID.String()
+					if !likedUsers[userIDStr] && randomUser.ID != comment.UserID { // Don't let users like their own comments
 						liker = randomUser
-						likedUsers[randomUser.ID] = true
+						likedUsers[userIDStr] = true
 						break
 					}
 				}
 
-				if liker.ID == 0 {
+				if liker.ID == uuid.Nil {
 					continue // Skip if we couldn't find a suitable user
 				}
 

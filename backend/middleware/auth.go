@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // AuthRequired middleware validates JWT access tokens
@@ -31,6 +32,21 @@ func AuthRequired() gin.HandlerFunc {
 		claims, err := utils.ValidateAccessToken(token)
 		if err != nil {
 			utils.UnauthorizedResponse(c, "Invalid or expired token")
+			c.Abort()
+			return
+		}
+
+		// Check if user is banned
+		db := config.GetDB()
+		var user models.User
+		if err := db.Select("banned").Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+			utils.UnauthorizedResponse(c, "User not found")
+			c.Abort()
+			return
+		}
+
+		if user.Banned {
+			utils.UnauthorizedResponse(c, "Your account has been banned")
 			c.Abort()
 			return
 		}
@@ -131,6 +147,21 @@ func OptionalAuth() gin.HandlerFunc {
 			return
 		}
 
+		// Check if user is banned
+		db := config.GetDB()
+		var user models.User
+		if err := db.Select("banned").Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+			// If user not found, treat as unauthenticated
+			c.Next()
+			return
+		}
+
+		if user.Banned {
+			// If user is banned, treat as unauthenticated
+			c.Next()
+			return
+		}
+
 		// Store user information in context
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
@@ -142,13 +173,13 @@ func OptionalAuth() gin.HandlerFunc {
 }
 
 // GetCurrentUserID extracts the current user ID from the context
-func GetCurrentUserID(c *gin.Context) (uint, bool) {
+func GetCurrentUserID(c *gin.Context) (string, bool) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		return 0, false
+		return "", false
 	}
 
-	id, ok := userID.(uint)
+	id, ok := userID.(string)
 	return id, ok
 }
 
@@ -223,13 +254,13 @@ func GetCurrentStationID(c *gin.Context) (string, bool) {
 }
 
 // GetCurrentStationUserID extracts the user ID of the current station from the context
-func GetCurrentStationUserID(c *gin.Context) (uint, bool) {
+func GetCurrentStationUserID(c *gin.Context) (string, bool) {
 	userID, exists := c.Get("station_user_id")
 	if !exists {
-		return 0, false
+		return "", false
 	}
 
-	id, ok := userID.(uint)
+	id, ok := userID.(string)
 	return id, ok
 }
 
@@ -238,7 +269,7 @@ func GetCurrentStationUserID(c *gin.Context) (uint, bool) {
 func TwoFactorRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
-			UserID uint   `json:"user_id" binding:"required"`
+			UserID string `json:"user_id" binding:"required"`
 			Code   string `json:"code" binding:"required"`
 		}
 
@@ -248,10 +279,18 @@ func TwoFactorRequired() gin.HandlerFunc {
 			return
 		}
 
+		// Parse user ID
+		userUUID, err := uuid.Parse(req.UserID)
+		if err != nil {
+			utils.ValidationErrorResponse(c, "Invalid user ID format")
+			c.Abort()
+			return
+		}
+
 		// Verify the user exists and has 2FA enabled
 		db := config.GetDB()
 		var user models.User
-		if err := db.First(&user, req.UserID).Error; err != nil {
+		if err := db.First(&user, userUUID).Error; err != nil {
 			utils.UnauthorizedResponse(c, "Invalid user session")
 			c.Abort()
 			return

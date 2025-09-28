@@ -124,3 +124,21 @@ func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
 
 	return SendEmail(data)
 }
+
+// SendApprovalNotificationEmail sends an account approval notification email
+func SendApprovalNotificationEmail(toEmail, username string) error {
+	appConfig := config.GetAppConfig()
+	loginURL := fmt.Sprintf("%s/login", appConfig.FrontendURL)
+
+	data := EmailData{
+		Subject:  "Your SatDump Account Has Been Approved",
+		To:       toEmail,
+		Template: "approval_notification",
+		Data: map[string]interface{}{
+			"Username": username,
+			"LoginURL": loginURL,
+		},
+	}
+
+	return SendEmail(data)
+}
