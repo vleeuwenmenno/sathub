@@ -514,8 +514,8 @@ export const getUserLikedPosts = async (
 };
 
 // Comment API functions
-export const getCommentsForPost = async (postId: string): Promise<PostComment[]> => {
-  const res = await api.get(`/comments/post/${postId}`);
+export const getCommentsForPost = async (postId: string, sortBy: 'newest' | 'most_liked' = 'newest'): Promise<PostComment[]> => {
+  const res = await api.get(`/comments/post/${postId}?sort_by=${sortBy}`);
   return res.data.data || [];
 };
 

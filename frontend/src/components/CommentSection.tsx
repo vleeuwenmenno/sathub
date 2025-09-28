@@ -13,6 +13,10 @@ import {
   CircularProgress,
   Alert,
   Textarea,
+  Select,
+  Option,
+  FormControl,
+  FormLabel,
 } from '@mui/joy';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
@@ -301,17 +305,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   const [editingSubmitting, setEditingSubmitting] = useState(false);
   const [isCommentFormExpanded, setIsCommentFormExpanded] = useState(false);
   const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<'newest' | 'most_liked'>('newest');
 
   useEffect(() => {
     loadComments();
-  }, [postId]);
+  }, [postId, sortBy]);
 
   const loadComments = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading comments for post:', postId);
-      const data = await getCommentsForPost(postId);
+      console.log('Loading comments for post:', postId, 'sort by:', sortBy);
+      const data = await getCommentsForPost(postId, sortBy);
       console.log('Comments loaded:', data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
       const commentsArray = Array.isArray(data) ? data : (data ? [data] : []);
       setComments(commentsArray);
@@ -407,9 +412,21 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography level="h3" sx={{ mb: 3 }}>
-        Comments ({comments ? comments.length : 0})
-      </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+        <Typography level="h3">
+          Comments ({comments ? comments.length : 0})
+        </Typography>
+        <FormControl size="sm" sx={{ minWidth: 150 }}>
+          <FormLabel>Sort by</FormLabel>
+          <Select
+            value={sortBy}
+            onChange={(_, value) => setSortBy(value as 'newest' | 'most_liked')}
+          >
+            <Option value="newest">Newest first</Option>
+            <Option value="most_liked">Most liked</Option>
+          </Select>
+        </FormControl>
+      </Stack>
 
       {error && (
         <Alert color="danger" sx={{ mb: 2 }}>

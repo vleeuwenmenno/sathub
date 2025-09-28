@@ -63,9 +63,27 @@ func GetCommentsForPost(c *gin.Context) {
 		return
 	}
 
-	// Fetch all comments for the post
+	// Parse sorting parameter
+	sortBy := c.DefaultQuery("sort_by", "newest")
+	if sortBy != "newest" && sortBy != "most_liked" {
+		sortBy = "newest" // default fallback
+	}
+
+	// Fetch all comments for the post with appropriate sorting
 	var comments []models.Comment
-	if err := db.Preload("User").Where("post_id = ?", uint(postID)).Order("created_at DESC").Find(&comments).Error; err != nil {
+	commentQuery := db.Preload("User").Where("post_id = ?", uint(postID))
+
+	if sortBy == "newest" {
+		commentQuery = commentQuery.Order("created_at DESC")
+	} else if sortBy == "most_liked" {
+		// For most liked, we need to join with comment_likes and count, then sort by count desc, created_at desc
+		commentQuery = commentQuery.Joins("LEFT JOIN comment_likes cl ON comments.id = cl.comment_id").
+			Select("comments.*, COUNT(cl.id) as likes_count").
+			Group("comments.id").
+			Order("likes_count DESC, comments.created_at DESC")
+	}
+
+	if err := commentQuery.Find(&comments).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch comments")
 		return
 	}
