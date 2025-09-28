@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -12,8 +12,6 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
-  Divider,
-  FormLabel,
   Textarea,
 } from '@mui/joy';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -21,7 +19,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../contexts/AuthContext';
 import { getCommentsForPost, createComment, updateComment, deleteComment } from '../api';
-import type { Comment } from '../types';
+import type { PostComment } from '../types';
+
+const MAX_COMMENT_LENGTH = 2000;
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -37,24 +37,57 @@ interface CommentSectionProps {
 }
 
 const CommentItem: React.FC<{
-  comment: Comment;
-  onEdit: (comment: Comment) => void;
+  comment: PostComment;
+  onEdit: (comment: PostComment) => void;
   onDelete: (commentId: number) => void;
+  onSaveEdit: (commentId: number, content: string) => Promise<void>;
+  onCancelEdit: () => void;
   currentUserId?: number;
+  isEditing?: boolean;
+  editContent?: string;
+  onEditContentChange?: (content: string) => void;
+  submitting?: boolean;
+  isNewlyPosted?: boolean;
 }> = ({
   comment,
   onEdit,
   onDelete,
+  onSaveEdit,
+  onCancelEdit,
   currentUserId,
+  isEditing = false,
+  editContent = '',
+  onEditContentChange,
+  submitting = false,
+  isNewlyPosted = false,
 }) => {
-  const [showReplyForm, setShowReplyForm] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const isOwner = currentUserId === comment.user_id;
 
+  const handleSaveEdit = async () => {
+    if (editContent.trim()) {
+      await onSaveEdit(comment.id, editContent.trim());
+    }
+  };
+
+  const handleCancelEdit = () => {
+    onCancelEdit();
+  };
+
   return (
     <Box>
-      <Card variant="outlined" sx={{ mb: 2 }}>
+      <Card
+        variant="outlined"
+        sx={{
+          mb: 2,
+          ...(isNewlyPosted && {
+            backgroundColor: 'success.softBg',
+            borderColor: 'success.outlinedBorder',
+            transition: 'all 0.3s ease-out',
+          })
+        }}
+      >
         <CardContent>
           <Stack direction="row" spacing={2} alignItems="flex-start">
             <Avatar size="sm">
@@ -83,7 +116,7 @@ const CommentItem: React.FC<{
                 <Typography level="body-xs" color="neutral">
                   {formatDate(comment.created_at)}
                 </Typography>
-                {isOwner && (
+                {isOwner && !isEditing && (
                   <>
                     <IconButton
                       size="sm"
@@ -120,9 +153,53 @@ const CommentItem: React.FC<{
                   </>
                 )}
               </Stack>
-              <Typography level="body-md" sx={{ mb: 1 }}>
-                {comment.content}
-              </Typography>
+              {isEditing ? (
+                <Box>
+                  <Textarea
+                    placeholder="Edit your comment..."
+                    value={editContent}
+                    onChange={(e) => onEditContentChange?.(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSaveEdit();
+                      } else if (e.key === 'Escape') {
+                        handleCancelEdit();
+                      }
+                    }}
+                    minRows={2}
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography
+                    level="body-xs"
+                    sx={{
+                      textAlign: 'right',
+                      mb: 1,
+                      color: editContent.length > MAX_COMMENT_LENGTH * 0.9 ? 'warning.main' : 'neutral',
+                      fontWeight: editContent.length > MAX_COMMENT_LENGTH * 0.9 ? 'bold' : 'normal'
+                    }}
+                  >
+                    {editContent.length} / {MAX_COMMENT_LENGTH}
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="sm"
+                      loading={submitting}
+                      disabled={!editContent.trim()}
+                      onClick={handleSaveEdit}
+                    >
+                      Save
+                    </Button>
+                    <Button size="sm" variant="plain" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                  </Stack>
+                </Box>
+              ) : (
+                <Typography level="body-md" sx={{ mb: 1 }}>
+                  {comment.content}
+                </Typography>
+              )}
             </Box>
           </Stack>
         </CardContent>
@@ -140,13 +217,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     console.warn('Auth context not available:', error);
     user = null;
   }
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingSubmitting, setEditingSubmitting] = useState(false);
+  const [isCommentFormExpanded, setIsCommentFormExpanded] = useState(false);
+  const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<number | null>(null);
 
   useEffect(() => {
     loadComments();
@@ -180,9 +261,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         content: newComment.trim(),
       };
 
-      await createComment(postId, commentData);
+      const response = await createComment(postId, commentData);
       setNewComment('');
+      setIsCommentFormExpanded(false); // Collapse form after posting
       await loadComments(); // Reload comments
+
+      // Highlight the newly posted comment for 2 seconds
+      if (response && response.id) {
+        setNewlyPostedCommentId(response.id);
+        setTimeout(() => {
+          setNewlyPostedCommentId(null);
+        }, 2000);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post comment');
     } finally {
@@ -190,20 +280,37 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     }
   };
 
-  const handleEditComment = async () => {
-    if (!editingComment || !newComment.trim()) return;
+  const handleExpandCommentForm = () => {
+    setIsCommentFormExpanded(true);
+  };
 
+  const handleCancelCommentForm = () => {
+    setNewComment('');
+    setIsCommentFormExpanded(false);
+  };
+
+  const handleSaveEdit = async (commentId: number, content: string) => {
     try {
-      setSubmitting(true);
-      await updateComment(editingComment.id, { content: newComment.trim() });
-      setNewComment('');
-      setEditingComment(null);
+      setEditingSubmitting(true);
+      await updateComment(commentId, { content });
+      setEditingCommentId(null);
+      setEditContent('');
       await loadComments();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update comment');
     } finally {
-      setSubmitting(false);
+      setEditingSubmitting(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditContent('');
+  };
+
+  const startEdit = (comment: PostComment) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.content);
   };
 
   const handleDeleteComment = async (commentId: number) => {
@@ -215,16 +322,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete comment');
     }
-  };
-
-  const startEdit = (comment: Comment) => {
-    setEditingComment(comment);
-    setNewComment(comment.content);
-  };
-
-  const cancelAction = () => {
-    setEditingComment(null);
-    setNewComment('');
   };
 
   if (loading && !hasLoaded) {
@@ -249,44 +346,64 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
 
       {/* Add Comment Form */}
       {user && (
-        <Card variant="outlined" sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography level="body-lg" sx={{ mb: 2 }}>
-              {editingComment ? 'Edit Comment' : 'Add a Comment'}
-            </Typography>
-            <form onSubmit={(e) => { e.preventDefault(); editingComment ? handleEditComment() : handleSubmitComment(); }}>
-              <Stack spacing={2}>
-                <Textarea
-                  placeholder={editingComment ? 'Edit your comment...' : 'Write a comment...'}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      editingComment ? handleEditComment() : handleSubmitComment();
-                    }
-                  }}
-                  minRows={3}
-                  autosize={true}
-                />
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    type="submit"
-                    loading={submitting}
-                    disabled={!newComment.trim()}
-                  >
-                    {editingComment ? 'Update' : 'Post'}
-                  </Button>
-                  {editingComment && (
-                    <Button variant="plain" onClick={cancelAction}>
-                      Cancel
-                    </Button>
-                  )}
-                </Stack>
-              </Stack>
-            </form>
-          </CardContent>
-        </Card>
+        <Box sx={{ mb: 3 }}>
+          {!isCommentFormExpanded ? (
+            <Button
+              variant="outlined"
+              onClick={handleExpandCommentForm}
+              sx={{ width: '100%' }}
+            >
+              Write a comment
+            </Button>
+          ) : (
+            <Card variant="outlined">
+              <CardContent>
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmitComment(); }}>
+                  <Stack spacing={2}>
+                    <Textarea
+                      placeholder="Write a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmitComment();
+                        }
+                      }}
+                      minRows={3}
+                      autoFocus
+                    />
+                    <Typography
+                      level="body-xs"
+                      sx={{
+                        textAlign: 'right',
+                        color: newComment.length > MAX_COMMENT_LENGTH * 0.9 ? 'warning.main' : 'neutral',
+                        fontWeight: newComment.length > MAX_COMMENT_LENGTH * 0.9 ? 'bold' : 'normal'
+                      }}
+                    >
+                      {newComment.length} / {MAX_COMMENT_LENGTH}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        type="submit"
+                        loading={submitting}
+                        disabled={!newComment.trim()}
+                      >
+                        Post
+                      </Button>
+                      <Button
+                        variant="plain"
+                        onClick={handleCancelCommentForm}
+                      >
+                        Cancel
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </Box>
       )}
 
       {!user && (
@@ -308,7 +425,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
               comment={comment}
               onEdit={startEdit}
               onDelete={handleDeleteComment}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
               currentUserId={user?.id}
+              isEditing={editingCommentId === comment.id}
+              editContent={editContent}
+              onEditContentChange={setEditContent}
+              submitting={editingSubmitting}
+              isNewlyPosted={newlyPostedCommentId === comment.id}
             />
           ))
         )}

@@ -78,7 +78,7 @@ export interface User {
   has_profile_picture: boolean;
 }
 
-export interface Comment {
+export interface PostComment {
   id: number;
   user_id: number;
   username: string;
@@ -87,7 +87,7 @@ export interface Comment {
   has_profile_picture: boolean;
   content: string;
   parent_id?: number;
-  replies?: Comment[];
+  replies?: PostComment[];
   created_at: string;
   updated_at: string;
 }

@@ -16,7 +16,7 @@ import (
 
 // CommentRequest represents the request body for creating/updating a comment
 type CommentRequest struct {
-	Content string `json:"content" binding:"required,min=1,max=1000"`
+	Content string `json:"content" binding:"required,min=1,max=2000"`
 }
 
 // CommentResponse represents a comment in responses
@@ -63,7 +63,7 @@ func GetCommentsForPost(c *gin.Context) {
 
 	// Fetch all comments for the post
 	var comments []models.Comment
-	if err := db.Preload("User").Where("post_id = ?", uint(postID)).Order("created_at ASC").Find(&comments).Error; err != nil {
+	if err := db.Preload("User").Where("post_id = ?", uint(postID)).Order("created_at DESC").Find(&comments).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch comments")
 		return
 	}

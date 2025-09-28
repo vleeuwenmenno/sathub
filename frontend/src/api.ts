@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment } from "./types";
 
 const API_BASE = "/api";
 
@@ -514,7 +514,7 @@ export const getUserLikedPosts = async (
 };
 
 // Comment API functions
-export const getCommentsForPost = async (postId: string): Promise<Comment[]> => {
+export const getCommentsForPost = async (postId: string): Promise<PostComment[]> => {
   const res = await api.get(`/comments/post/${postId}`);
   return res.data.data || [];
 };
@@ -522,7 +522,7 @@ export const getCommentsForPost = async (postId: string): Promise<Comment[]> => 
 export const createComment = async (
   postId: string,
   data: { content: string; parent_id?: number }
-): Promise<Comment> => {
+): Promise<PostComment> => {
   const res = await api.post(`/comments/post/${postId}`, data);
   return res.data.data;
 };
@@ -530,7 +530,7 @@ export const createComment = async (
 export const updateComment = async (
   commentId: number,
   data: { content: string }
-): Promise<Comment> => {
+): Promise<PostComment> => {
   const res = await api.put(`/comments/${commentId}`, data);
   return res.data.data;
 };
