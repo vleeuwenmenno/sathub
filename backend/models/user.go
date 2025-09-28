@@ -15,6 +15,7 @@ type User struct {
 	Username           string         `gorm:"uniqueIndex;not null" json:"username"`
 	Email              sql.NullString `gorm:"unique" json:"email,omitempty"`
 	EmailConfirmed     bool           `gorm:"default:false" json:"email_confirmed"`
+	Approved           bool           `gorm:"default:false" json:"approved"`
 	Password           string         `gorm:"not null" json:"-"`
 	Role               string         `gorm:"default:user" json:"role"`
 	Banned             bool           `gorm:"default:false" json:"banned"`

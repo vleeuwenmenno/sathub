@@ -23,6 +23,7 @@ import TwoFactorVerify from "./components/TwoFactorVerify";
 import ConfirmDisableTwoFactor from "./components/ConfirmDisableTwoFactor";
 import AdminOverview from "./components/AdminOverview";
 import AdminUserManagement from "./components/AdminUserManagement";
+import AdminPendingUsers from "./components/AdminPendingUsers";
 import AdminInvite from "./components/AdminInvite";
 import Achievements from "./components/Achievements";
 import Notifications from "./components/Notifications";
@@ -85,6 +86,7 @@ function App() {
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/admin" element={<AdminOverview />} />
                 <Route path="/admin/users" element={<AdminUserManagement />} />
+                <Route path="/admin/pending-users" element={<AdminPendingUsers />} />
                 <Route path="/admin/invite" element={<AdminInvite />} />
               </Routes>
             </Box>

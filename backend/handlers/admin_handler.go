@@ -18,6 +18,7 @@ import (
 // AdminOverviewResponse represents the response for admin overview statistics
 type AdminOverviewResponse struct {
 	TotalUsers    int64  `json:"total_users"`
+	PendingUsers  int64  `json:"pending_users"`
 	TotalPosts    int64  `json:"total_posts"`
 	TotalStations int64  `json:"total_stations"`
 	SystemHealth  string `json:"system_health"`
@@ -29,6 +30,7 @@ type AdminUserResponse struct {
 	Username          string `json:"username"`
 	Email             string `json:"email,omitempty"`
 	Role              string `json:"role"`
+	Approved          bool   `json:"approved"`
 	Banned            bool   `json:"banned"`
 	BannedAt          string `json:"banned_at,omitempty"`
 	EmailConfirmed    bool   `json:"email_confirmed"`
@@ -64,6 +66,7 @@ func GetAdminOverview(c *gin.Context) {
 	db := config.GetDB()
 
 	var totalUsers int64
+	var pendingUsers int64
 	var totalPosts int64
 	var totalStations int64
 
@@ -71,6 +74,24 @@ func GetAdminOverview(c *gin.Context) {
 	if err := db.Model(&models.User{}).Count(&totalUsers).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to count users")
 		return
+	}
+
+	// Check if approval is required
+	var approvalSetting models.Setting
+	approvalRequired := true // Default to requiring approval
+	err := db.Where("key = ?", "approval_required").First(&approvalSetting).Error
+	if err == nil && approvalSetting.Value == "false" {
+		approvalRequired = false
+	}
+
+	// Count pending users only if approval is required
+	if approvalRequired {
+		if err := db.Model(&models.User{}).Where("approved = ?", false).Count(&pendingUsers).Error; err != nil {
+			utils.InternalErrorResponse(c, "Failed to count pending users")
+			return
+		}
+	} else {
+		pendingUsers = 0 // No pending users if approval is not required
 	}
 
 	// Count total posts
@@ -90,6 +111,7 @@ func GetAdminOverview(c *gin.Context) {
 
 	response := AdminOverviewResponse{
 		TotalUsers:    totalUsers,
+		PendingUsers:  pendingUsers,
 		TotalPosts:    totalPosts,
 		TotalStations: totalStations,
 		SystemHealth:  systemHealth,
@@ -98,7 +120,7 @@ func GetAdminOverview(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Admin overview retrieved successfully", response)
 }
 
-// GetAllUsers returns a paginated list of users for admin management with optional search
+// GetAllUsers returns a paginated list of users for admin management with optional search and filters
 func GetAllUsers(c *gin.Context) {
 	db := config.GetDB()
 
@@ -106,6 +128,8 @@ func GetAllUsers(c *gin.Context) {
 	page := 1
 	limit := 20
 	search := c.Query("search")
+	approvedFilter := c.Query("approved") // "true", "false", or empty for all
+	bannedFilter := c.Query("banned")     // "true", "false", or empty for all
 
 	if pageStr := c.Query("page"); pageStr != "" {
 		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
@@ -135,6 +159,20 @@ func GetAllUsers(c *gin.Context) {
 		query = query.Where("username ILIKE ? OR email ILIKE ?", searchTerm, searchTerm)
 	}
 
+	// Add approval filter if provided
+	if approvedFilter == "true" {
+		query = query.Where("approved = ?", true)
+	} else if approvedFilter == "false" {
+		query = query.Where("approved = ?", false)
+	}
+
+	// Add ban filter if provided
+	if bannedFilter == "true" {
+		query = query.Where("banned = ?", true)
+	} else if bannedFilter == "false" {
+		query = query.Where("banned = ?", false)
+	}
+
 	// Get total count for pagination
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -158,6 +196,7 @@ func GetAllUsers(c *gin.Context) {
 			ID:                user.ID.String(),
 			Username:          user.Username,
 			Role:              user.Role,
+			Approved:          user.Approved,
 			Banned:            user.Banned,
 			EmailConfirmed:    user.EmailConfirmed,
 			TwoFactorEnabled:  user.TwoFactorEnabled,
@@ -613,6 +652,7 @@ func GetUserDetails(c *gin.Context) {
 			ID:                user.ID.String(),
 			Username:          user.Username,
 			Role:              user.Role,
+			Approved:          user.Approved,
 			Banned:            user.Banned,
 			EmailConfirmed:    user.EmailConfirmed,
 			TwoFactorEnabled:  user.TwoFactorEnabled,
@@ -652,4 +692,188 @@ func GetAdminInvite(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Invite page data retrieved", response)
+}
+
+// RegistrationSettingsResponse represents the response for registration settings
+type RegistrationSettingsResponse struct {
+	Disabled bool `json:"disabled"`
+}
+
+// UpdateRegistrationSettingsRequest represents the request to update registration settings
+type UpdateRegistrationSettingsRequest struct {
+	Disabled bool `json:"disabled"`
+}
+
+// ApprovalSettingsResponse represents the response for approval settings
+type ApprovalSettingsResponse struct {
+	Required bool `json:"required"`
+}
+
+// UpdateApprovalSettingsRequest represents the request to update approval settings
+type UpdateApprovalSettingsRequest struct {
+	Required bool `json:"required"`
+}
+
+// GetRegistrationSettings returns the current registration settings
+func GetRegistrationSettings(c *gin.Context) {
+	db := config.GetDB()
+
+	var setting models.Setting
+	err := db.Where("key = ?", "registration_disabled").First(&setting).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		utils.InternalErrorResponse(c, "Failed to retrieve registration settings")
+		return
+	}
+
+	disabled := false
+	if err == nil && setting.Value == "true" {
+		disabled = true
+	}
+
+	response := RegistrationSettingsResponse{
+		Disabled: disabled,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Registration settings retrieved successfully", response)
+}
+
+// UpdateRegistrationSettings updates the registration disabled setting
+func UpdateRegistrationSettings(c *gin.Context) {
+	var req UpdateRegistrationSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	setting := models.Setting{
+		Key:         "registration_disabled",
+		Value:       "false",
+		Description: "Controls whether new user registrations are allowed",
+	}
+
+	if req.Disabled {
+		setting.Value = "true"
+	}
+
+	if err := db.Save(&setting).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update registration settings")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Registration settings updated successfully", nil)
+}
+
+// GetApprovalSettings returns the current approval settings
+func GetApprovalSettings(c *gin.Context) {
+	db := config.GetDB()
+
+	var setting models.Setting
+	err := db.Where("key = ?", "approval_required").First(&setting).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		utils.InternalErrorResponse(c, "Failed to retrieve approval settings")
+		return
+	}
+
+	required := true // Default to requiring approval
+	if err == nil && setting.Value == "false" {
+		required = false
+	}
+
+	response := ApprovalSettingsResponse{
+		Required: required,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Approval settings retrieved successfully", response)
+}
+
+// UpdateApprovalSettings updates the approval required setting
+func UpdateApprovalSettings(c *gin.Context) {
+	var req UpdateApprovalSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	setting := models.Setting{
+		Key:         "approval_required",
+		Value:       "true",
+		Description: "Controls whether new user registrations require admin approval",
+	}
+
+	if !req.Required {
+		setting.Value = "false"
+	}
+
+	if err := db.Save(&setting).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update approval settings")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Approval settings updated successfully", nil)
+}
+
+// ApproveUserRequest represents the request to approve or reject a user
+type ApproveUserRequest struct {
+	Approved bool `json:"approved"`
+}
+
+// ApproveUser approves or rejects a user (admin only)
+func ApproveUser(c *gin.Context) {
+	userIDStr := c.Param("id")
+	if userIDStr == "" {
+		utils.ValidationErrorResponse(c, "User ID is required")
+		return
+	}
+
+	// Parse user ID
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID format")
+		return
+	}
+
+	var req ApproveUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find the target user
+	var user models.User
+	if err := db.First(&user, targetUserID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "User not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Database error")
+		return
+	}
+
+	// Update approval status
+	user.Approved = req.Approved
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update user approval status")
+		return
+	}
+
+	// Send approval notification email if user was approved
+	if req.Approved && user.Email.Valid {
+		if err := utils.SendApprovalNotificationEmail(user.Email.String, user.Username); err != nil {
+			// Log error but don't fail the approval operation
+			fmt.Printf("Failed to send approval notification email to user %s: %v\n", user.Username, err)
+		}
+	}
+
+	action := "approved"
+	if !req.Approved {
+		action = "rejected"
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("User %s successfully", action), nil)
 }

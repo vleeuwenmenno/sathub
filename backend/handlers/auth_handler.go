@@ -73,6 +73,14 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Check if registration is disabled
+	var setting models.Setting
+	err := config.GetDB().Where("key = ?", "registration_disabled").First(&setting).Error
+	if err == nil && setting.Value == "true" {
+		utils.ValidationErrorResponse(c, "New user registration is currently disabled")
+		return
+	}
+
 	db := config.GetDB()
 
 	// Check if username already exists
@@ -98,11 +106,20 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Check if approval is required
+	var approvalSetting models.Setting
+	approvalRequired := true // Default to requiring approval
+	err = config.GetDB().Where("key = ?", "approval_required").First(&approvalSetting).Error
+	if err == nil && approvalSetting.Value == "false" {
+		approvalRequired = false
+	}
+
 	// Create new user
 	user := models.User{
 		Username: req.Username,
 		Email:    sql.NullString{String: req.Email, Valid: true},
 		Role:     role,
+		Approved: !approvalRequired, // Auto-approve if approval is not required
 	}
 
 	// Hash password
@@ -187,6 +204,12 @@ func Login(c *gin.Context) {
 	// Check if email is confirmed
 	if !user.EmailConfirmed {
 		utils.UnauthorizedResponse(c, "Please confirm your email address before logging in")
+		return
+	}
+
+	// Check if user is approved
+	if !user.Approved {
+		utils.UnauthorizedResponse(c, "Your account is registered but awaiting approval from a moderator/admin. Please check back later.")
 		return
 	}
 

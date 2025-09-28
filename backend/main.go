@@ -245,9 +245,20 @@ func main() {
 			admin.GET("/users", handlers.GetAllUsers)
 			admin.GET("/users/:id", handlers.GetUserDetails)
 			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
+			admin.PUT("/users/:id/approve", handlers.ApproveUser)
 			admin.PUT("/users/:id/ban", handlers.BanUser)
 			admin.DELETE("/users/:id", handlers.DeleteUser)
 			admin.GET("/invite", handlers.GetAdminInvite)
+			admin.GET("/settings/registration", handlers.GetRegistrationSettings)
+			admin.PUT("/settings/registration", handlers.UpdateRegistrationSettings)
+			admin.GET("/settings/approval", handlers.GetApprovalSettings)
+			admin.PUT("/settings/approval", handlers.UpdateApprovalSettings)
+		}
+
+		// Public routes (no authentication required)
+		public := api.Group("/")
+		{
+			public.GET("/settings/registration", handlers.GetRegistrationSettings)
 		}
 	}
 
