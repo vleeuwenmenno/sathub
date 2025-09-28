@@ -226,7 +226,7 @@ const AdminUserManagement: React.FC = () => {
                             {user.display_name || user.username}
                           </Typography>
                           <Typography level="body-sm" color="neutral">
-                            @{user.username} • ID: {user.id}
+                            @{user.username}
                           </Typography>
                         </Box>
                         <Stack direction="row" spacing={1}>
@@ -319,12 +319,10 @@ const AdminUserManagement: React.FC = () => {
             <Table>
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Username</th>
                   <th>Email</th>
                   <th>Role</th>
                   <th>Status</th>
-                  <th>Banned</th>
                   <th>Created</th>
                   <th>Actions</th>
                 </tr>
@@ -336,7 +334,6 @@ const AdminUserManagement: React.FC = () => {
                     onClick={() => handleViewUserDetails(user.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td>{user.id}</td>
                     <td>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Typography level="body-sm">{user.username}</Typography>
@@ -383,16 +380,14 @@ const AdminUserManagement: React.FC = () => {
                             2FA
                           </Chip>
                         )}
+                        <Chip
+                          size="sm"
+                          color={user.banned ? "danger" : "success"}
+                          variant="soft"
+                        >
+                          {user.banned ? "Banned" : "Active"}
+                        </Chip>
                       </Stack>
-                    </td>
-                    <td>
-                      <Chip
-                        size="sm"
-                        color={user.banned ? "danger" : "success"}
-                        variant="soft"
-                      >
-                        {user.banned ? "Banned" : "Active"}
-                      </Chip>
                     </td>
                     <td>
                       <Typography level="body-sm">
@@ -429,16 +424,24 @@ const AdminUserManagement: React.FC = () => {
 
       {/* Pagination */}
       {pagination.pages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
-          <Pagination
-            count={pagination.pages}
-            page={pagination.page}
-            onChange={(_, page) => handlePageChange(page)}
-            color="primary"
-            size={isMobile ? "small" : "medium"}
-            showFirstButton
-            showLastButton
-          />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            disabled={pagination.page === 1}
+            onClick={() => handlePageChange(pagination.page - 1)}
+          >
+            Previous
+          </Button>
+          <Typography sx={{ alignSelf: 'center', mx: 2 }}>
+            Page {pagination.page} of {pagination.pages}
+          </Typography>
+          <Button
+            variant="outlined"
+            disabled={pagination.page === pagination.pages}
+            onClick={() => handlePageChange(pagination.page + 1)}
+          >
+            Next
+          </Button>
         </Box>
       )}
 
