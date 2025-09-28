@@ -156,129 +156,133 @@ const UserOverview: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1400px', mx: 'auto' }}>
       <Typography level="h2" sx={{ mb: 3 }}>
         User Overview
       </Typography>
 
-      {/* Recent Posts Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography level="h3" sx={{ mb: 2 }}>
-          Recent Posts ({posts.length})
-        </Typography>
-        {posts.length === 0 ? (
-          <Typography>No public posts available</Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {posts.slice(0, 6).map((post) => (
-              <Grid key={post.id} xs={12} sm={6} md={4}>
-                <Card
-                  variant="outlined"
-                  onClick={() => navigate(`/post/${post.id}`)}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <CardContent>
-                    <Typography level="title-md" sx={{ mb: 1 }}>
-                      {post.satellite_name}
-                    </Typography>
-                    <Typography level="body-sm" sx={{ mb: 1 }}>
-                      Station: {post.station_name}
-                    </Typography>
-                    <Typography level="body-xs" color="neutral">
-                      {formatDate(post.timestamp)}
-                    </Typography>
-                    {post.images.length > 0 && (
-                      <Chip size="sm" sx={{ mt: 1 }}>
-                        {post.images.length} image{post.images.length !== 1 ? "s" : ""}
-                      </Chip>
-                    )}
-                  </CardContent>
-                </Card>
+      <Card>
+        <CardContent>
+          {/* Recent Posts Section */}
+          <Box sx={{ mb: 4 }}>
+            <Typography level="h3" sx={{ mb: 2 }}>
+              Recent Posts ({posts.length})
+            </Typography>
+            {posts.length === 0 ? (
+              <Typography>No public posts available</Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {posts.slice(0, 6).map((post) => (
+                  <Grid key={post.id} xs={12} sm={6} md={4}>
+                    <Card
+                      variant="outlined"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <CardContent>
+                        <Typography level="title-md" sx={{ mb: 1 }}>
+                          {post.satellite_name}
+                        </Typography>
+                        <Typography level="body-sm" sx={{ mb: 1 }}>
+                          Station: {post.station_name}
+                        </Typography>
+                        <Typography level="body-xs" color="neutral">
+                          {formatDate(post.timestamp)}
+                        </Typography>
+                        {post.images.length > 0 && (
+                          <Chip size="sm" sx={{ mt: 1 }}>
+                            {post.images.length} image{post.images.length !== 1 ? "s" : ""}
+                          </Chip>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
+            )}
+          </Box>
 
-      <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-      {/* Stations Section */}
-      <Box>
-        <Typography level="h3" sx={{ mb: 2 }}>
-          Public Stations ({stations.length})
-        </Typography>
-        {stations.length === 0 ? (
-          <Typography>No public stations available</Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {stations.map((station) => (
-              <Grid key={station.id} xs={12} sm={6} md={4}>
-                <Card 
-                  variant="outlined"
-                  onClick={() => navigate(`/station/${station.id}`)}
-                  sx={{ 
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'lg',
-                    }
-                  }}
-                >
-                  {imageBlobs[`${station.id}-picture`] && (
-                    <Box
+          {/* Stations Section */}
+          <Box>
+            <Typography level="h3" sx={{ mb: 2 }}>
+              Public Stations ({stations.length})
+            </Typography>
+            {stations.length === 0 ? (
+              <Typography>No public stations available</Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {stations.map((station) => (
+                  <Grid key={station.id} xs={12} sm={6} md={4}>
+                    <Card
+                      variant="outlined"
+                      onClick={() => navigate(`/station/${station.id}`)}
                       sx={{
-                        position: "relative",
-                        height: 120,
-                        overflow: "hidden",
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 'lg',
+                        }
                       }}
                     >
-                      <img
-                        src={imageBlobs[`${station.id}-picture`]}
-                        alt={station.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </Box>
-                  )}
-                  <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Box>
-                        <Typography level="title-md">{station.name}</Typography>
-                        <Typography level="body-sm" color="neutral">
-                          {station.location}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    {station.equipment && (
-                      <Typography level="body-sm" sx={{ mb: 1 }}>
-                        Equipment: {station.equipment}
-                      </Typography>
-                    )}
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Chip size="sm" color="success">
-                        Public
-                      </Chip>
-                      <Tooltip title={formatFullTimestamp(station)}>
-                        <Chip
-                          size="sm"
-                          variant="soft"
-                          color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                      {imageBlobs[`${station.id}-picture`] && (
+                        <Box
+                          sx={{
+                            position: "relative",
+                            height: 120,
+                            overflow: "hidden",
+                          }}
                         >
-                          {formatLastSeen(station)}
-                        </Chip>
-                      </Tooltip>
-                    </Box>
-                  </CardContent>
-                </Card>
+                          <img
+                            src={imageBlobs[`${station.id}-picture`]}
+                            alt={station.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </Box>
+                      )}
+                      <CardContent>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <Box>
+                            <Typography level="title-md">{station.name}</Typography>
+                            <Typography level="body-sm" color="neutral">
+                              {station.location}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {station.equipment && (
+                          <Typography level="body-sm" sx={{ mb: 1 }}>
+                            Equipment: {station.equipment}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Chip size="sm" color="success">
+                            Public
+                          </Chip>
+                          <Tooltip title={formatFullTimestamp(station)}>
+                            <Chip
+                              size="sm"
+                              variant="soft"
+                              color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                            >
+                              {formatLastSeen(station)}
+                            </Chip>
+                          </Tooltip>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
     </Box>
   );
 };

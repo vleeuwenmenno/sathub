@@ -51,22 +51,12 @@ const GlobalUsers: React.FC = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return <Typography>Loading...</Typography>;
-  }
-
-  // Don't render if not authenticated (will redirect)
-  if (!isAuthenticated) {
-    return null;
-  }
-
   const loadUsers = async () => {
     try {
       setLoading(true);
       const data = await getGlobalUsers(limit, page, sort, order, search);
       setUsers(data);
-      
+
       // Load profile pictures for users that have them
       const picturePromises = data
         .filter(user => user.has_profile_picture && user.profile_picture_url)
@@ -82,13 +72,13 @@ const GlobalUsers: React.FC = () => {
 
       const pictureResults = await Promise.all(picturePromises);
       const newProfilePictureUrls: Record<number, string> = {};
-      
+
       pictureResults.forEach(result => {
         if (result) {
           newProfilePictureUrls[result.id] = result.url;
         }
       });
-      
+
       setProfilePictureUrls(newProfilePictureUrls);
       setError(null);
     } catch (err: any) {
@@ -104,15 +94,33 @@ const GlobalUsers: React.FC = () => {
   };
 
   useEffect(() => {
-    loadUsers();
-  }, [limit, page, sort, order, search]);
+    if (!authLoading && isAuthenticated) {
+      loadUsers();
+    }
+  }, [limit, page, sort, order, search, authLoading, isAuthenticated]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (loading) return <Typography>Loading users...</Typography>;
   if (error) return <Typography color="danger">Error: {error}</Typography>;
 
   return (
     <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', mb: 3, gap: 2, flexWrap: 'wrap' }}>
+      <Typography level="h2" sx={{ mb: 3 }}>
+        Global Users
+      </Typography>
+
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', mb: 3, gap: 2, flexWrap: 'wrap' }}>
         <FormControl size="sm">
           <FormLabel>Search users</FormLabel>
           <Input
@@ -179,12 +187,12 @@ const GlobalUsers: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {users.map((user) => (
             <Grid key={user.id} xs={12} sm={6} lg={4}>
               <Card
                 sx={{
-                  height: "100%",
+                  height: "auto",
                   display: "flex",
                   flexDirection: "column",
                   transition: "transform 0.2s, box-shadow 0.2s",
@@ -197,48 +205,55 @@ const GlobalUsers: React.FC = () => {
                 onClick={() => navigate(`/user/${user.id}`)}
               >
                 <CardContent
-                  sx={{ flex: 1, display: "flex", flexDirection: "column", textAlign: "center" }}
+                  sx={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: { xs: "column", md: "row" },
+                    alignItems: { xs: "center", md: "flex-start" },
+                    gap: { xs: 2, md: 3 },
+                    textAlign: { xs: "center", md: "left" }
+                  }}
                 >
-                  <Box sx={{ mb: 2 }}>
-                    <Avatar
-                      src={profilePictureUrls[user.id] || undefined}
-                      sx={{ width: 80, height: 80, mx: "auto", mb: 1 }}
-                    >
-                      {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Typography level="h4" sx={{ mb: 0.5 }}>
-                      {user.display_name || user.username}
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1, flex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0, width: "100%" }}>
+                      <Avatar
+                        src={profilePictureUrls[user.id] || undefined}
+                        sx={{ width: { xs: 80, md: 60 }, height: { xs: 80, md: 60 }, flexShrink: 0 }}
+                      >
+                        {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography level="h5" sx={{ mb: 0.5 }}>
+                          {user.display_name || user.username}
+                        </Typography>
+                        {user.display_name && (
+                          <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
+                            @{user.username}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                    <Typography level="body-sm" sx={{ color: "text.tertiary", width: "100%" }}>
+                      <span>📅</span> Joined {formatDate(user.created_at)}
                     </Typography>
-                    {user.display_name && (
-                      <Typography level="body-sm" sx={{ mb: 1, color: "text.tertiary" }}>
-                        @{user.username}
-                      </Typography>
-                    )}
-                    <Chip size="sm" variant="soft" color={user.role === 'admin' ? 'danger' : user.role === 'moderator' ? 'warning' : 'primary'}>
-                      {user.role}
-                    </Chip>
                   </Box>
 
-                  <Stack spacing={1} sx={{ mb: 2, flex: 1 }}>
-                    <Typography
-                      level="body-sm"
-                      startDecorator={<span>📡</span>}
-                    >
-                      {user.public_stations} Public Station{user.public_stations !== 1 ? 's' : ''}
-                    </Typography>
-                    <Typography
-                      level="body-sm"
-                      startDecorator={<span>📊</span>}
-                    >
-                      {user.public_posts} Public Post{user.public_posts !== 1 ? 's' : ''}
-                    </Typography>
-                    <Typography
-                      level="body-sm"
-                      startDecorator={<span>📅</span>}
-                    >
-                      Joined {formatDate(user.created_at)}
-                    </Typography>
-                  </Stack>
+                  <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: { xs: "center", md: "flex-end" } }}>
+                    <Stack spacing={1} sx={{ textAlign: { xs: "center", md: "right" } }}>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>📡</span>}
+                      >
+                        {user.public_stations} Public Station{user.public_stations !== 1 ? 's' : ''}
+                      </Typography>
+                      <Typography
+                        level="body-sm"
+                        startDecorator={<span>📊</span>}
+                      >
+                        {user.public_posts} Public Post{user.public_posts !== 1 ? 's' : ''}
+                      </Typography>
+                    </Stack>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -256,6 +271,8 @@ const GlobalUsers: React.FC = () => {
           loading={loading}
         />
       )}
+        </CardContent>
+      </Card>
     </Box>
   );
 };
