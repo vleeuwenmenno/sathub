@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail } from "./types";
+import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment } from "./types";
 
 const API_BASE = "/api";
 
@@ -510,5 +510,37 @@ export const getUserLikedPosts = async (
   limit: number = 20
 ): Promise<{ posts: Post[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
   const res = await api.get(`/likes/user/${userId}?page=${page}&limit=${limit}`);
+  return res.data.data;
+};
+
+// Comment API functions
+export const getCommentsForPost = async (postId: string, sortBy: 'newest' | 'most_liked' = 'newest'): Promise<PostComment[]> => {
+  const res = await api.get(`/comments/post/${postId}?sort_by=${sortBy}`);
+  return res.data.data || [];
+};
+
+export const createComment = async (
+  postId: string,
+  data: { content: string; parent_id?: number }
+): Promise<PostComment> => {
+  const res = await api.post(`/comments/post/${postId}`, data);
+  return res.data.data;
+};
+
+export const updateComment = async (
+  commentId: number,
+  data: { content: string }
+): Promise<PostComment> => {
+  const res = await api.put(`/comments/${commentId}`, data);
+  return res.data.data;
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+  await api.delete(`/comments/${commentId}`);
+};
+
+// Comment Like API functions
+export const likeComment = async (commentId: number): Promise<{ liked: boolean }> => {
+  const res = await api.post(`/comments/likes/${commentId}`);
   return res.data.data;
 };

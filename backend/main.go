@@ -193,6 +193,22 @@ func main() {
 			likes.GET("/user/:userId", handlers.GetUserLikedPosts)
 		}
 
+		// Public comment routes (no authentication required for viewing)
+		publicComments := api.Group("/comments")
+		{
+			publicComments.GET("/post/:postId", middleware.OptionalAuth(), handlers.GetCommentsForPost)
+		}
+
+		// Protected comment routes (user authentication required)
+		protectedComments := api.Group("/comments")
+		protectedComments.Use(middleware.AuthRequired())
+		{
+			protectedComments.POST("/post/:postId", handlers.CreateComment)
+			protectedComments.PUT("/:commentId", handlers.UpdateComment)
+			protectedComments.DELETE("/:commentId", handlers.DeleteComment)
+			protectedComments.POST("/likes/:commentId", handlers.LikeComment)
+		}
+
 		// Station health routes (station token authentication required)
 		stationHealth := api.Group("/stations")
 		stationHealth.Use(middleware.StationTokenAuth())

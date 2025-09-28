@@ -86,6 +86,8 @@ func InitDatabase() {
 		&models.Post{},
 		&models.PostImage{},
 		&models.Like{},
+		&models.Comment{},
+		&models.CommentLike{},
 		&models.PasswordResetToken{},
 		&models.EmailConfirmationToken{},
 		&models.EmailChangeToken{},

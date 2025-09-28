@@ -5,7 +5,6 @@ import {
   CardContent,
   Typography,
   Grid,
-  Button,
   Box,
   Stack,
   CircularProgress,
@@ -23,7 +22,7 @@ const formatDate = (dateString: string): string => {
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();
 
-  return `${day}-${month}-${year}`;
+  return `${day}.${month}.${year}`;
 };
 
 const Overview: React.FC = () => {

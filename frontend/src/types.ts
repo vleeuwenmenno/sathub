@@ -78,6 +78,31 @@ export interface User {
   has_profile_picture: boolean;
 }
 
+export interface PostComment {
+  id: number;
+  user_id: number;
+  username: string;
+  display_name?: string;
+  profile_picture_url?: string;
+  has_profile_picture: boolean;
+  content: string;
+  parent_id?: number;
+  replies?: PostComment[];
+  likes_count: number;
+  is_liked: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+  parent_id?: number;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;
