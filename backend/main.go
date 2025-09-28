@@ -61,13 +61,13 @@ func main() {
 	if frontendURL == "" {
 		frontendURL = "http://localhost:5173"
 	}
-	
+
 	// Get additional allowed origins from environment
 	additionalOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
-	
+
 	corsConfig := cors.DefaultConfig()
 	allowedOrigins := []string{frontendURL}
-	
+
 	// Add additional origins from environment variable (comma-separated)
 	if additionalOrigins != "" {
 		for _, origin := range strings.Split(additionalOrigins, ",") {
@@ -77,12 +77,12 @@ func main() {
 			}
 		}
 	}
-	
+
 	corsConfig.AllowOrigins = allowedOrigins
 	corsConfig.AllowCredentials = true
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
-	
+
 	r.Use(cors.New(corsConfig))
 
 	// Captcha routes
