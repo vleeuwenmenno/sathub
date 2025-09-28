@@ -8,6 +8,7 @@ import (
 	"sathub-ui-backend/middleware"
 	"sathub-ui-backend/models"
 	"sathub-ui-backend/utils"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -623,6 +624,66 @@ func BanUser(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("User %s successfully", action), nil)
+}
+
+// AdminDeletePost handles deleting any post (admin only)
+func AdminDeletePost(c *gin.Context) {
+	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find post to verify it exists
+	var post models.Post
+	if err := db.First(&post, uint(postID)).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Post not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	// Delete associated comment likes first (for comments on this post)
+	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", uint(postID)).Delete(&models.CommentLike{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete comment likes")
+		return
+	}
+
+	// Delete associated comments
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Comment{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post comments")
+		return
+	}
+
+	// Delete associated likes
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Like{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post likes")
+		return
+	}
+
+	// Delete associated images
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post images")
+		return
+	}
+
+	// Delete the post
+	if err := db.Delete(&post).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post")
+		return
+	}
+
+	// Log admin post deletion
+	utils.LogAuditEvent(c, models.ActionAdminPostDelete, models.TargetTypePost, fmt.Sprintf("%d", post.ID), models.AuditMetadata{
+		"satellite_name": post.SatelliteName,
+		"station_id":     post.StationID,
+	})
+
+	utils.SuccessResponse(c, http.StatusOK, "Post deleted successfully", nil)
 }
 
 // GetUserDetails returns detailed information about a specific user

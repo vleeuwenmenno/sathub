@@ -248,6 +248,7 @@ func main() {
 			admin.PUT("/users/:id/approve", handlers.ApproveUser)
 			admin.PUT("/users/:id/ban", handlers.BanUser)
 			admin.DELETE("/users/:id", handlers.DeleteUser)
+			admin.DELETE("/posts/:id", handlers.AdminDeletePost)
 			admin.GET("/invite", handlers.GetAdminInvite)
 			admin.GET("/settings/registration", handlers.GetRegistrationSettings)
 			admin.PUT("/settings/registration", handlers.UpdateRegistrationSettings)

@@ -9,12 +9,13 @@ import {
   Alert,
 } from "@mui/joy";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { deletePost } from "../api";
+import { deletePost, adminDeletePost } from "../api";
 
 interface DeletePostButtonProps {
   postId: number;
   postName: string;
   isOwner: boolean;
+  isAdmin?: boolean;
   onDelete: () => void;
 }
 
@@ -22,13 +23,14 @@ const DeletePostButton: React.FC<DeletePostButtonProps> = ({
   postId,
   postName,
   isOwner,
+  isAdmin = false,
   onDelete,
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOwner) {
+  if (!isOwner && !isAdmin) {
     return null;
   }
 
@@ -37,7 +39,11 @@ const DeletePostButton: React.FC<DeletePostButtonProps> = ({
     setError(null);
 
     try {
-      await deletePost(postId);
+      if (isAdmin) {
+        await adminDeletePost(postId);
+      } else {
+        await deletePost(postId);
+      }
       setOpen(false);
       onDelete();
     } catch (err) {
@@ -51,7 +57,7 @@ const DeletePostButton: React.FC<DeletePostButtonProps> = ({
     <>
       <IconButton
         size="sm"
-        color="danger"
+        color={isAdmin ? "warning" : "danger"}
         variant="plain"
         onClick={(e) => {
           e.preventDefault();
@@ -68,7 +74,7 @@ const DeletePostButton: React.FC<DeletePostButtonProps> = ({
         }}
         sx={{
           "&:hover": {
-            bgcolor: "danger.softBg",
+            bgcolor: isAdmin ? "warning.softBg" : "danger.softBg",
           },
         }}
       >
@@ -102,7 +108,7 @@ const DeletePostButton: React.FC<DeletePostButtonProps> = ({
               Cancel
             </Button>
             <Button
-              color="danger"
+              color={isAdmin ? "warning" : "danger"}
               onClick={handleDelete}
               loading={loading}
             >

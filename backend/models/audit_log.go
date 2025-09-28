@@ -31,6 +31,7 @@ const (
 	ActionAdminUserApprove    AuditAction = "admin_user_approve"
 	ActionAdminUserReject     AuditAction = "admin_user_reject"
 	ActionAdminUserDelete     AuditAction = "admin_user_delete"
+	ActionAdminPostDelete     AuditAction = "admin_post_delete"
 
 	// Comment actions
 	ActionCommentCreate AuditAction = "comment_create"

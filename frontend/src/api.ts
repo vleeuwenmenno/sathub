@@ -350,6 +350,10 @@ export const deletePost = async (postId: number): Promise<void> => {
   await api.delete(`/posts/${postId}`);
 };
 
+export const adminDeletePost = async (postId: number): Promise<void> => {
+  await api.delete(`/admin/posts/${postId}`);
+};
+
 export const getPostImageUrl = (postId: number, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };

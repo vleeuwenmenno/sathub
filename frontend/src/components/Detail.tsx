@@ -563,6 +563,7 @@ const Detail: React.FC = () => {
                       postId={detail.id}
                       postName={detail.satellite_name}
                       isOwner={user?.id === detail.station_user?.id}
+                      isAdmin={user?.role === 'admin'}
                       onDelete={handleDeletePost}
                     />
                     <LikeButton
