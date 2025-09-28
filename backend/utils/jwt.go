@@ -16,7 +16,7 @@ const (
 
 // JWT Claims structures
 type AccessTokenClaims struct {
-	UserID   uint   `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
 	jwt.RegisteredClaims
@@ -24,7 +24,7 @@ type AccessTokenClaims struct {
 
 type RefreshTokenClaims struct {
 	TokenID string `json:"token_id"`
-	UserID  uint   `json:"user_id"`
+	UserID  string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
@@ -45,7 +45,7 @@ func GetJWTSecrets() (accessSecret, refreshSecret string) {
 }
 
 // GenerateAccessToken creates a new JWT access token
-func GenerateAccessToken(userID uint, username, role string) (string, error) {
+func GenerateAccessToken(userID string, username, role string) (string, error) {
 	accessSecret, _ := GetJWTSecrets()
 
 	claims := AccessTokenClaims{
@@ -64,7 +64,7 @@ func GenerateAccessToken(userID uint, username, role string) (string, error) {
 }
 
 // GenerateRefreshToken creates a new JWT refresh token
-func GenerateRefreshToken(tokenID string, userID uint) (string, error) {
+func GenerateRefreshToken(tokenID string, userID string) (string, error) {
 	_, refreshSecret := GetJWTSecrets()
 
 	claims := RefreshTokenClaims{

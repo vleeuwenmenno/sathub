@@ -38,7 +38,7 @@ const AdminUserManagement: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
@@ -54,7 +54,7 @@ const AdminUserManagement: React.FC = () => {
     try {
       setLoading(true);
       const response = await getAllUsers(page, pagination.limit, search);
-      setUsers(response.users);
+      setUsers(response.users.sort((a, b) => a.username.localeCompare(b.username)));
       setPagination(response.pagination);
       setError(null);
     } catch (err) {
@@ -80,7 +80,7 @@ const AdminUserManagement: React.FC = () => {
     fetchUsers(newPage, searchQuery);
   };
 
-  const handleRoleChange = async (userId: number, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       setUpdatingUserId(userId);
       await updateUserRole(userId, newRole);
@@ -94,7 +94,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteUser = async (userId: string) => {
     try {
       await deleteUser(userId);
       setDeleteDialog({ open: false, user: null });
@@ -114,7 +114,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleBanUser = async (userId: number, banned: boolean) => {
+  const handleBanUser = async (userId: string, banned: boolean) => {
     try {
       console.log(`Attempting to ${banned ? 'ban' : 'unban'} user ${userId}`);
       await banUser(userId, banned);
@@ -128,7 +128,7 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  const handleViewUserDetails = async (userId: number) => {
+  const handleViewUserDetails = async (userId: string) => {
     try {
       setLoadingDetails(true);
       const userDetails = await getUserDetails(userId);

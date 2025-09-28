@@ -86,8 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('No 2FA session found');
     }
     
-    const userId = parseInt(userIdStr, 10);
-    const { token, refresh_token } = await verifyTwoFactorCode(userId, code);
+    const { token, refresh_token } = await verifyTwoFactorCode(userIdStr, code);
     
     // Clear 2FA session data
     sessionStorage.removeItem('two_factor_user_id');

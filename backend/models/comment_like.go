@@ -3,12 +3,13 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type CommentLike struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null;index" json:"user_id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
 	CommentID uint      `gorm:"not null;index" json:"comment_id"`
 	Comment   Comment   `gorm:"foreignKey:CommentID" json:"-"`

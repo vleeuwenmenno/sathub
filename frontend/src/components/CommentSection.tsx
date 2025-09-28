@@ -49,7 +49,7 @@ const CommentItem: React.FC<{
   onSaveEdit: (commentId: number, content: string) => Promise<void>;
   onCancelEdit: () => void;
   onLikeChange?: (commentId: number, liked: boolean, likesCount: number) => void;
-  currentUserId?: number;
+  currentUserId?: string;
   isEditing?: boolean;
   editContent?: string;
   onEditContentChange?: (content: string) => void;

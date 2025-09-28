@@ -13,6 +13,7 @@ import (
 	"satdump-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +54,8 @@ func generatePostImageURL(postID, imageID uint) string {
 
 // GetUserPosts handles fetching all public posts for a specific user
 func GetUserPosts(c *gin.Context) {
-	userID, err := strconv.ParseUint(c.Param("userId"), 10, 32)
+	userIDStr := c.Param("userId")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID")
 		return
@@ -63,14 +65,14 @@ func GetUserPosts(c *gin.Context) {
 	var posts []models.Post
 
 	// Get posts where station belongs to user and station is public
-	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ?", uint(userID), true).Find(&posts).Error; err != nil {
+	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ?", userID, true).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
 
 	response := make([]PostResponse, len(posts))
 	for i, post := range posts {
-		response[i] = buildPostResponseWithUser(post, db, uint(userID))
+		response[i] = buildPostResponseWithUser(post, db, userIDStr)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Posts retrieved successfully", response)
@@ -152,7 +154,7 @@ func GetDatabasePostDetail(c *gin.Context) {
 		return
 	}
 
-	response := buildPostDetailResponseWithUser(post, db, uint(userID))
+	response := buildPostDetailResponseWithUser(post, db, userID)
 	utils.SuccessResponse(c, http.StatusOK, "Post detail retrieved successfully", response)
 }
 
@@ -174,7 +176,7 @@ type PostDetailResponse struct {
 
 // UserDetailResponse represents user information with profile picture for post details
 type UserDetailResponse struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	Username          string `json:"username"`
 	DisplayName       string `json:"display_name,omitempty"`
 	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
@@ -271,7 +273,7 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	response := buildPostResponseWithUser(post, db, 0) // New post, no likes yet
+	response := buildPostResponseWithUser(post, db, "") // New post, no likes yet
 	utils.SuccessResponse(c, http.StatusCreated, "Post created successfully", response)
 }
 
@@ -444,11 +446,11 @@ func GetPostImage(c *gin.Context) {
 
 // buildPostDetailResponse builds a PostDetailResponse from a Post model
 func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
-	return buildPostDetailResponseWithUser(post, db, 0)
+	return buildPostDetailResponseWithUser(post, db, "")
 }
 
 // buildPostDetailResponseWithUser builds a PostDetailResponse from a Post model with user context
-func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID uint) PostDetailResponse {
+func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID string) PostDetailResponse {
 	var images []models.PostImage
 	db.Where("post_id = ?", post.ID).Find(&images)
 
@@ -462,12 +464,12 @@ func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID uint)
 	}
 
 	var stationUser *UserDetailResponse
-	if post.Station.User.ID != 0 {
+	if post.Station.User.ID != uuid.Nil {
 		stationUser = &UserDetailResponse{
-			ID:                post.Station.User.ID,
+			ID:                post.Station.User.ID.String(),
 			Username:          post.Station.User.Username,
 			DisplayName:       post.Station.User.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(post.Station.User.ID, post.Station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ProfilePictureURL: generateProfilePictureURL(post.Station.User.ID.String(), post.Station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(post.Station.User.ProfilePicture) > 0,
 		}
 	}
@@ -478,7 +480,7 @@ func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID uint)
 
 	// Check if user liked this post
 	var isLiked bool
-	if userID > 0 {
+	if userID != "" {
 		var like models.Like
 		err := db.Where("user_id = ? AND post_id = ?", userID, post.ID).First(&like).Error
 		isLiked = err == nil
@@ -502,11 +504,11 @@ func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID uint)
 
 // buildPostResponse builds a PostResponse from a Post model
 func buildPostResponse(post models.Post, db *gorm.DB) PostResponse {
-	return buildPostResponseWithUser(post, db, 0)
+	return buildPostResponseWithUser(post, db, "")
 }
 
 // buildPostResponseWithUser builds a PostResponse from a Post model with user context for likes
-func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID uint) PostResponse {
+func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID string) PostResponse {
 	var images []models.PostImage
 	db.Where("post_id = ?", post.ID).Find(&images)
 
@@ -525,7 +527,7 @@ func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID uint) PostR
 
 	// Check if user liked this post
 	var isLiked bool
-	if userID > 0 {
+	if userID != "" {
 		var like models.Like
 		err := db.Where("user_id = ? AND post_id = ?", userID, post.ID).First(&like).Error
 		isLiked = err == nil

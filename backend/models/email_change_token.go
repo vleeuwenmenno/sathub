@@ -3,12 +3,13 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type EmailChangeToken struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null" json:"user_id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	NewEmail  string    `gorm:"not null" json:"new_email"`
 	Token     string    `gorm:"uniqueIndex;not null" json:"token"`
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`

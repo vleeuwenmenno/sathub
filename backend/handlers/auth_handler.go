@@ -14,6 +14,7 @@ import (
 
 	"github.com/dchest/captcha"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -47,7 +48,7 @@ type AuthResponse struct {
 
 // UserInfo represents user information in responses
 type UserInfo struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	Username          string `json:"username"`
 	Email             string `json:"email,omitempty"`
 	Role              string `json:"role"`
@@ -191,11 +192,11 @@ func Login(c *gin.Context) {
 		// Return a response indicating 2FA verification is needed
 		twoFactorResponse := struct {
 			RequiresTwoFactor bool   `json:"requires_two_factor"`
-			UserID            uint   `json:"user_id"`
+			UserID            string `json:"user_id"`
 			Username          string `json:"username"`
 		}{
 			RequiresTwoFactor: true,
-			UserID:            user.ID,
+			UserID:            user.ID.String(),
 			Username:          user.Username,
 		}
 		utils.SuccessResponse(c, http.StatusOK, "Two-factor authentication required", twoFactorResponse)
@@ -203,7 +204,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Generate access token
-	accessToken, err := utils.GenerateAccessToken(user.ID, user.Username, user.Role)
+	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Username, user.Role)
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate access token")
 		return
@@ -220,7 +221,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID)
+	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -234,13 +235,13 @@ func Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:                user.ID,
+			ID:                user.ID.String(),
 			Username:          user.Username,
 			Email:             user.Email.String,
 			Role:              user.Role,
 			TwoFactorEnabled:  user.TwoFactorEnabled,
 			DisplayName:       user.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(user.ProfilePicture) > 0,
 		},
 	}
@@ -287,7 +288,7 @@ func RefreshTokens(c *gin.Context) {
 	}
 
 	// Generate new access token
-	accessToken, err := utils.GenerateAccessToken(user.ID, user.Username, user.Role)
+	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Username, user.Role)
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate access token")
 		return
@@ -306,7 +307,7 @@ func RefreshTokens(c *gin.Context) {
 		return
 	}
 
-	newRefreshToken, err := utils.GenerateRefreshToken(newRefreshTokenRecord.ID, user.ID)
+	newRefreshToken, err := utils.GenerateRefreshToken(newRefreshTokenRecord.ID, user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -320,13 +321,13 @@ func RefreshTokens(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		User: UserInfo{
-			ID:                user.ID,
+			ID:                user.ID.String(),
 			Username:          user.Username,
 			Email:             user.Email.String,
 			Role:              user.Role,
 			TwoFactorEnabled:  user.TwoFactorEnabled,
 			DisplayName:       user.DisplayName,
-			ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 			HasProfilePicture: len(user.ProfilePicture) > 0,
 		},
 	}
@@ -396,7 +397,7 @@ func UpdateProfile(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "User not found")
 			return
@@ -446,9 +447,16 @@ func UpdateProfile(c *gin.Context) {
 		// Generate email change token
 		changeToken := utils.GenerateRandomString(32)
 
+		// Parse userID to UUID
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			utils.InternalErrorResponse(c, "Invalid user ID")
+			return
+		}
+
 		// Create email change token record
 		changeTokenRecord := models.EmailChangeToken{
-			UserID:    userID,
+			UserID:    userUUID,
 			NewEmail:  req.Email,
 			Token:     changeToken,
 			ExpiresAt: time.Now().Add(24 * time.Hour), // 24 hours
@@ -509,7 +517,7 @@ func GetProfile(c *gin.Context) {
 	db := config.GetDB()
 
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "User not found")
 			return
@@ -519,13 +527,13 @@ func GetProfile(c *gin.Context) {
 	}
 
 	userInfo := UserInfo{
-		ID:                user.ID,
+		ID:                user.ID.String(),
 		Username:          user.Username,
 		Email:             user.Email.String,
 		Role:              user.Role,
 		TwoFactorEnabled:  user.TwoFactorEnabled,
 		DisplayName:       user.DisplayName,
-		ProfilePictureURL: generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		ProfilePictureURL: generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		HasProfilePicture: len(user.ProfilePicture) > 0,
 	}
 
@@ -604,7 +612,7 @@ func UploadProfilePicture(c *gin.Context) {
 
 	// Get current user
 	var user models.User
-	if err := db.First(&user, userID).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to find user")
 		return
 	}
@@ -621,7 +629,7 @@ func UploadProfilePicture(c *gin.Context) {
 	}
 
 	response := map[string]interface{}{
-		"profile_picture_url": generateProfilePictureURL(user.ID, user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		"profile_picture_url": generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
 		"has_profile_picture": true,
 	}
 
@@ -637,8 +645,8 @@ func GetProfilePicture(c *gin.Context) {
 	}
 
 	// Parse user ID
-	var userID uint
-	if _, err := fmt.Sscanf(userIDStr, "%d", &userID); err != nil {
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid user ID format")
 		return
 	}
@@ -979,8 +987,8 @@ func ConfirmEmailChange(c *gin.Context) {
 }
 
 // generateProfilePictureURL creates a URL for accessing user profile pictures
-func generateProfilePictureURL(userID uint, updatedAt string) string {
-	return fmt.Sprintf("users/%d/profile-picture?t=%s", userID, updatedAt)
+func generateProfilePictureURL(userID string, updatedAt string) string {
+	return fmt.Sprintf("users/%s/profile-picture?t=%s", userID, updatedAt)
 }
 
 // isValidImageFile validates file content using magic numbers (file signatures)

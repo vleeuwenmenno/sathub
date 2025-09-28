@@ -5,12 +5,13 @@ import (
 
 	"database/sql"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID                 uint           `gorm:"primaryKey" json:"id"`
+	ID                 uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	Username           string         `gorm:"uniqueIndex;not null" json:"username"`
 	Email              sql.NullString `gorm:"unique" json:"email,omitempty"`
 	EmailConfirmed     bool           `gorm:"default:false" json:"email_confirmed"`
