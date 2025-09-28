@@ -96,7 +96,7 @@ export const register = async (
 export const login = async (
   usernameOrEmail: string,
   password: string,
-): Promise<{ token: string; refresh_token: string; user: User } | { requires_two_factor: boolean; user_id: number; username: string }> => {
+): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: number; username: string }> => {
   const res = await api.post("/auth/login", { username: usernameOrEmail, password });
   const authData = res.data.data; // Extract from the nested data structure
   
@@ -113,7 +113,6 @@ export const login = async (
   return {
     token: authData.access_token,
     refresh_token: authData.refresh_token,
-    user: authData.user,
   };
 };
 
@@ -436,13 +435,12 @@ export const verifyTwoFactorSetup = async (code: string): Promise<void> => {
 export const verifyTwoFactorCode = async (
   userId: number,
   code: string,
-): Promise<{ token: string; refresh_token: string; user: User }> => {
+): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-2fa", { user_id: userId, code });
   const authData = res.data.data;
   return {
     token: authData.access_token,
     refresh_token: authData.refresh_token,
-    user: authData.user,
   };
 };
 
@@ -469,13 +467,12 @@ export const regenerateRecoveryCodes = async (): Promise<{ recovery_codes: strin
   return res.data.data;
 };
 
-export const verifyRecoveryCode = async (code: string): Promise<{ token: string; refresh_token: string; user: User }> => {
+export const verifyRecoveryCode = async (code: string): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-recovery-code", { code });
   const authData = res.data.data;
   return {
     token: authData.access_token,
     refresh_token: authData.refresh_token,
-    user: authData.user,
   };
 };
 

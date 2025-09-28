@@ -9,9 +9,7 @@ import {
   Stack,
   CircularProgress,
   Alert,
-  Skeleton,
   IconButton,
-  Button,
   Chip,
 } from '@mui/joy';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -212,7 +210,7 @@ const Detail: React.FC = () => {
 
     const loadStationPicture = async () => {
       try {
-        const blobUrl = await getStationPictureBlob(station.picture_url);
+        const blobUrl = await getStationPictureBlob(station.picture_url!);
         setStationImageBlob(blobUrl);
       } catch (error) {
         console.error('Failed to load station picture:', error);

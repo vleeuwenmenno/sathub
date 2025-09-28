@@ -18,10 +18,10 @@ import {
   Login as LoginIcon,
   Email as EmailIcon,
   Lock as LockIcon,
-  SatelliteAlt as SatelliteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { resendConfirmationEmail } from '../api';
+import logo from '../assets/logo.svg';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -107,7 +107,16 @@ const Login: React.FC = () => {
             color: 'white',
           }}
         >
-          <SatelliteIcon sx={{ fontSize: 48, mb: 1 }} />
+          <Box
+            component="img"
+            src={logo}
+            alt="SatHub Logo"
+            sx={{
+              height: 48,
+              mb: 1,
+              filter: 'brightness(0) invert(1)', // Make logo white on dark background
+            }}
+          />
           <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
             SatDump
           </Typography>

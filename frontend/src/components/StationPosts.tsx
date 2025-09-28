@@ -31,7 +31,6 @@ const StationPosts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [station, setStation] = useState<Station | null>(null);
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
-  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,15 +64,6 @@ const StationPosts: React.FC = () => {
       if (!posts.length) return;
 
       const newImageBlobs: Record<string, string> = {};
-      const newLoadingImages: Record<string, boolean> = {};
-
-      // Set loading state for all images
-      for (const post of posts) {
-        if (post.images.length > 0) {
-          newLoadingImages[`${post.id}-image`] = true;
-        }
-      }
-      setLoadingImages(newLoadingImages);
 
       // Load images
       for (const post of posts) {
@@ -88,11 +78,6 @@ const StationPosts: React.FC = () => {
               post.id,
               error,
             );
-            // Mark as not loading if failed
-            setLoadingImages(prev => ({
-              ...prev,
-              [`${post.id}-image`]: false
-            }));
           }
         }
       }
@@ -220,19 +205,11 @@ const StationPosts: React.FC = () => {
                                     ...prev,
                                     [`${post.id}-image`]: true
                                   }));
-                                  setLoadingImages(prev => ({
-                                    ...prev,
-                                    [`${post.id}-image`]: false
-                                  }));
                                 }}
                                 onError={() => {
                                   setLoadedImages(prev => ({
                                     ...prev,
                                     [`${post.id}-image`]: true
-                                  }));
-                                  setLoadingImages(prev => ({
-                                    ...prev,
-                                    [`${post.id}-image`]: false
                                   }));
                                 }}
                                 onMouseEnter={(e) =>

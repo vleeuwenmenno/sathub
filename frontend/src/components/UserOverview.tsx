@@ -7,7 +7,6 @@ import {
   CardContent,
   Grid,
   Chip,
-  Avatar,
   Divider,
   CircularProgress,
   Tooltip,

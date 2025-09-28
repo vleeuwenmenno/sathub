@@ -20,7 +20,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import type { Station } from "../api";
 import {
   getGlobalStations,
-  getUserStations,
   getStationPictureBlob,
   getStationDetails,
 } from "../api";
@@ -81,7 +80,7 @@ const GlobalStations: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [stations, setStations] = useState<Station[]>([]);
-  const [stationDetails, setStationDetails] = useState<Record<number, Station>>(
+  const [stationDetails, setStationDetails] = useState<Record<string, Station>>(
     {},
   );
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
@@ -117,7 +116,7 @@ const GlobalStations: React.FC = () => {
       setStations(data);
 
       // Fetch detailed information for each station to get owner info
-      const details: Record<number, Station> = {};
+      const details: Record<string, Station> = {};
       for (const station of data) {
         try {
           const stationDetail = await getStationDetails(station.id);
@@ -336,7 +335,7 @@ const GlobalStations: React.FC = () => {
                       </Tooltip>
                       {stationDetails[station.id]?.user && (
                         <Chip size="sm" variant="soft" color="primary">
-                          @{stationDetails[station.id].user.username}
+                          @{stationDetails[station.id]?.user?.username}
                         </Chip>
                       )}
                     </Stack>

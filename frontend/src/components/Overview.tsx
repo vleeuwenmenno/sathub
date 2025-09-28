@@ -157,7 +157,7 @@ const Overview: React.FC = () => {
 
       {!loading && posts.length > 0 && !isAuthenticated && (
         <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Alert color="info" variant="soft">
+          <Alert color="primary" variant="soft">
             Please login to browse further.
           </Alert>
         </Box>

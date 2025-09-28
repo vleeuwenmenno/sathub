@@ -17,8 +17,8 @@ import {
   Switch,
 } from '@mui/joy';
 import { ArrowBack, PhotoCamera } from '@mui/icons-material';
-import type { Station } from '../api';
 import { getStation, createStation, updateStation, uploadStationPicture, getStationPictureBlob } from '../api';
+import type { Station } from '../api';
 import LocationPicker from './LocationPicker';
 
 interface StationFormProps {
@@ -30,7 +30,6 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [station, setStation] = useState<Station | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -54,8 +53,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
     try {
       setLoading(true);
       const data = await getStation(id);
-      setStation(data);
-            setFormData({
+      setFormData({
         name: data.name,
         location: data.location,
         latitude: data.latitude,

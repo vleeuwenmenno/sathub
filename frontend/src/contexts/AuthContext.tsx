@@ -67,9 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     // Normal login flow
-    const { token, refresh_token, user } = response as { token: string; refresh_token: string; user: User };
+    const { token, refresh_token } = response as { token: string; refresh_token: string };
     localStorage.setItem('auth_token', token);
     localStorage.setItem('refresh_token', refresh_token);
+    
+    // Fetch fresh user data to ensure profile information is up-to-date
+    const user = await getProfile();
     setAuthState({
       user,
       token,
@@ -84,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     const userId = parseInt(userIdStr, 10);
-    const { token, refresh_token, user } = await verifyTwoFactorCode(userId, code);
+    const { token, refresh_token } = await verifyTwoFactorCode(userId, code);
     
     // Clear 2FA session data
     sessionStorage.removeItem('two_factor_user_id');
@@ -93,6 +96,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Complete authentication
     localStorage.setItem('auth_token', token);
     localStorage.setItem('refresh_token', refresh_token);
+    
+    // Fetch fresh user data
+    const user = await getProfile();
     setAuthState({
       user,
       token,
@@ -101,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const verifyRecoveryCode = async (code: string) => {
-    const { token, refresh_token, user } = await apiVerifyRecoveryCode(code);
+    const { token, refresh_token } = await apiVerifyRecoveryCode(code);
     
     // Clear 2FA session data
     sessionStorage.removeItem('two_factor_user_id');
@@ -110,6 +116,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Complete authentication
     localStorage.setItem('auth_token', token);
     localStorage.setItem('refresh_token', refresh_token);
+    
+    // Fetch fresh user data
+    const user = await getProfile();
     setAuthState({
       user,
       token,

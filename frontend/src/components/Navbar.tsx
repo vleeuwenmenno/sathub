@@ -22,7 +22,6 @@ import {
 import {
   DarkMode,
   LightMode,
-  Satellite,
   ArrowBack,
   Logout,
   Settings,
@@ -36,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { getProfilePictureBlob } from "../api";
+import logo from "../assets/logo.svg";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -156,7 +156,7 @@ const Navbar: React.FC = () => {
               </IconButton>
             )}
             <img
-              src="/src/assets/logo.svg"
+              src={logo}
               alt="SatHub Logo"
               style={{ width: "2rem", height: "2rem" }}
             />
@@ -307,7 +307,7 @@ const Navbar: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <img
-                src="/src/assets/logo.svg"
+                src={logo}
                 alt="SatHub Logo"
                 style={{ width: "1.5rem", height: "1.5rem" }}
               />
