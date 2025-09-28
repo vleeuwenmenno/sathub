@@ -188,6 +188,12 @@ func CreateComment(c *gin.Context) {
 
 	fmt.Printf("Comment created successfully with ID: %d\n", comment.ID)
 
+	// Log comment creation
+	utils.LogCommentAction(c, models.ActionCommentCreate, comment.ID, models.AuditMetadata{
+		"post_id":        postID,
+		"content_length": len(req.Content),
+	})
+
 	// Fetch the created comment with user info for response
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch created comment")
@@ -245,11 +251,18 @@ func UpdateComment(c *gin.Context) {
 	}
 
 	// Update the comment
+	oldContent := comment.Content
 	comment.Content = req.Content
 	if err := db.Save(&comment).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to update comment")
 		return
 	}
+
+	// Log comment update
+	utils.LogCommentAction(c, models.ActionCommentUpdate, comment.ID, models.AuditMetadata{
+		"old_content_length": len(oldContent),
+		"new_content_length": len(req.Content),
+	})
 
 	// Fetch updated comment with user info
 	if err := db.Preload("User").First(&comment, comment.ID).Error; err != nil {
@@ -316,6 +329,11 @@ func DeleteComment(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete comment")
 		return
 	}
+
+	// Log comment deletion
+	utils.LogCommentAction(c, models.ActionCommentDelete, uint(commentID), models.AuditMetadata{
+		"content_length": len(comment.Content),
+	})
 
 	utils.SuccessResponse(c, http.StatusOK, "Comment deleted successfully", nil)
 }

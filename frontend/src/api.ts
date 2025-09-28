@@ -675,3 +675,52 @@ export const getPublicRegistrationSettings = async (): Promise<RegistrationSetti
   const res = await axios.get(`${API_BASE}/settings/registration`);
   return res.data.data;
 };
+
+// Audit Log API functions
+export interface AuditLog {
+  id: string;
+  user_id?: string;
+  username?: string;
+  action: string;
+  target_type: string;
+  target_id?: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface AuditLogsResponse {
+  logs: AuditLog[];
+  pagination: PaginationMeta;
+}
+
+export const getAuditLogs = async (
+  page: number = 1,
+  limit: number = 50,
+  filters: {
+    user_id?: string;
+    action?: string;
+    target_type?: string;
+    target_id?: string;
+    search?: string;
+    date_from?: string;
+    date_to?: string;
+  } = {}
+): Promise<AuditLogsResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (filters.user_id) params.set("user_id", filters.user_id);
+  if (filters.action) params.set("action", filters.action);
+  if (filters.target_type) params.set("target_type", filters.target_type);
+  if (filters.target_id) params.set("target_id", filters.target_id);
+  if (filters.search) params.set("search", filters.search);
+  if (filters.date_from) params.set("date_from", filters.date_from);
+  if (filters.date_to) params.set("date_to", filters.date_to);
+
+  const res = await api.get(`/admin/audit-logs?${params}`);
+  return res.data.data;
+};

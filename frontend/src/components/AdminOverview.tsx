@@ -158,17 +158,30 @@ const AdminOverview: React.FC = () => {
         </Grid>
 
         <Grid xs={12} sm={6} md={4} lg={2.4}>
-          <Card>
+          <Card
+            onClick={() => navigate('/admin/audit-logs')}
+            sx={{
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: 'lg',
+              },
+            }}
+          >
             <CardContent>
               <Stack spacing={1}>
                 <Typography level="h4" color="primary">
-                  🛰️ Stations
+                  📋 Audit Logs
                 </Typography>
                 <Typography level="h1">
-                  {stats?.total_stations.toLocaleString() || 0}
+                  View
                 </Typography>
                 <Typography level="body-sm" color="neutral">
-                  Total ground stations
+                  System activity logs
+                </Typography>
+                <Typography level="body-xs" color="primary" sx={{ mt: 1 }}>
+                  Click to view logs →
                 </Typography>
               </Stack>
             </CardContent>

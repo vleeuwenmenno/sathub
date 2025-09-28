@@ -59,6 +59,10 @@ func LikePost(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to unlike post")
 			return
 		}
+
+		// Log post unlike
+		utils.LogPostAction(c, models.ActionPostUnlike, uint(postID), models.AuditMetadata{})
+
 		utils.SuccessResponse(c, http.StatusOK, "Post unliked successfully", gin.H{"liked": false})
 	} else if err == gorm.ErrRecordNotFound {
 		// User hasn't liked, so like (create the like)
@@ -70,6 +74,10 @@ func LikePost(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to like post")
 			return
 		}
+
+		// Log post like
+		utils.LogPostAction(c, models.ActionPostLike, uint(postID), models.AuditMetadata{})
+
 		utils.SuccessResponse(c, http.StatusCreated, "Post liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")
