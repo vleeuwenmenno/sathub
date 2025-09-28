@@ -24,6 +24,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCommentsForPost, createComment, updateComment, deleteComment } from '../api';
 import type { Comment } from '../types';
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}.${month}.${year}`;
+};
+
 interface CommentSectionProps {
   postId: string;
 }
@@ -91,7 +100,7 @@ const CommentItem: React.FC<{
                   {comment.username}
                 </Typography>
                 <Typography level="body-xs" color="neutral">
-                  {new Date(comment.created_at).toLocaleDateString()}
+                  {formatDate(comment.created_at)}
                 </Typography>
                 {isOwner && (
                   <>
