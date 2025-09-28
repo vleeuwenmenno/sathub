@@ -40,6 +40,20 @@ type AdminUserResponse struct {
 	UpdatedAt         string `json:"updated_at"`
 }
 
+// AdminUsersResponse represents paginated user data for admin management
+type AdminUsersResponse struct {
+	Users      []AdminUserResponse `json:"users"`
+	Pagination PaginationMeta      `json:"pagination"`
+}
+
+// PaginationMeta represents pagination metadata
+type PaginationMeta struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+	Total int `json:"total"`
+	Pages int `json:"pages"`
+}
+
 // UpdateUserRoleRequest represents the request to update a user's role
 type UpdateUserRoleRequest struct {
 	Role string `json:"role" binding:"required"`
@@ -84,15 +98,59 @@ func GetAdminOverview(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Admin overview retrieved successfully", response)
 }
 
-// GetAllUsers returns a list of all users for admin management
+// GetAllUsers returns a paginated list of users for admin management with optional search
 func GetAllUsers(c *gin.Context) {
 	db := config.GetDB()
 
+	// Parse query parameters
+	page := 1
+	limit := 20
+	search := c.Query("search")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
+			page = 1
+		}
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || l != 1 {
+			limit = 20
+		}
+		// Cap limit at 100
+		if limit > 100 {
+			limit = 100
+		}
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Build query
+	query := db.Model(&models.User{})
+
+	// Add search filter if provided
+	if search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Where("username ILIKE ? OR email ILIKE ?", searchTerm, searchTerm)
+	}
+
+	// Get total count for pagination
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count users")
+		return
+	}
+
+	// Get paginated users
 	var users []models.User
-	if err := db.Find(&users).Error; err != nil {
+	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&users).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to retrieve users")
 		return
 	}
+
+	// Calculate total pages
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
 
 	var userResponses []AdminUserResponse
 	for _, user := range users {
@@ -127,7 +185,17 @@ func GetAllUsers(c *gin.Context) {
 		userResponses = append(userResponses, userResponse)
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Users retrieved successfully", userResponses)
+	response := AdminUsersResponse{
+		Users: userResponses,
+		Pagination: PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+			Pages: totalPages,
+		},
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Users retrieved successfully", response)
 }
 
 // UpdateUserRole updates a user's role (admin only)
@@ -221,9 +289,126 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Delete the user (cascade will handle related records)
-	if err := db.Delete(&user).Error; err != nil {
+	// Delete all related records in a transaction to ensure atomicity
+	tx := db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Delete comment likes
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.CommentLike{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user comment likes")
+		return
+	}
+
+	// Delete likes
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Like{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user likes")
+		return
+	}
+
+	// Get all station IDs for this user first
+	var stationIDs []string
+	if err := tx.Model(&models.Station{}).Where("user_id = ?", targetUserID).Pluck("id", &stationIDs).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to find user stations")
+		return
+	}
+
+	// Delete comments by user
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Comment{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user comments")
+		return
+	}
+
+	// Delete posts and related data for these stations
+	if len(stationIDs) > 0 {
+		// Get all post IDs for these stations first
+		var postIDs []uint
+		if err := tx.Model(&models.Post{}).Where("station_id IN ?", stationIDs).Pluck("id", &postIDs).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to find user posts")
+			return
+		}
+
+		if len(postIDs) > 0 {
+			// Delete comments on these posts (by other users)
+			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Comment{}).Error; err != nil {
+				tx.Rollback()
+				utils.InternalErrorResponse(c, "Failed to delete comments on user posts")
+				return
+			}
+
+			// Delete likes on these posts (by other users)
+			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Like{}).Error; err != nil {
+				tx.Rollback()
+				utils.InternalErrorResponse(c, "Failed to delete likes on user posts")
+				return
+			}
+
+			// Delete post images
+			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.PostImage{}).Error; err != nil {
+				tx.Rollback()
+				utils.InternalErrorResponse(c, "Failed to delete user post images")
+				return
+			}
+		}
+
+		// Delete posts
+		if err := tx.Where("station_id IN ?", stationIDs).Delete(&models.Post{}).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to delete user posts")
+			return
+		}
+	}
+
+	// Delete stations
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Station{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user stations")
+		return
+	}
+
+	// Delete tokens
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.RefreshToken{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user refresh tokens")
+		return
+	}
+
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.PasswordResetToken{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user password reset tokens")
+		return
+	}
+
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailConfirmationToken{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user email confirmation tokens")
+		return
+	}
+
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailChangeToken{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user email change tokens")
+		return
+	}
+
+	// Finally delete the user
+	if err := tx.Delete(&user).Error; err != nil {
+		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user")
+		return
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to commit user deletion")
 		return
 	}
 
@@ -295,11 +480,28 @@ func BanUser(c *gin.Context) {
 		return
 	}
 
-	// If user is being banned, terminate all their active sessions
+	// If user is being banned, terminate all their active sessions and deactivate station APIs
 	if req.Banned {
 		if err := db.Where("user_id = ?", targetUserID).Delete(&models.RefreshToken{}).Error; err != nil {
 			// Log error but don't fail the ban operation
 			fmt.Printf("Failed to delete refresh tokens for banned user %d: %v\n", targetUserID, err)
+		}
+
+		// Regenerate tokens for all stations to deactivate their APIs
+		var stations []models.Station
+		if err := db.Where("user_id = ?", targetUserID).Find(&stations).Error; err != nil {
+			// Log error but don't fail the ban operation
+			fmt.Printf("Failed to find stations for banned user %d: %v\n", targetUserID, err)
+		} else {
+			for _, station := range stations {
+				if err := station.RegenerateToken(); err != nil {
+					fmt.Printf("Failed to regenerate token for station %s: %v\n", station.ID, err)
+					continue
+				}
+				if err := db.Save(&station).Error; err != nil {
+					fmt.Printf("Failed to save regenerated token for station %s: %v\n", station.ID, err)
+				}
+			}
 		}
 	}
 

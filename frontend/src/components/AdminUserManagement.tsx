@@ -17,15 +17,29 @@ import {
   ModalClose,
   Avatar,
   Divider,
+  Input,
+  IconButton,
 } from "@mui/joy";
+import { useMediaQuery, useTheme, Pagination } from "@mui/material";
+import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
 import { getAllUsers, updateUserRole, deleteUser, banUser, getUserDetails } from "../api";
 import type { AdminUser, AdminUserDetails } from "../api";
 
 const AdminUserManagement: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number }>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
@@ -36,11 +50,12 @@ const AdminUserManagement: React.FC = () => {
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number = 1, search: string = '') => {
     try {
       setLoading(true);
-      const data = await getAllUsers();
-      setUsers(data);
+      const response = await getAllUsers(page, pagination.limit, search);
+      setUsers(response.users);
+      setPagination(response.pagination);
       setError(null);
     } catch (err) {
       setError("Failed to load users");
@@ -50,16 +65,27 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
+  // Initial load
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(pagination.page, searchQuery);
   }, []);
+
+  const handleSearch = () => {
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when searching
+    fetchUsers(1, searchQuery);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+    fetchUsers(newPage, searchQuery);
+  };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       setUpdatingUserId(userId);
       await updateUserRole(userId, newRole);
-      // Refresh the user list to get updated data from server
-      await fetchUsers();
+      // Refresh the current page to get updated data from server
+      await fetchUsers(pagination.page, searchQuery);
     } catch (err) {
       setError("Failed to update user role");
       console.error("Error updating user role:", err);
@@ -71,9 +97,17 @@ const AdminUserManagement: React.FC = () => {
   const handleDeleteUser = async (userId: string) => {
     try {
       await deleteUser(userId);
-      // Remove from local state
-      setUsers(users.filter(user => user.id !== userId));
       setDeleteDialog({ open: false, user: null });
+
+      // Check if we need to adjust pagination after deletion
+      const remainingUsers = users ? users.filter(user => user.id !== userId) : [];
+      if (remainingUsers.length === 0 && pagination.page > 1) {
+        // If this was the last user on the page and we're not on page 1, go to previous page
+        handlePageChange(pagination.page - 1);
+      } else {
+        // Otherwise, refresh the current page
+        await fetchUsers(pagination.page, searchQuery);
+      }
     } catch (err) {
       setError("Failed to delete user");
       console.error("Error deleting user:", err);
@@ -85,8 +119,8 @@ const AdminUserManagement: React.FC = () => {
       console.log(`Attempting to ${banned ? 'ban' : 'unban'} user ${userId}`);
       await banUser(userId, banned);
       console.log(`Successfully ${banned ? 'banned' : 'unbanned'} user ${userId}`);
-      // Refresh the user list to get updated data from server
-      await fetchUsers();
+      // Refresh the current page to get updated data from server
+      await fetchUsers(pagination.page, searchQuery);
       console.log(`Refreshed user list after ${banned ? 'ban' : 'unban'} operation`);
     } catch (err) {
       console.error(`Error ${banned ? 'banning' : 'unbanning'} user:`, err);
@@ -135,117 +169,284 @@ const AdminUserManagement: React.FC = () => {
         </Alert>
       )}
 
-      <Card>
+      {/* Search and Filters */}
+      <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Banned</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr
-                  key={user.id}
-                  onClick={() => handleViewUserDetails(user.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td>{user.id}</td>
-                  <td>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography level="body-sm">{user.username}</Typography>
-                      {user.display_name && (
-                        <Typography level="body-xs" color="neutral">
-                          ({user.display_name})
-                        </Typography>
-                      )}
-                    </Stack>
-                  </td>
-                  <td>
-                    {user.email ? (
-                      <Stack spacing={0.5}>
-                        <Typography level="body-sm">{user.email}</Typography>
-                        {user.email_confirmed ? (
-                          <Chip size="sm" color="success" variant="soft">Confirmed</Chip>
-                        ) : (
-                          <Chip size="sm" color="warning" variant="soft">Unconfirmed</Chip>
-                        )}
-                      </Stack>
-                    ) : (
-                      <Typography level="body-sm" color="neutral">No email</Typography>
-                    )}
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <Select
+          <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Input
+                key="search-input" // Stable key to prevent recreation
+                placeholder="Search by username or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                startDecorator={<SearchIcon />}
+                endDecorator={
+                  searchQuery && (
+                    <IconButton
                       size="sm"
-                      value={user.role}
-                      onChange={(_, value) => value && handleRoleChange(user.id, value)}
-                      disabled={updatingUserId === user.id}
-                      sx={{ minWidth: 120 }}
+                      onClick={() => setSearchQuery('')}
                     >
-                      <Option value="user">User</Option>
-                      <Option value="admin">Admin</Option>
-                    </Select>
-                  </td>
-                  <td>
-                    <Stack spacing={0.5}>
-                      <Chip size="sm" color={getRoleColor(user.role)} variant="soft">
-                        {user.role}
-                      </Chip>
-                      {user.two_factor_enabled && (
-                        <Chip size="sm" color="success" variant="outlined">
-                          2FA
-                        </Chip>
-                      )}
-                    </Stack>
-                  </td>
-                  <td>
-                    <Chip
-                      size="sm"
-                      color={user.banned ? "danger" : "success"}
-                      variant="soft"
-                    >
-                      {user.banned ? "Banned" : "Active"}
-                    </Chip>
-                  </td>
-                  <td>
-                    <Typography level="body-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </Typography>
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        size="sm"
-                        color={user.banned ? "success" : "warning"}
-                        variant="soft"
-                        onClick={() => handleBanUser(user.id, !user.banned)}
-                      >
-                        {user.banned ? "Unban" : "Ban"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        color="danger"
-                        variant="soft"
-                        onClick={() => setDeleteDialog({ open: true, user })}
-                      >
-                        Delete
-                      </Button>
-                    </Stack>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                      <ClearIcon />
+                    </IconButton>
+                  )
+                }
+                sx={{ width: '100%' }}
+              />
+            </Box>
+            <Button
+              variant="solid"
+              onClick={handleSearch}
+              startDecorator={<SearchIcon />}
+              sx={{ minWidth: isMobile ? '100%' : 'auto' }}
+            >
+              Search
+            </Button>
+          </Stack>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent sx={{ p: { xs: 1, md: 2 } }}>
+          {isMobile ? (
+            // Mobile card layout
+            <Stack spacing={2}>
+              {users && users.map((user) => (
+                <Card key={user.id} variant="outlined" sx={{ cursor: 'pointer' }} onClick={() => handleViewUserDetails(user.id)}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Stack spacing={2}>
+                      {/* Header with username and ID */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Box>
+                          <Typography level="body-lg" fontWeight="bold">
+                            {user.display_name || user.username}
+                          </Typography>
+                          <Typography level="body-sm" color="neutral">
+                            @{user.username} • ID: {user.id}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1}>
+                          <Chip size="sm" color={getRoleColor(user.role)} variant="soft">
+                            {user.role}
+                          </Chip>
+                          <Chip
+                            size="sm"
+                            color={user.banned ? "danger" : "success"}
+                            variant="soft"
+                          >
+                            {user.banned ? "Banned" : "Active"}
+                          </Chip>
+                        </Stack>
+                      </Box>
+
+                      {/* Email */}
+                      {user.email ? (
+                        <Box>
+                          <Typography level="body-sm">{user.email}</Typography>
+                          <Chip
+                            size="sm"
+                            color={user.email_confirmed ? "success" : "warning"}
+                            variant="soft"
+                            sx={{ mt: 0.5 }}
+                          >
+                            {user.email_confirmed ? "Confirmed" : "Unconfirmed"}
+                          </Chip>
+                        </Box>
+                      ) : (
+                        <Typography level="body-sm" color="neutral">No email</Typography>
+                      )}
+
+                      {/* Role selector and 2FA status */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            size="sm"
+                            value={user.role}
+                            onChange={(_, value) => value && handleRoleChange(user.id, value)}
+                            disabled={updatingUserId === user.id}
+                            sx={{ minWidth: 100 }}
+                          >
+                            <Option value="user">User</Option>
+                            <Option value="admin">Admin</Option>
+                          </Select>
+                        </Box>
+                        {user.two_factor_enabled && (
+                          <Chip size="sm" color="success" variant="outlined">
+                            2FA
+                          </Chip>
+                        )}
+                      </Box>
+
+                      {/* Created date */}
+                      <Typography level="body-xs" color="neutral">
+                        Created: {new Date(user.created_at).toLocaleDateString('de-DE')}
+                      </Typography>
+
+                      {/* Action buttons */}
+                      <Box onClick={(e) => e.stopPropagation()}>
+                        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                          <Button
+                            size="sm"
+                            color={user.banned ? "success" : "warning"}
+                            variant="soft"
+                            onClick={() => handleBanUser(user.id, !user.banned)}
+                            fullWidth
+                          >
+                            {user.banned ? "Unban" : "Ban"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            color="danger"
+                            variant="soft"
+                            onClick={() => setDeleteDialog({ open: true, user })}
+                            fullWidth
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          ) : (
+            // Desktop table layout
+            <Table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Banned</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users && users.map((user) => (
+                  <tr
+                    key={user.id}
+                    onClick={() => handleViewUserDetails(user.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td>{user.id}</td>
+                    <td>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography level="body-sm">{user.username}</Typography>
+                        {user.display_name && (
+                          <Typography level="body-xs" color="neutral">
+                            ({user.display_name})
+                          </Typography>
+                        )}
+                      </Stack>
+                    </td>
+                    <td>
+                      {user.email ? (
+                        <Stack spacing={0.5}>
+                          <Typography level="body-sm">{user.email}</Typography>
+                          {user.email_confirmed ? (
+                            <Chip size="sm" color="success" variant="soft">Confirmed</Chip>
+                          ) : (
+                            <Chip size="sm" color="warning" variant="soft">Unconfirmed</Chip>
+                          )}
+                        </Stack>
+                      ) : (
+                        <Typography level="body-sm" color="neutral">No email</Typography>
+                      )}
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        size="sm"
+                        value={user.role}
+                        onChange={(_, value) => value && handleRoleChange(user.id, value)}
+                        disabled={updatingUserId === user.id}
+                        sx={{ minWidth: 120 }}
+                      >
+                        <Option value="user">User</Option>
+                        <Option value="admin">Admin</Option>
+                      </Select>
+                    </td>
+                    <td>
+                      <Stack spacing={0.5}>
+                        <Chip size="sm" color={getRoleColor(user.role)} variant="soft">
+                          {user.role}
+                        </Chip>
+                        {user.two_factor_enabled && (
+                          <Chip size="sm" color="success" variant="outlined">
+                            2FA
+                          </Chip>
+                        )}
+                      </Stack>
+                    </td>
+                    <td>
+                      <Chip
+                        size="sm"
+                        color={user.banned ? "danger" : "success"}
+                        variant="soft"
+                      >
+                        {user.banned ? "Banned" : "Active"}
+                      </Chip>
+                    </td>
+                    <td>
+                      <Typography level="body-sm">
+                        {new Date(user.created_at).toLocaleDateString('de-DE')}
+                      </Typography>
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="sm"
+                          color={user.banned ? "success" : "warning"}
+                          variant="soft"
+                          onClick={() => handleBanUser(user.id, !user.banned)}
+                        >
+                          {user.banned ? "Unban" : "Ban"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="danger"
+                          variant="soft"
+                          onClick={() => setDeleteDialog({ open: true, user })}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+          <Pagination
+            count={pagination.pages}
+            page={pagination.page}
+            onChange={(_, page) => handlePageChange(page)}
+            color="primary"
+            size={isMobile ? "small" : "medium"}
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Results summary */}
+      <Typography level="body-sm" color="neutral" sx={{ textAlign: 'center', mb: 3 }}>
+        Showing {users ? users.length : 0} of {pagination.total} users
+        {searchQuery && ` matching "${searchQuery}"`}
+      </Typography>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -301,7 +502,7 @@ const AdminUserManagement: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     size="lg"
-                    src={userDetailsModal.user.profile_picture_url}
+                    src={userDetailsModal.user.profile_picture_url ? `/api/${userDetailsModal.user.profile_picture_url}` : undefined}
                     sx={{ width: 80, height: 80 }}
                   >
                     {userDetailsModal.user.display_name?.charAt(0) || userDetailsModal.user.username.charAt(0)}
@@ -337,29 +538,30 @@ const AdminUserManagement: React.FC = () => {
                     <Typography level="body-sm">
                       <strong>User ID:</strong> {userDetailsModal.user.id}
                     </Typography>
-                    <Typography level="body-sm">
-                      <strong>Email:</strong> {userDetailsModal.user.email || 'Not provided'}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography level="body-sm">
+                        <strong>Email:</strong> {userDetailsModal.user.email || 'Not provided'}
+                      </Typography>
                       {userDetailsModal.user.email && (
                         <Chip
                           size="sm"
                           color={userDetailsModal.user.email_confirmed ? "success" : "warning"}
                           variant="soft"
-                          sx={{ ml: 1 }}
                         >
                           {userDetailsModal.user.email_confirmed ? "Confirmed" : "Unconfirmed"}
                         </Chip>
                       )}
-                    </Typography>
+                    </Box>
                     <Typography level="body-sm">
                       <strong>Two-Factor Auth:</strong>{' '}
                       {userDetailsModal.user.two_factor_enabled ? 'Enabled' : 'Disabled'}
                     </Typography>
                     <Typography level="body-sm">
-                      <strong>Created:</strong> {new Date(userDetailsModal.user.created_at).toLocaleString()}
+                      <strong>Created:</strong> {new Date(userDetailsModal.user.created_at).toLocaleDateString('de-DE')}
                     </Typography>
                     {userDetailsModal.user.banned && userDetailsModal.user.banned_at && (
                       <Typography level="body-sm">
-                        <strong>Banned At:</strong> {new Date(userDetailsModal.user.banned_at).toLocaleString()}
+                        <strong>Banned At:</strong> {new Date(userDetailsModal.user.banned_at).toLocaleDateString('de-DE')}
                       </Typography>
                     )}
                   </Stack>
