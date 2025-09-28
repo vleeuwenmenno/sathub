@@ -297,20 +297,6 @@ func DeleteUser(c *gin.Context) {
 		}
 	}()
 
-	// Delete comment likes
-	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.CommentLike{}).Error; err != nil {
-		tx.Rollback()
-		utils.InternalErrorResponse(c, "Failed to delete user comment likes")
-		return
-	}
-
-	// Delete likes
-	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Like{}).Error; err != nil {
-		tx.Rollback()
-		utils.InternalErrorResponse(c, "Failed to delete user likes")
-		return
-	}
-
 	// Get all station IDs for this user first
 	var stationIDs []string
 	if err := tx.Model(&models.Station{}).Where("user_id = ?", targetUserID).Pluck("id", &stationIDs).Error; err != nil {
@@ -319,52 +305,109 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Delete comments by user
-	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Comment{}).Error; err != nil {
-		tx.Rollback()
-		utils.InternalErrorResponse(c, "Failed to delete user comments")
-		return
-	}
-
-	// Delete posts and related data for these stations
+	// Get all post IDs for these stations
+	var postIDs []uint
 	if len(stationIDs) > 0 {
-		// Get all post IDs for these stations first
-		var postIDs []uint
 		if err := tx.Model(&models.Post{}).Where("station_id IN ?", stationIDs).Pluck("id", &postIDs).Error; err != nil {
 			tx.Rollback()
 			utils.InternalErrorResponse(c, "Failed to find user posts")
 			return
 		}
+	}
 
-		if len(postIDs) > 0 {
-			// Delete comments on these posts (by other users)
-			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Comment{}).Error; err != nil {
-				tx.Rollback()
-				utils.InternalErrorResponse(c, "Failed to delete comments on user posts")
-				return
-			}
+	// Get all comment IDs for comments by this user
+	var userCommentIDs []uint
+	if err := tx.Model(&models.Comment{}).Where("user_id = ?", targetUserID).Pluck("id", &userCommentIDs).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to find user comments")
+		return
+	}
 
-			// Delete likes on these posts (by other users)
-			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Like{}).Error; err != nil {
-				tx.Rollback()
-				utils.InternalErrorResponse(c, "Failed to delete likes on user posts")
-				return
-			}
-
-			// Delete post images
-			if err := tx.Where("post_id IN ?", postIDs).Delete(&models.PostImage{}).Error; err != nil {
-				tx.Rollback()
-				utils.InternalErrorResponse(c, "Failed to delete user post images")
-				return
-			}
+	// Get all comment IDs for comments on user's posts
+	var postCommentIDs []uint
+	if len(postIDs) > 0 {
+		if err := tx.Model(&models.Comment{}).Where("post_id IN ?", postIDs).Pluck("id", &postCommentIDs).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to find comments on user posts")
+			return
 		}
+	}
 
-		// Delete posts
+	// Combine all comment IDs that need their likes deleted
+	allCommentIDsToDeleteLikes := append(userCommentIDs, postCommentIDs...)
+
+	// Delete comment likes on comments that will be deleted (to avoid foreign key constraints)
+	if len(allCommentIDsToDeleteLikes) > 0 {
+		if err := tx.Where("comment_id IN ?", allCommentIDsToDeleteLikes).Delete(&models.CommentLike{}).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to delete comment likes on user-related comments")
+			return
+		}
+		fmt.Printf("Deleted comment likes on %d comments\n", len(allCommentIDsToDeleteLikes))
+	}
+
+	// Delete comment likes by the user
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.CommentLike{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user comment likes")
+		return
+	}
+	fmt.Printf("Deleted comment likes by user %s\n", targetUserID)
+
+	// Delete likes on user's posts
+	if len(postIDs) > 0 {
+		if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Like{}).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to delete likes on user posts")
+			return
+		}
+		fmt.Printf("Deleted likes on %d user posts\n", len(postIDs))
+	}
+
+	// Delete likes by the user
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Like{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user likes")
+		return
+	}
+	fmt.Printf("Deleted likes by user %s\n", targetUserID)
+
+	// Delete comments on user's posts
+	if len(postIDs) > 0 {
+		if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Comment{}).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to delete comments on user posts")
+			return
+		}
+		fmt.Printf("Deleted comments on %d user posts\n", len(postIDs))
+	}
+
+	// Delete comments by the user
+	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.Comment{}).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to delete user comments")
+		return
+	}
+	fmt.Printf("Deleted %d comments by user %s\n", len(userCommentIDs), targetUserID)
+
+	// Delete post images
+	if len(postIDs) > 0 {
+		if err := tx.Where("post_id IN ?", postIDs).Delete(&models.PostImage{}).Error; err != nil {
+			tx.Rollback()
+			utils.InternalErrorResponse(c, "Failed to delete user post images")
+			return
+		}
+		fmt.Printf("Deleted post images for %d posts\n", len(postIDs))
+	}
+
+	// Delete posts
+	if len(stationIDs) > 0 {
 		if err := tx.Where("station_id IN ?", stationIDs).Delete(&models.Post{}).Error; err != nil {
 			tx.Rollback()
 			utils.InternalErrorResponse(c, "Failed to delete user posts")
 			return
 		}
+		fmt.Printf("Deleted %d posts for %d stations\n", len(postIDs), len(stationIDs))
 	}
 
 	// Delete stations
@@ -373,6 +416,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user stations")
 		return
 	}
+	fmt.Printf("Deleted %d stations for user %s\n", len(stationIDs), targetUserID)
 
 	// Delete tokens
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.RefreshToken{}).Error; err != nil {
@@ -380,24 +424,28 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user refresh tokens")
 		return
 	}
+	fmt.Printf("Deleted refresh tokens for user %s\n", targetUserID)
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.PasswordResetToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user password reset tokens")
 		return
 	}
+	fmt.Printf("Deleted password reset tokens for user %s\n", targetUserID)
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailConfirmationToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user email confirmation tokens")
 		return
 	}
+	fmt.Printf("Deleted email confirmation tokens for user %s\n", targetUserID)
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailChangeToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user email change tokens")
 		return
 	}
+	fmt.Printf("Deleted email change tokens for user %s\n", targetUserID)
 
 	// Finally delete the user
 	if err := tx.Delete(&user).Error; err != nil {
@@ -405,6 +453,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user")
 		return
 	}
+	fmt.Printf("Deleted user %s\n", targetUserID)
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
