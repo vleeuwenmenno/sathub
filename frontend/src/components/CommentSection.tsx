@@ -45,86 +45,89 @@ const CommentItem: React.FC<{
   comment,
   onEdit,
   onDelete,
-  currentUserId
+  currentUserId,
 }) => {
+  const [showReplyForm, setShowReplyForm] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   const isOwner = currentUserId === comment.user_id;
 
   return (
-    <Card variant="outlined" sx={{ mb: 2 }}>
-      <CardContent>
-        <Stack direction="row" spacing={2} alignItems="flex-start">
-          <Avatar size="sm">
-            {comment.has_profile_picture && comment.profile_picture_url ? (
-              <img
-                src={`/api/${comment.profile_picture_url}`}
-                alt={`${comment.username}'s profile`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%'
-                }}
-              />
-            ) : (
-              <Typography level="body-sm">
-                {(comment.display_name || comment.username).charAt(0).toUpperCase()}
-              </Typography>
-            )}
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-              <Typography level="body-sm" fontWeight="bold">
-                {comment.username}
-              </Typography>
-              <Typography level="body-xs" color="neutral">
-                {formatDate(comment.created_at)}
-              </Typography>
-              {isOwner && (
-                <>
-                  <IconButton
-                    size="sm"
-                    onClick={(e) => setMenuAnchor(e.currentTarget)}
-                    sx={{ ml: 'auto' }}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                  <Menu
-                    anchorEl={menuAnchor}
-                    open={Boolean(menuAnchor)}
-                    onClose={() => setMenuAnchor(null)}
-                  >
-                    <MenuItem
-                      onClick={() => {
-                        onEdit(comment);
-                        setMenuAnchor(null);
-                      }}
-                    >
-                      <EditIcon sx={{ mr: 1 }} />
-                      Edit
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        onDelete(comment.id);
-                        setMenuAnchor(null);
-                      }}
-                      color="danger"
-                    >
-                      <DeleteIcon sx={{ mr: 1 }} />
-                      Delete
-                    </MenuItem>
-                  </Menu>
-                </>
+    <Box>
+      <Card variant="outlined" sx={{ mb: 2 }}>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Avatar size="sm">
+              {comment.has_profile_picture && comment.profile_picture_url ? (
+                <img
+                  src={`/api/${comment.profile_picture_url}`}
+                  alt={`${comment.username}'s profile`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%'
+                  }}
+                />
+              ) : (
+                <Typography level="body-sm">
+                  {(comment.display_name || comment.username).charAt(0).toUpperCase()}
+                </Typography>
               )}
-            </Stack>
-            <Typography level="body-md" sx={{ mb: 1 }}>
-              {comment.content}
-            </Typography>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <Typography level="body-sm" fontWeight="bold">
+                  {comment.username}
+                </Typography>
+                <Typography level="body-xs" color="neutral">
+                  {formatDate(comment.created_at)}
+                </Typography>
+                {isOwner && (
+                  <>
+                    <IconButton
+                      size="sm"
+                      onClick={(e) => setMenuAnchor(e.currentTarget)}
+                      sx={{ ml: 'auto' }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      anchorEl={menuAnchor}
+                      open={Boolean(menuAnchor)}
+                      onClose={() => setMenuAnchor(null)}
+                    >
+                      <MenuItem
+                        onClick={() => {
+                          onEdit(comment);
+                          setMenuAnchor(null);
+                        }}
+                      >
+                        <EditIcon sx={{ mr: 1 }} />
+                        Edit
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          onDelete(comment.id);
+                          setMenuAnchor(null);
+                        }}
+                        color="danger"
+                      >
+                        <DeleteIcon sx={{ mr: 1 }} />
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </>
+                )}
+              </Stack>
+              <Typography level="body-md" sx={{ mb: 1 }}>
+                {comment.content}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
@@ -213,7 +216,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
       setError(err instanceof Error ? err.message : 'Failed to delete comment');
     }
   };
-
 
   const startEdit = (comment: Comment) => {
     setEditingComment(comment);

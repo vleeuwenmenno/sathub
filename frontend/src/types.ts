@@ -86,12 +86,15 @@ export interface Comment {
   profile_picture_url?: string;
   has_profile_picture: boolean;
   content: string;
+  parent_id?: number;
+  replies?: Comment[];
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateCommentRequest {
   content: string;
+  parent_id?: number;
 }
 
 export interface UpdateCommentRequest {
