@@ -1,8 +1,15 @@
 // New post types for database-driven posts
 export interface Post {
   id: number;
-  station_id: number;
+  station_id: string;
   station_name: string;
+  station_user?: {
+    id: string;
+    username: string;
+    display_name?: string;
+    profile_picture_url?: string;
+    has_profile_picture: boolean;
+  };
   timestamp: string;
   satellite_name: string;
   metadata: string;

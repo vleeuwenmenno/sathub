@@ -30,6 +30,7 @@ type PostResponse struct {
 	ID            uint                `json:"id"`
 	StationID     string              `json:"station_id"`
 	StationName   string              `json:"station_name"`
+	StationUser   *UserDetailResponse `json:"station_user,omitempty"`
 	Timestamp     string              `json:"timestamp"`
 	SatelliteName string              `json:"satellite_name"`
 	Metadata      string              `json:"metadata"`
@@ -110,7 +111,7 @@ func GetStationPosts(c *gin.Context) {
 	var posts []models.Post
 
 	// Get all posts for the station
-	if err := db.Preload("Station").Where("station_id = ?", stationID).Order("created_at DESC").Find(&posts).Error; err != nil {
+	if err := db.Preload("Station").Preload("Station.User").Where("station_id = ?", stationID).Order("created_at DESC").Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -214,7 +215,7 @@ func GetLatestPosts(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	// Get posts from public stations, ordered by created_at desc
-	if err := db.Preload("Station").Joins("Station").Where("is_public = ?", true).Order("posts.created_at DESC").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
+	if err := db.Preload("Station").Preload("Station.User").Joins("Station").Where("is_public = ?", true).Order("posts.created_at DESC").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -411,7 +412,25 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	// Delete associated images first
+	// Delete associated comment likes first (for comments on this post)
+	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", uint(postID)).Delete(&models.CommentLike{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete comment likes")
+		return
+	}
+
+	// Delete associated comments
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Comment{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post comments")
+		return
+	}
+
+	// Delete associated likes
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Like{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post likes")
+		return
+	}
+
+	// Delete associated images
 	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post images")
 		return
@@ -556,6 +575,17 @@ func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID string) Pos
 		}
 	}
 
+	var stationUser *UserDetailResponse
+	if post.Station.User.ID != uuid.Nil {
+		stationUser = &UserDetailResponse{
+			ID:                post.Station.User.ID.String(),
+			Username:          post.Station.User.Username,
+			DisplayName:       post.Station.User.DisplayName,
+			ProfilePictureURL: generateProfilePictureURL(post.Station.User.ID.String(), post.Station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture: len(post.Station.User.ProfilePicture) > 0,
+		}
+	}
+
 	// Get likes count
 	var likesCount int64
 	db.Model(&models.Like{}).Where("post_id = ?", post.ID).Count(&likesCount)
@@ -572,6 +602,7 @@ func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID string) Pos
 		ID:            post.ID,
 		StationID:     post.StationID,
 		StationName:   post.Station.Name,
+		StationUser:   stationUser,
 		Timestamp:     post.Timestamp.Format("2006-01-02T15:04:05Z07:00"),
 		SatelliteName: post.SatelliteName,
 		Metadata:      post.Metadata,

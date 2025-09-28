@@ -16,6 +16,8 @@ import { getStationPosts, getPostImageBlob, getStationDetails } from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
+import DeletePostButton from "./DeletePostButton";
+import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -29,6 +31,7 @@ const formatDate = (dateString: string): string => {
 const StationPosts: React.FC = () => {
   const { stationId } = useParams<{ stationId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [station, setStation] = useState<Station | null>(null);
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
@@ -59,6 +62,10 @@ const StationPosts: React.FC = () => {
 
     loadData();
   }, [stationId]);
+
+  const handleDeletePost = (postId: number) => {
+    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+  };
 
   useEffect(() => {
     const loadImages = async () => {
@@ -250,7 +257,15 @@ const StationPosts: React.FC = () => {
                               {formatDate(post.created_at)}
                             </Typography>
                           </Stack>
-                          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "auto" }}>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: "auto" }}>
+                            <Box onClick={(e) => e.stopPropagation()}>
+                              <DeletePostButton
+                                postId={post.id}
+                                postName={post.satellite_name}
+                                isOwner={user?.id === station?.user?.id}
+                                onDelete={() => handleDeletePost(post.id)}
+                              />
+                            </Box>
                             <LikeButton
                               postId={post.id}
                               initialLikesCount={post.likes_count}

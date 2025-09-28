@@ -18,7 +18,9 @@ import type { DatabasePostDetail } from '../types';
 import type { Station } from '../api';
 import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob } from '../api';
 import LikeButton from './LikeButton';
+import DeletePostButton from './DeletePostButton';
 import CommentSection from './CommentSection';
+import { useAuth } from '../contexts/AuthContext';
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -108,6 +110,7 @@ const groupImagesByCategory = (images: DatabasePostDetail['images']): Record<str
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [detail, setDetail] = useState<DatabasePostDetail | null>(null);
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(true);
@@ -220,6 +223,10 @@ const Detail: React.FC = () => {
 
     loadStationPicture();
   }, [station]);
+
+  const handleDeletePost = () => {
+    navigate('/');
+  };
 
   if (loading) {
     return (
@@ -551,11 +558,19 @@ const Detail: React.FC = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                   <Typography level="h3">Post Details</Typography>
-                  <LikeButton
-                    postId={detail.id}
-                    initialLikesCount={detail.likes_count}
-                    initialIsLiked={detail.is_liked}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <DeletePostButton
+                      postId={detail.id}
+                      postName={detail.satellite_name}
+                      isOwner={user?.id === detail.station_user?.id}
+                      onDelete={handleDeletePost}
+                    />
+                    <LikeButton
+                      postId={detail.id}
+                      initialLikesCount={detail.likes_count}
+                      initialIsLiked={detail.is_liked}
+                    />
+                  </Box>
                 </Box>
                 <Stack spacing={1}>
                   <Box>
