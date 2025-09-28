@@ -15,7 +15,6 @@ import { getLatestPosts, getPostImageUrl } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 import LikeButton from "./LikeButton";
-import DeletePostButton from "./DeletePostButton";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -41,10 +40,6 @@ const Overview: React.FC = () => {
       setLoading(false);
     });
   }, [limit, page]);
-
-  const handleDeletePost = (postId: number) => {
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-  };
 
   return (
     <Box sx={{ py: { xs: 1, md: 2 }, px: 0, maxWidth: "1400px", mx: "auto" }}>
@@ -132,15 +127,7 @@ const Overview: React.FC = () => {
                       {post.images.length !== 1 ? "s" : ""}
                     </Typography>
                   </Stack>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: "auto" }}>
-                    <Box onClick={(e) => e.stopPropagation()}>
-                      <DeletePostButton
-                        postId={post.id}
-                        postName={post.satellite_name}
-                        isOwner={user?.id === post.station_user?.id}
-                        onDelete={() => handleDeletePost(post.id)}
-                      />
-                    </Box>
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mt: "auto" }}>
                     <LikeButton
                       postId={post.id}
                       initialLikesCount={post.likes_count}
