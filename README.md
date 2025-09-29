@@ -1,265 +1,61 @@
 # SatHub
 
-A community platform for satellite enthusiasts to manage ground stations and share captured satellite data.
+A community platform for satellite enthusiasts to share and explore satellite data from ground stations worldwide.
 
 [![Release Images](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml)
 [![Client Binaries](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml)
 
-A web-based platform for managing satellite ground stations and their captured data.
+## What is SatHub?
 
-## Features
+SatHub is a web-based platform where satellite enthusiasts can:
 
-SatHub provides a comprehensive solution for satellite enthusiasts and operators to manage their ground stations and share satellite data.
+- **Explore** satellite data and images from ground stations around the world
+- **Share** your own captures using the SatHub client
+- **Connect** with other satellite enthusiasts in the community
+- **Manage** your ground station and track your satellite passes
 
-### Current Features
+🌐 **Visit the platform**: [sathub.de](https://sathub.de)
 
-<details>
-<summary>Current Features</summary>
+## SatHub Client
 
-- [x] Responsive web interface
-- [x] Docker-based development environment
-- [x] Database using GORM with SQLite (easily switchable to MariaDB or Postgres)
-  - [x] Database seeding for development and testing
-- [x] Station management (create, edit, delete ground stations)
-  - [x] Station health monitoring
-  - [x] Public and private station visibility
-  - [x] Satellite data post management
-  - [x] Posts upload using API keys per station
-  - [x] Global station and user directories
-- [x] User authentication and registration
-  - [x] JWT-based session management with refresh tokens
-  - [x] Password hashing and security best practices
-  - [x] Email confirmation for new registrations
-  - [x] Password reset via email
-  - [x] 2FA Support (TOTP and recovery codes)
-- [x] Docker-based production environment
-- [x] GitHub Workfows that publish and compile docker images for prod
+The SatHub client allows you to automatically upload your satellite captures to your SatHub station.
 
-</details>
+### Download
 
-### Planned Features
+Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathub/releases) page:
 
-<details>
-<summary>Planned Features</summary>
+- **Linux (x86_64)**: `sathub-client-linux-amd64`
+- **Linux (ARM64)**: `sathub-client-linux-arm64` (Raspberry Pi and other ARM devices)
 
-- [ ] API rate limiting
-- [ ] Data export functionality
-- [ ] Achievements for users
-- [ ] Notifications (Email, Shoutrr) (e.g. new post from followed station, station offline, etc)
-- [ ] Quick access to popular stations
+*Windows support is planned for future releases. macOS is not currently supported.*
 
-</details>
+### Quick Setup
 
-## Tech Stack
-
-### Backend
-
-- **Language**: Go 1.21+
-- **Framework**: Gin web framework
-- **Database**: PostgreSQL with GORM ORM (SQLite supported for development)
-- **Authentication**: JWT tokens with refresh tokens
-- **API**: RESTful JSON API
-
-### Frontend
-
-- **Language**: TypeScript
-- **Framework**: React 19 with Vite
-- **UI Library**: Material-UI (MUI) with Joy design system
-- **Routing**: React Router
-- **HTTP Client**: Axios
-
-### Development & Deployment
-
-- **Containerization**: Docker & Docker Compose
-- **Hot Reloading**: Configured for both frontend and backend
-- **Linting**: ESLint for frontend, Go standard tools for backend
-
-## Architecture
-
-```mermaid
-graph TD
-    A[Web Browser] --> B[Frontend React App<br/>Port 5173]
-    B --> C[Backend Go API<br/>Port 4001]
-    C --> D[(SQLite Database<br/>sathub.db)]
-    E[Satellite Stations] -->|HTTP POST<br/>with Station Token| C
-    C -->|JWT Auth| B
-```
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Git
-
-For local development without Docker:
-- Go 1.21+ (for backend)
-- Node.js 18+ and npm (for frontend)
-
-## Quick Start
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd sathub
-   ```
-
-2. Start the development environment:
-   ```bash
-   docker compose up -d --build
-   ```
-
-3. Wait for the backend to compile (first run takes longer).
-
-4. Open your browser to `http://localhost:5173`
-
-5. Seed the database with test data: (If you have the backend running, it will automatically restart due to the database file being changed, so no need to stop/start the backend manually)
-   ```bash
-   rm backend/sathub.db  
-   docker compose exec backend go run main.go --seed
-   ```
-
-## Development Setup
-
-For detailed development setup with Caddy reverse proxy (recommended for proper hostnames and CORS-free development), see [README.dev.md](README.dev.md).
-
-### Using Docker (Recommended)
-
-The project includes Docker Compose configuration for easy development:
+1. Create an account on [sathub.de](https://sathub.de)
+2. Create a ground station and note your **Station API Token**
+3. Download the client for your platform
+4. Run the client with your station token:
 
 ```bash
-# Start all services
-docker compose up -d --build
+# Linux (x86_64)
+./sathub-client-linux-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
 
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
+# Linux (ARM64 - Raspberry Pi)
+./sathub-client-linux-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
 ```
 
-### Local Development
+The client will monitor the specified directory and automatically upload new images to your SatHub station.
 
-#### Backend Setup
+### Client Documentation
 
-```bash
-cd backend
-go mod download
-go run main.go
-```
+For detailed client setup, configuration options, and troubleshooting, see the [client README](client/README.md).
 
-The backend will start on `http://localhost:4001`
+## For Developers
 
-#### Frontend Setup
+If you're interested in contributing to SatHub or setting up your own instance:
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will start on `http://localhost:5173`
-
-### Database Seeding
-
-To populate the database with test data:
-
-```bash
-cd backend && go run main.go --seed
-```
-
-*Make sure you don't already have a database file, otherwise the seeding will likely fail!*
-
-This creates:
-- 3 test users (alice_skywatcher, bob_satellite, charlie_space)
-- 6 stations (mix of public/private)
-- 15-40 posts with sample satellite data
-- Placeholder images (assuming you have some stored in the root folder data/)
-
-Login with any user using password: `password123`
-
-## Releases
-
-The project includes a release script to automate the process of creating and publishing new versions.
-
-### Creating a Release
-
-Use the release script to create a new tag and push it to GitHub:
-
-```bash
-# Using the script directly
-./release.sh
-
-# Or using make
-make release
-```
-
-The script will:
-
-1. Check for uncommitted changes
-2. Get the latest tag
-3. Ask you to choose the type of release (patch, minor, or major)
-4. Create a new tag with the incremented version
-5. Push the tag to GitHub
-6. Optionally open the GitHub releases page to create a release
-
-### Version Numbering
-
-The script follows [Semantic Versioning](https://semver.org/):
-
-- **Patch** (1.0.0 → 1.0.1): Bug fixes and small changes
-- **Minor** (1.0.0 → 1.1.0): New features that are backward compatible
-- **Major** (1.0.0 → 2.0.0): Breaking changes
-
-## API Overview
-
-The backend provides a REST API with the following main endpoints:
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/refresh` - Refresh access tokens
-
-### Stations
-- `GET /api/stations` - List user's stations
-- `POST /api/stations` - Create new station
-- `GET /api/stations/:id` - Get station details
-- `PUT /api/stations/:id` - Update station
-- `DELETE /api/stations/:id` - Delete station
-- `GET /api/stations/global` - Global station directory
-
-### Posts
-- `GET /api/posts` - List posts (authenticated)
-- `GET /api/posts/latest` - Latest posts (public)
-- `POST /api/posts` - Create post (station token auth)
-- `GET /api/posts/:id` - Get post details
-
-### Users
-- `GET /api/users/global` - Global user directory
-
-All endpoints return JSON responses. See `backend/main.go` for complete route definitions.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-### Development Guidelines
-
-- Follow Go and TypeScript best practices
-- Use meaningful commit messages
-- Update documentation for API changes
-- Test your changes thoroughly
-
-## Production Images
-
-Production Docker images are automatically built and published to GitHub Container Registry when releases are created:
-
-- Backend: `ghcr.io/vleeuwenmenno/sathub/backend:latest`
-- Frontend: `ghcr.io/vleeuwenmenno/sathub/frontend:latest`
-
-Images are tagged with semantic versions (e.g., `v1.0.0`, `v1.0`, `v1`) and `latest`.
+- **Technical documentation**: [TECHNICAL.md](TECHNICAL.md)
+- **Getting started guide**: [docs/getting_started.md](docs/getting_started.md)
 
 ## License
 
