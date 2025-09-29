@@ -16,6 +16,7 @@ SatHub is a community platform for satellite enthusiasts to manage their ground 
    - Password (choose something strong!)
 4. Check your email for a confirmation link
 5. Click the link to activate your account
+6. Wait for admin approval (you'll get an email when approved, sorry for the wait, we want to keep the community safe! We may or may not switch to open registration in the future)
 
 ### Logging In
 

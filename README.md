@@ -38,10 +38,10 @@ Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathu
 
 ```bash
 # Linux (x86_64)
-./sathub-client-linux-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
+./sathub-client-linux-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/satdump/live_output
 
 # Linux (ARM64 - Raspberry Pi)
-./sathub-client-linux-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
+./sathub-client-linux-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/satdump/live_output
 ```
 
 The client will monitor the specified directory and automatically upload new images to your SatHub station.
