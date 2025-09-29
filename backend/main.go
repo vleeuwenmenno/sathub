@@ -69,6 +69,11 @@ func main() {
 	corsConfig := cors.DefaultConfig()
 	allowedOrigins := []string{frontendURL}
 
+	// Add localhost origins for development
+	if gin.Mode() == gin.DebugMode {
+		allowedOrigins = append(allowedOrigins, "http://localhost:5173", "https://localhost:5173", "http://127.0.0.1:5173", "https://127.0.0.1:5173")
+	}
+
 	// Add additional origins from environment variable (comma-separated)
 	if additionalOrigins != "" {
 		for _, origin := range strings.Split(additionalOrigins, ",") {

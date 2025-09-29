@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"sathub-ui-backend/config"
@@ -474,7 +473,7 @@ func DeletePost(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Post deleted successfully", nil)
 }
 
-// GetPostImage serves post images from database BLOB
+// GetPostImage serves post images by proxying from MinIO
 func GetPostImage(c *gin.Context) {
 	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -511,49 +510,33 @@ func GetPostImage(c *gin.Context) {
 		return
 	}
 
-	// Convert internal MinIO URL to external Caddy URL
-	// image.ImageURL is like: http://minio:9000/sathub-images/images/filename.jpg
-	// We need: https://obj.sathub.local:9999/sathub-images/images/filename.jpg
+	// Proxy the image from MinIO
+	resp, err := http.Get(image.ImageURL)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch image from storage")
+		return
+	}
+	defer resp.Body.Close()
 
-	cfg := config.GetStorageConfig()
-	// Extract the path part after the endpoint and bucket
-	// URL format: http://minio:9000/bucket/path/to/image
-	parts := strings.Split(image.ImageURL, "/")
-	if len(parts) >= 4 {
-		// Find bucket index and reconstruct path
-		bucketIndex := -1
-		for i, part := range parts {
-			if part == cfg.Bucket {
-				bucketIndex = i
-				break
-			}
-		}
-		if bucketIndex >= 0 && bucketIndex < len(parts)-1 {
-			pathPart := strings.Join(parts[bucketIndex:], "/")
-			cfg := config.GetStorageConfig()
-			externalURL := fmt.Sprintf("%s/%s", cfg.ExternalURL, pathPart)
+	if resp.StatusCode != http.StatusOK {
+		utils.InternalErrorResponse(c, "Image not available")
+		return
+	}
 
-			// Add CORS headers to redirect response for cross-origin requests
-			origin := c.GetHeader("Origin")
-			if origin != "" {
-				c.Header("Access-Control-Allow-Origin", origin)
-				c.Header("Access-Control-Allow-Credentials", "true")
-			}
-
-			c.Redirect(http.StatusFound, externalURL)
-			return
+	// Set content type
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = image.ImageType
+		if contentType == "" {
+			contentType = "image/jpeg"
 		}
 	}
 
-	// Fallback to original URL if parsing fails
-	// Add CORS headers to redirect response for cross-origin requests
-	origin := c.GetHeader("Origin")
-	if origin != "" {
-		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Credentials", "true")
-	}
+	// Set cache control for images
+	c.Header("Cache-Control", "public, max-age=86400") // Cache for 24 hours
 
-	c.Redirect(http.StatusFound, image.ImageURL)
+	// Stream the image data
+	c.DataFromReader(http.StatusOK, resp.ContentLength, contentType, resp.Body, nil)
 }
 
 // buildPostDetailResponse builds a PostDetailResponse from a Post model
