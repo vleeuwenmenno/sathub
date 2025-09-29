@@ -359,6 +359,17 @@ export const getPostImageUrl = (postId: number, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };
 
+export const getProfilePictureUrl = (profilePictureUrl: string): string => {
+  // If the URL is already absolute (starts with http), return as-is
+  if (profilePictureUrl.startsWith('http')) {
+    return profilePictureUrl;
+  }
+  // The backend returns URLs starting with /api/, so we need to prepend the base URL (without /api)
+  // API_BASE is https://api.sathub.local:9999/api, so we remove the trailing /api
+  const baseUrl = API_BASE.slice(0, -4); // Remove '/api' from the end
+  return `${baseUrl}${profilePictureUrl}`;
+};
+
 export const getPostImageBlob = async (
   postId: number,
   imageId: number,

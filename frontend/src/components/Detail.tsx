@@ -16,7 +16,7 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import type { DatabasePostDetail } from '../types';
 import type { Station } from '../api';
-import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob } from '../api';
+import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob, getProfilePictureUrl } from '../api';
 import LikeButton from './LikeButton';
 import DeletePostButton from './DeletePostButton';
 import CommentSection from './CommentSection';
@@ -524,7 +524,7 @@ const Detail: React.FC = () => {
                     >
                       {detail.station_user.has_profile_picture && detail.station_user.profile_picture_url ? (
                         <img
-                          src={`/api/${detail.station_user.profile_picture_url}`}
+                          src={getProfilePictureUrl(detail.station_user.profile_picture_url)}
                           alt={`${detail.station_user.username}'s profile`}
                           style={{
                             width: "100%",

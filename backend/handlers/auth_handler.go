@@ -1079,7 +1079,7 @@ func ConfirmEmailChange(c *gin.Context) {
 
 // generateProfilePictureURL creates a URL for accessing user profile pictures
 func generateProfilePictureURL(userID string, updatedAt string) string {
-	return fmt.Sprintf("users/%s/profile-picture?t=%s", userID, updatedAt)
+	return fmt.Sprintf("/api/users/%s/profile-picture?t=%s", userID, updatedAt)
 }
 
 // isValidImageFile validates file content using magic numbers (file signatures)

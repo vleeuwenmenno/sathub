@@ -14,7 +14,7 @@ services:
       - DB_USER=sathub
       - DB_PASSWORD=sathub_password
       - DB_NAME=sathub
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=https://sathub.local:9999
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_BUCKET=sathub-images
       - MINIO_ACCESS_KEY=minioadmin
@@ -76,7 +76,7 @@ services:
       - "9999:9999"
       - "4444:4444"
     volumes:
-      - ./Caddyfile.dev:/etc/caddy/Caddyfile
+      - ./docker/Caddyfile.dev:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

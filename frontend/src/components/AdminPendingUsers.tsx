@@ -391,7 +391,7 @@ const AdminPendingUsers: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     size="lg"
-                    src={userDetailsModal.user.profile_picture_url ? `/api/${userDetailsModal.user.profile_picture_url}` : undefined}
+                    src={userDetailsModal.user.profile_picture_url || undefined}
                     sx={{ width: 80, height: 80 }}
                   >
                     {userDetailsModal.user.display_name?.charAt(0) || userDetailsModal.user.username.charAt(0)}

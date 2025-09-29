@@ -1,0 +1,20 @@
+# Local development Caddyfile (HTTPS on port 9999)
+# Add these to your /etc/hosts:
+# 127.0.0.1 sathub.local
+# 127.0.0.1 api.sathub.local
+# 127.0.0.1 obj.sathub.local
+
+# Frontend
+sathub.local:9999 {
+    reverse_proxy frontend:5173
+}
+
+# API
+api.sathub.local:9999 {
+    reverse_proxy backend:4001
+}
+
+# Object storage (MinIO)
+obj.sathub.local:9999 {
+    reverse_proxy minio:9000
+}

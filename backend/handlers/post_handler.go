@@ -532,12 +532,27 @@ func GetPostImage(c *gin.Context) {
 			pathPart := strings.Join(parts[bucketIndex:], "/")
 			cfg := config.GetStorageConfig()
 			externalURL := fmt.Sprintf("%s/%s", cfg.ExternalURL, pathPart)
+
+			// Add CORS headers to redirect response for cross-origin requests
+			origin := c.GetHeader("Origin")
+			if origin != "" {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Access-Control-Allow-Credentials", "true")
+			}
+
 			c.Redirect(http.StatusFound, externalURL)
 			return
 		}
 	}
 
 	// Fallback to original URL if parsing fails
+	// Add CORS headers to redirect response for cross-origin requests
+	origin := c.GetHeader("Origin")
+	if origin != "" {
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Credentials", "true")
+	}
+
 	c.Redirect(http.StatusFound, image.ImageURL)
 }
 

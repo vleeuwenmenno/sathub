@@ -22,7 +22,7 @@ import {
 } from "@mui/joy";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
-import { getAllUsers, updateUserRole, deleteUser, banUser, approveUser, getUserDetails } from "../api";
+import { getAllUsers, updateUserRole, deleteUser, banUser, approveUser, getUserDetails, getProfilePictureUrl } from "../api";
 import type { AdminUser, AdminUserDetails } from "../api";
 
 const AdminUserManagement: React.FC = () => {
@@ -590,7 +590,7 @@ const AdminUserManagement: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     size="lg"
-                    src={userDetailsModal.user.profile_picture_url ? `/api/${userDetailsModal.user.profile_picture_url}` : undefined}
+                    src={userDetailsModal.user.profile_picture_url ? getProfilePictureUrl(userDetailsModal.user.profile_picture_url) : undefined}
                     sx={{ width: 80, height: 80 }}
                   >
                     {userDetailsModal.user.display_name?.charAt(0) || userDetailsModal.user.username.charAt(0)}

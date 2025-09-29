@@ -12,7 +12,7 @@ import {
   Box,
 } from "@mui/joy";
 import type { Post } from "../types";
-import { getStationPosts, getPostImageBlob, getStationDetails } from "../api";
+import { getStationPosts, getPostImageBlob, getStationDetails, getProfilePictureUrl } from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
@@ -327,7 +327,7 @@ const StationPosts: React.FC = () => {
                       >
                         {station.user.has_profile_picture && station.user.profile_picture_url ? (
                           <img
-                            src={station.user.profile_picture_url}
+                            src={getProfilePictureUrl(station.user.profile_picture_url)}
                             alt={`${station.user.username}'s profile`}
                             style={{
                               width: "100%",

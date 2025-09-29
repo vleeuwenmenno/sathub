@@ -59,31 +59,34 @@ func main() {
 	// Configure CORS for cross-origin requests
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "http://localhost:5173"
+		frontendURL = "https://sathub.local:9999"
 	}
 
 	// Get additional allowed origins from environment
 	additionalOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
 
-	corsConfig := cors.DefaultConfig()
-	allowedOrigins := []string{frontendURL}
+	// Apply CORS in development mode or when using Caddy (port 9999)
+	if gin.Mode() == gin.DebugMode || strings.Contains(frontendURL, ":9999") {
+		corsConfig := cors.DefaultConfig()
+		allowedOrigins := []string{frontendURL}
 
-	// Add additional origins from environment variable (comma-separated)
-	if additionalOrigins != "" {
-		for _, origin := range strings.Split(additionalOrigins, ",") {
-			origin = strings.TrimSpace(origin)
-			if origin != "" && origin != frontendURL {
-				allowedOrigins = append(allowedOrigins, origin)
+		// Add additional origins from environment variable (comma-separated)
+		if additionalOrigins != "" {
+			for _, origin := range strings.Split(additionalOrigins, ",") {
+				origin = strings.TrimSpace(origin)
+				if origin != "" {
+					allowedOrigins = append(allowedOrigins, origin)
+				}
 			}
 		}
+
+		corsConfig.AllowOrigins = allowedOrigins
+		corsConfig.AllowCredentials = true
+		corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"}
+		corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
+
+		r.Use(cors.New(corsConfig))
 	}
-
-	corsConfig.AllowOrigins = allowedOrigins
-	corsConfig.AllowCredentials = true
-	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "Accept"}
-	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
-
-	r.Use(cors.New(corsConfig))
 
 	// Captcha routes
 	r.GET("/captcha/*path", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))

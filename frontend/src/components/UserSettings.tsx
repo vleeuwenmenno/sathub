@@ -75,7 +75,11 @@ const UserSettings: React.FC = () => {
     const fetchProfilePicture = async () => {
       if (user?.has_profile_picture && user?.profile_picture_url) {
         try {
-          const blobUrl = await getProfilePictureBlob(user.profile_picture_url);
+          // Remove /api/ prefix if it exists since the api client already includes it
+          const cleanUrl = user.profile_picture_url.startsWith('/api/')
+            ? user.profile_picture_url.substring(5) // Remove '/api/'
+            : user.profile_picture_url;
+          const blobUrl = await getProfilePictureBlob(cleanUrl);
           setProfilePictureUrl(blobUrl);
         } catch (err) {
           console.error("Failed to fetch profile picture", err);
@@ -250,7 +254,11 @@ const UserSettings: React.FC = () => {
 
       // Update the profile picture URL immediately from the upload response
       if (result.profile_picture_url) {
-        const blobUrl = await getProfilePictureBlob(result.profile_picture_url);
+        // Remove /api/ prefix if it exists since the api client already includes it
+        const cleanUrl = result.profile_picture_url.startsWith('/api/')
+          ? result.profile_picture_url.substring(5) // Remove '/api/'
+          : result.profile_picture_url;
+        const blobUrl = await getProfilePictureBlob(cleanUrl);
         setProfilePictureUrl(blobUrl);
       }
 

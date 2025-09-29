@@ -61,7 +61,11 @@ const GlobalUsers: React.FC = () => {
         .filter(user => user.has_profile_picture && user.profile_picture_url)
         .map(async (user) => {
           try {
-            const blobUrl = await getProfilePictureBlob(user.profile_picture_url!);
+            // Remove /api/ prefix if it exists since the api client already includes it
+            const cleanUrl = user.profile_picture_url!.startsWith('/api/')
+              ? user.profile_picture_url!.substring(5) // Remove '/api/'
+              : user.profile_picture_url!;
+            const blobUrl = await getProfilePictureBlob(cleanUrl);
             return { id: user.id, url: blobUrl };
           } catch (err) {
             console.error(`Failed to load profile picture for user ${user.id}:`, err);

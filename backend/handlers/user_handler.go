@@ -72,7 +72,7 @@ func GetGlobalUsers(c *gin.Context) {
 	// Build query to get users with public stations
 	query := db.Model(&models.User{}).
 		Select(`users.id, users.username, users.display_name, users.email, users.role, users.created_at,
-			CASE WHEN users.profile_picture IS NOT NULL AND users.profile_picture != '' THEN CONCAT('users/', users.id, '/profile-picture') ELSE '' END as profile_picture_url,
+			CASE WHEN users.profile_picture IS NOT NULL AND users.profile_picture != '' THEN CONCAT('/api/users/', users.id, '/profile-picture?t=', TO_CHAR(users.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) ELSE '' END as profile_picture_url,
 			CASE WHEN users.profile_picture IS NOT NULL THEN true ELSE false END as has_profile_picture,
 			COUNT(DISTINCT CASE WHEN stations.is_public = true THEN stations.id END) as public_stations,
 			COUNT(DISTINCT CASE WHEN stations.is_public = true THEN posts.id END) as public_posts`).

@@ -24,7 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../contexts/AuthContext';
-import { getCommentsForPost, createComment, updateComment, deleteComment, likeComment } from '../api';
+import { getCommentsForPost, createComment, updateComment, deleteComment, likeComment, getProfilePictureUrl } from '../api';
 import type { PostComment } from '../types';
 
 const MAX_COMMENT_LENGTH = 2000;
@@ -135,7 +135,7 @@ const CommentItem: React.FC<{
             <Avatar size="sm">
               {comment.has_profile_picture && comment.profile_picture_url ? (
                 <img
-                  src={`/api/${comment.profile_picture_url}`}
+                  src={getProfilePictureUrl(comment.profile_picture_url)}
                   alt={`${comment.username}'s profile`}
                   style={{
                     width: '100%',

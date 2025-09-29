@@ -636,7 +636,7 @@ func GetGlobalStations(c *gin.Context) {
 			hasProfilePicture := len(station.User.ProfilePicture) > 0
 			profilePictureURL := ""
 			if hasProfilePicture {
-				profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
+				profilePictureURL = generateProfilePictureURL(station.User.ID.String(), station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
 			}
 			stationResponse.User = &UserResponse{
 				ID:                station.User.ID.String(),
@@ -684,7 +684,7 @@ func GetUserStations(c *gin.Context) {
 			hasProfilePicture := len(station.User.ProfilePicture) > 0
 			profilePictureURL := ""
 			if hasProfilePicture {
-				profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
+				profilePictureURL = generateProfilePictureURL(station.User.ID.String(), station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
 			}
 			stationResponse.User = &UserResponse{
 				ID:                station.User.ID.String(),
@@ -742,7 +742,7 @@ func GetStationDetails(c *gin.Context) {
 		hasProfilePicture := len(station.User.ProfilePicture) > 0
 		profilePictureURL := ""
 		if hasProfilePicture {
-			profilePictureURL = fmt.Sprintf("/api/users/%s/profile-picture", station.User.ID.String())
+			profilePictureURL = generateProfilePictureURL(station.User.ID.String(), station.User.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
 		}
 		response.User = &UserResponse{
 			ID:                station.User.ID.String(),
