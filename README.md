@@ -26,8 +26,9 @@ Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathu
 
 - **Linux (x86_64)**: `sathub-client-linux-amd64`
 - **Linux (ARM64)**: `sathub-client-linux-arm64` (Raspberry Pi and other ARM devices)
-
-*Windows support is planned for future releases. macOS is not currently supported.*
+- **Windows (x86_64)**: `sathub-client-windows-amd64.exe`
+- **macOS (Intel)**: `sathub-client-darwin-amd64`
+- **macOS (Apple Silicon)**: `sathub-client-darwin-arm64`
 
 ### Quick Setup
 
@@ -38,10 +39,19 @@ Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathu
 
 ```bash
 # Linux (x86_64)
-./sathub-client-linux-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/satdump/live_output
+./sathub-client-linux-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
 
 # Linux (ARM64 - Raspberry Pi)
-./sathub-client-linux-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/satdump/live_output
+./sathub-client-linux-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
+
+# Windows
+sathub-client-windows-amd64.exe --token YOUR_STATION_TOKEN --watch C:\path\to\your\images
+
+# macOS (Intel)
+./sathub-client-darwin-amd64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
+
+# macOS (Apple Silicon)
+./sathub-client-darwin-arm64 --token YOUR_STATION_TOKEN --watch /path/to/your/images
 ```
 
 The client will monitor the specified directory and automatically upload new images to your SatHub station.

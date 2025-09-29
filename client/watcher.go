@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/rs/zerolog"
 )
 
 // SatelliteData represents the parsed satellite data from files
@@ -27,7 +27,7 @@ type FileWatcher struct {
 	apiClient *APIClient
 	watcher   *fsnotify.Watcher
 	processed map[string]bool // Track processed directories
-	logger    *log.Logger
+	logger    zerolog.Logger
 }
 
 // NewFileWatcher creates a new file watcher
@@ -42,7 +42,7 @@ func NewFileWatcher(config *Config, apiClient *APIClient) (*FileWatcher, error) 
 		apiClient: apiClient,
 		watcher:   watcher,
 		processed: make(map[string]bool),
-		logger:    log.New(os.Stdout, "[WATCHER] ", log.LstdFlags),
+		logger:    logger.With().Str("component", "watcher").Logger(),
 	}
 
 	// Ensure processed directory exists
@@ -58,10 +58,10 @@ func (fw *FileWatcher) Start() error {
 	// Watch all configured paths
 	for _, path := range fw.config.WatchPaths {
 		if err := fw.watcher.Add(path); err != nil {
-			fw.logger.Printf("Warning: failed to watch path %s: %v", path, err)
+			fw.logger.Warn().Err(err).Str("path", path).Msg("Failed to watch path")
 			continue
 		}
-		fw.logger.Printf("Watching directory: %s", path)
+		fw.logger.Info().Str("path", path).Msg("Watching directory")
 	}
 
 	// Process existing directories first
@@ -101,7 +101,7 @@ func (fw *FileWatcher) watchLoop() {
 			if !ok {
 				return
 			}
-			fw.logger.Printf("Watcher error: %v", err)
+			fw.logger.Error().Err(err).Msg("Watcher error")
 		}
 	}
 }
@@ -113,15 +113,19 @@ func (fw *FileWatcher) handleDirectoryEvent(dirPath string) {
 		return
 	}
 
-	fw.logger.Printf("Detected new satellite pass directory: %s", dirPath)
+	fw.logger.Info().Str("dir", dirPath).Msg("Detected new satellite pass directory")
 
 	// Wait for the configured delay to allow sathub to complete processing
-	fw.logger.Printf("Waiting %v before processing...", fw.config.ProcessDelay)
+	fw.logger.Info().
+		Dur("delay_ms", fw.config.ProcessDelay).
+		Int64("delay_seconds", int64(fw.config.ProcessDelay.Seconds())).
+		Int64("delay_minutes", int64(fw.config.ProcessDelay.Minutes())).
+		Msg("Waiting before processing")
 	time.Sleep(fw.config.ProcessDelay)
 
 	// Check if this looks like a complete satellite pass
 	if !fw.isCompleteSatellitePass(dirPath) {
-		fw.logger.Printf("Directory %s doesn't appear to be a complete satellite pass, skipping", dirPath)
+		fw.logger.Warn().Str("dir", dirPath).Msg("Directory doesn't appear to be a complete satellite pass, skipping")
 		return
 	}
 
@@ -130,7 +134,7 @@ func (fw *FileWatcher) handleDirectoryEvent(dirPath string) {
 
 	// Process the directory
 	if err := fw.processSatellitePass(dirPath); err != nil {
-		fw.logger.Printf("Failed to process satellite pass %s: %v", dirPath, err)
+		fw.logger.Error().Err(err).Str("dir", dirPath).Msg("Failed to process satellite pass")
 		// Remove from processed map on failure so it can be retried
 		delete(fw.processed, dirPath)
 		return
@@ -145,7 +149,7 @@ func (fw *FileWatcher) processExistingDirectories() {
 	for _, watchPath := range fw.config.WatchPaths {
 		entries, err := os.ReadDir(watchPath)
 		if err != nil {
-			fw.logger.Printf("Warning: failed to read directory %s: %v", watchPath, err)
+			fw.logger.Warn().Err(err).Str("path", watchPath).Msg("Failed to read directory")
 			continue
 		}
 
@@ -187,14 +191,14 @@ func (fw *FileWatcher) parseJSONFile(filePath string) (*SatelliteData, error) {
 	if ts, ok := rawData["timestamp"].(string); ok {
 		if parsed, err := time.Parse(time.RFC3339, ts); err == nil {
 			data.Timestamp = parsed
-			fw.logger.Printf("Parsed timestamp: %s", data.Timestamp.Format(time.RFC3339))
+			fw.logger.Debug().Time("timestamp", data.Timestamp).Msg("Parsed timestamp")
 		} else {
 			data.Timestamp = time.Now() // fallback
-			fw.logger.Printf("Warning: Invalid timestamp format, using current time")
+			fw.logger.Warn().Str("raw_timestamp", ts).Msg("Invalid timestamp format, using current time")
 		}
 	} else {
 		data.Timestamp = time.Now()
-		fw.logger.Printf("Warning: No timestamp found, using current time")
+		fw.logger.Warn().Msg("No timestamp found, using current time")
 	}
 
 	// Extract satellite name with fallbacks
@@ -207,26 +211,26 @@ func (fw *FileWatcher) parseJSONFile(filePath string) (*SatelliteData, error) {
 	} else {
 		data.SatelliteName = "Unknown"
 	}
-	fw.logger.Printf("Parsed satellite name: %s", data.SatelliteName)
+	fw.logger.Info().Str("satellite", data.SatelliteName).Msg("Parsed satellite name")
 
 	// Log additional satellite information if available
 	if norad, ok := rawData["norad"].(float64); ok {
-		fw.logger.Printf("NORAD ID: %.0f", norad)
+		fw.logger.Debug().Float64("norad_id", norad).Msg("NORAD ID")
 	}
 	if frequency, ok := rawData["frequency"].(float64); ok {
-		fw.logger.Printf("Frequency: %.1f MHz", frequency)
+		fw.logger.Debug().Float64("frequency_mhz", frequency).Msg("Frequency")
 	}
 	if modulation, ok := rawData["modulation"].(string); ok {
-		fw.logger.Printf("Modulation: %s", modulation)
+		fw.logger.Debug().Str("modulation", modulation).Msg("Modulation")
 	}
 
 	// Log dataset information if available
 	if datasets, ok := rawData["datasets"].([]interface{}); ok {
-		fw.logger.Printf("Found %d datasets", len(datasets))
+		fw.logger.Debug().Int("count", len(datasets)).Msg("Found datasets")
 		for i, ds := range datasets {
 			if dsMap, ok := ds.(map[string]interface{}); ok {
 				if name, ok := dsMap["name"].(string); ok {
-					fw.logger.Printf("  Dataset %d: %s", i+1, name)
+					fw.logger.Debug().Int("index", i+1).Str("name", name).Msg("Dataset")
 				}
 			}
 		}
@@ -234,11 +238,11 @@ func (fw *FileWatcher) parseJSONFile(filePath string) (*SatelliteData, error) {
 
 	// Log product information if available
 	if products, ok := rawData["products"].([]interface{}); ok {
-		fw.logger.Printf("Found %d products", len(products))
+		fw.logger.Debug().Int("count", len(products)).Msg("Found products")
 		for i, prod := range products {
 			if prodMap, ok := prod.(map[string]interface{}); ok {
 				if name, ok := prodMap["name"].(string); ok {
-					fw.logger.Printf("  Product %d: %s", i+1, name)
+					fw.logger.Debug().Int("index", i+1).Str("name", name).Msg("Product")
 				}
 			}
 		}
@@ -250,7 +254,7 @@ func (fw *FileWatcher) parseJSONFile(filePath string) (*SatelliteData, error) {
 	delete(rawData, "satellite")
 	delete(rawData, "name")
 
-	fw.logger.Printf("Parsed dataset.json with %d metadata fields", len(rawData))
+	fw.logger.Debug().Int("fields", len(rawData)).Msg("Parsed dataset.json")
 	return data, nil
 }
 
@@ -287,7 +291,7 @@ func (fw *FileWatcher) isCompleteSatellitePass(dirPath string) bool {
 
 // processSatellitePass processes a complete satellite pass directory
 func (fw *FileWatcher) processSatellitePass(dirPath string) error {
-	fw.logger.Printf("Processing satellite pass: %s", dirPath)
+	fw.logger.Info().Str("dir", dirPath).Msg("Processing satellite pass")
 
 	// Read dataset.json for main metadata
 	datasetPath := filepath.Join(dirPath, "dataset.json")
@@ -322,7 +326,7 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read CBOR from %s: %w", selectedProduct, err)
 	}
-	fw.logger.Printf("Found CBOR data in %s (%d bytes)", selectedProduct, len(cborData))
+	fw.logger.Debug().Str("product", selectedProduct).Int("bytes", len(cborData)).Msg("Found CBOR data")
 
 	// Collect all PNG images
 	var imagePaths []string
@@ -338,10 +342,9 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 			imageCount++
 		}
 	}
-	fw.logger.Printf("Found %d images in %s", imageCount, selectedProduct)
+	fw.logger.Debug().Str("product", selectedProduct).Int("count", imageCount).Msg("Found images")
 
-	fw.logger.Printf("Selected product: %s", selectedProduct)
-	fw.logger.Printf("Total images to upload: %d", len(imagePaths))
+	fw.logger.Info().Str("product", selectedProduct).Int("images", len(imagePaths)).Msg("Selected product for upload")
 
 	// Create post with combined metadata
 	postReq := PostRequest{
@@ -356,21 +359,21 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 		return fmt.Errorf("failed to create post: %w", err)
 	}
 
-	fw.logger.Printf("Created post ID %d for satellite %s", post.ID, post.SatelliteName)
+	fw.logger.Info().Uint("post_id", post.ID).Str("satellite", post.SatelliteName).Msg("Created post")
 
 	// Upload all images
 	for _, imagePath := range imagePaths {
 		if err := fw.apiClient.UploadImage(post.ID, imagePath); err != nil {
-			fw.logger.Printf("Warning: failed to upload image %s: %v", imagePath, err)
+			fw.logger.Warn().Err(err).Str("image", imagePath).Msg("Failed to upload image")
 			// Continue with other images
 		} else {
-			fw.logger.Printf("Uploaded image %s for post %d", filepath.Base(imagePath), post.ID)
+			fw.logger.Info().Str("image", filepath.Base(imagePath)).Uint("post_id", post.ID).Msg("Uploaded image")
 		}
 	}
 
 	// Send health check
 	if err := fw.apiClient.StationHealth(); err != nil {
-		fw.logger.Printf("Warning: failed to send health check: %v", err)
+		fw.logger.Warn().Err(err).Msg("Failed to send health check")
 	}
 
 	return nil
@@ -382,7 +385,7 @@ func (fw *FileWatcher) moveDirectoryToProcessed(dirPath string) {
 	dest := filepath.Join(fw.config.ProcessedDir, dirName)
 
 	if err := os.Rename(dirPath, dest); err != nil {
-		fw.logger.Printf("Warning: failed to move directory to processed: %v", err)
+		fw.logger.Warn().Err(err).Str("from", dirPath).Str("to", dest).Msg("Failed to move directory to processed")
 	}
 }
 

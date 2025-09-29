@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -50,12 +51,19 @@ type APIClient struct {
 }
 
 // NewAPIClient creates a new API client
-func NewAPIClient(baseURL, stationToken string) *APIClient {
+func NewAPIClient(baseURL, stationToken string, insecure bool) *APIClient {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: insecure,
+		},
+	}
+
 	return &APIClient{
 		baseURL:      strings.TrimSuffix(baseURL, "/"),
 		stationToken: stationToken,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		},
 	}
 }

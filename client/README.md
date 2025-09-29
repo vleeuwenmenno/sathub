@@ -7,39 +7,59 @@ A standalone binary that monitors directories for satellite data from sathub and
 - **Directory Monitoring**: Watches for complete satellite pass directories from sathub
 - **Processing Delay**: Configurable delay before processing to allow sathub to complete
 - **Complete Pass Processing**: Handles all data from a satellite pass (metadata, CBOR, images)
-- **Multi-Platform**: Binaries for Linux, Windows, and macOS
+- **Cross-Platform**: Binaries for Linux (x86_64 and ARM64), Windows (x86_64), and macOS (Intel and Apple Silicon)
 - **Station Health**: Sends periodic health checks to keep station online
 - **Error Recovery**: Automatic retry with configurable backoff
+- **Flexible Configuration**: Command-line arguments with environment variable fallbacks
+- **Rich Logging**: Structured logging with zerolog for better debugging
 
 ## Installation
 
 ### Download Pre-built Binary
 
-Download the Linux binary from the releases page or build it yourself.
+Download the appropriate binary for your platform from the [GitHub releases page](https://github.com/vleeuwenmenno/sathub/releases):
+
+- **Linux (x86_64)**: `sathub-client-linux-amd64`
+- **Linux (ARM64)**: `sathub-client-linux-arm64` (Raspberry Pi compatible)
+- **Windows (x86_64)**: `sathub-client-windows-amd64.exe`
+- **macOS (Intel)**: `sathub-client-darwin-amd64`
+- **macOS (Apple Silicon)**: `sathub-client-darwin-arm64`
 
 ### Build from Source
 
 ```bash
 cd client
-./build.sh
+go build -o sathub-client
 ```
 
-This creates a binary at `bin/sathub-client`.
+This creates the `sathub-client` binary in the current directory.
 
 ## Configuration
 
-The client is configured via environment variables:
+The client supports both command-line arguments and environment variables. Command-line arguments take precedence over environment variables.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_URL` | `http://localhost:4001` | SatHub API base URL |
-| `STATION_TOKEN` | *required* | Station authentication token |
-| `WATCH_PATHS` | `./data` | Comma-separated list of directories to monitor |
-| `PROCESSED_DIR` | `./data/processed` | Directory to move processed satellite passes |
-| `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
-| `RETRY_COUNT` | `3` | Number of retries for failed API calls |
-| `RETRY_DELAY` | `5` | Delay between retries in seconds |
-| `PROCESS_DELAY` | `10` | Minutes to wait before processing new directories |
+### Command-Line Arguments
+
+```bash
+sathub-client --help
+```
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--token` | `-t` | *required* | Station API token |
+| `--watch` | `-w` | *required* | Directory path to watch for new images |
+| `--api` | `-a` | `https://api.sathub.de` | SatHub API URL |
+| `--processed` | `-p` | `./processed` | Directory to move processed files |
+| `--verbose` | `-v` | `false` | Enable verbose (debug) logging |
+
+### Environment Variables (Fallbacks)
+
+| Variable | Description |
+|----------|-------------|
+| `STATION_TOKEN` | Station authentication token (fallback for `--token`) |
+| `WATCH_PATHS` | Directory to monitor (fallback for `--watch`) |
+| `API_URL` | SatHub API base URL (fallback for `--api`) |
+| `PROCESSED_DIR` | Directory to move processed satellite passes (fallback for `--processed`) |
 
 ## Data Format
 
@@ -102,31 +122,80 @@ All PNG images from product directories are automatically uploaded as post image
 
 ## Usage
 
-### Basic Setup
+### Quick Start
 
 1. **Get your station token** from the SatHub web interface
-2. **Configure sathub** to output to a monitored directory (e.g., `./data`)
-3. **Set environment variables** and run the client
+2. **Configure sathub** to output to a monitored directory
+3. **Run the client** with your token and watch directory
 
-### Example Usage
+### Command-Line Usage
 
 ```bash
-# Set required environment variables
+# Linux/macOS
+./sathub-client --token YOUR_STATION_TOKEN --watch /path/to/satellite/data
+
+# Windows
+sathub-client.exe --token YOUR_STATION_TOKEN --watch C:\path\to\satellite\data
+
+# With custom API server
+./sathub-client --token YOUR_TOKEN --watch /path/to/data --api https://my-sathub.example.com
+
+# Enable verbose logging
+./sathub-client --token YOUR_TOKEN --watch /path/to/data --verbose
+
+# Custom processed directory
+./sathub-client --token YOUR_TOKEN --watch /path/to/data --processed /path/to/archive
+```
+
+### Environment Variable Usage (Legacy)
+
+You can still use environment variables as an alternative to command-line arguments:
+
+```bash
+# Set environment variables
 export STATION_TOKEN=your_station_token_from_sathub
-export API_URL=http://your-sathub-server:4001
+export WATCH_PATHS=/path/to/satellite/data
+export API_URL=https://api.sathub.de
 
-# Optional: customize watch directory and processing delay
-export WATCH_PATHS=./satellite-data
-export PROCESS_DELAY=15  # Wait 15 minutes before processing
-
-# Run the client
+# Run the client (no arguments needed)
 ./sathub-client
+```
+
+### Mixed Usage
+
+Environment variables provide defaults that can be overridden by command-line arguments:
+
+```bash
+# Set defaults via environment
+export STATION_TOKEN=your_default_token
+export API_URL=https://api.sathub.de
+
+# Override watch path via command line
+./sathub-client --watch /different/path --verbose
 ```
 
 ### Systemd Service (Linux)
 
 Create `/etc/systemd/system/sathub-client.service`:
 
+**Option 1: Using command-line arguments (recommended)**
+```ini
+[Unit]
+Description=SatHub Data Client
+After=network.target
+
+[Service]
+Type=simple
+User=sathub
+ExecStart=/path/to/sathub-client --token your_token_here --watch /home/sathub/data --api https://api.sathub.de
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Option 2: Using environment variables**
 ```ini
 [Unit]
 Description=SatHub Data Client
@@ -136,8 +205,8 @@ After=network.target
 Type=simple
 User=sathub
 Environment=STATION_TOKEN=your_token_here
-Environment=API_URL=http://your-sathub-server:4001
 Environment=WATCH_PATHS=/home/sathub/data
+Environment=API_URL=https://api.sathub.de
 ExecStart=/path/to/sathub-client
 Restart=always
 RestartSec=10
@@ -165,30 +234,33 @@ sudo systemctl status sathub-client
 
 ## Logging
 
-The client provides detailed logging of satellite data processing:
+The client uses structured logging with zerolog for better debugging and monitoring:
 
+**Normal logging (default):**
 ```
-[CLIENT] Starting SatHub Data Client
-[WATCHER] Watching directory: ./data
-[WATCHER] Detected new satellite pass directory: ./data/2025-09-26_13-01_meteor_m2-x_lrpt_137.9 MHz/
-[WATCHER] Waiting 10m0s before processing...
-[WATCHER] Processing satellite pass: ./data/2025-09-26_13-01_meteor_m2-x_lrpt_137.9 MHz/
-[WATCHER] Parsed timestamp: 2024-09-27T16:45:00Z
-[WATCHER] Parsed satellite name: METEOR-M2
-[WATCHER] NORAD ID: 40069
-[WATCHER] Frequency: 137.9 MHz
-[WATCHER] Modulation: LRPT
-[WATCHER] Found 2 datasets
-[WATCHER]   Dataset 1: MSU-MR
-[WATCHER]   Dataset 2: MSU-MR (Filled)
-[WATCHER] Parsed dataset.json with 15 metadata fields
-[WATCHER] Found 2 product directories: [MSU-MR MSU-MR (Filled)]
-[WATCHER] Found CBOR data in MSU-MR (245760 bytes)
-[WATCHER] Found 6 images in MSU-MR
-[WATCHER] Total images to upload: 12
-[WATCHER] Created post ID 123 for satellite METEOR-M2
-[WATCHER] Uploaded image MSU-MR-1.png for post 123
-[WATCHER] Uploaded image MSU-MR-2.png for post 123
+2024-09-29T15:30:00Z INF Starting SatHub Data Client component=client version=v1.0.0 api_url=https://api.sathub.de
+2024-09-29T15:30:00Z INF Testing API connection... component=client
+2024-09-29T15:30:01Z INF API connection successful component=client
+2024-09-29T15:30:01Z INF Watching directory component=watcher path=/path/to/data
+2024-09-29T15:30:01Z INF SatHub Data Client started successfully component=client
+2024-09-29T15:35:00Z INF Detected new satellite pass directory component=watcher dir=/path/to/2024-09-29_15-30_meteor-m2_lrpt
+2024-09-29T15:45:00Z INF Processing satellite pass component=watcher dir=/path/to/2024-09-29_15-30_meteor-m2_lrpt
+2024-09-29T15:45:01Z INF Parsed satellite name component=watcher satellite=METEOR-M2
+2024-09-29T15:45:02Z INF Selected product for upload component=watcher product=MSU-MR images=6
+2024-09-29T15:45:03Z INF Created post component=watcher post_id=123 satellite=METEOR-M2
+2024-09-29T15:45:05Z INF Uploaded image component=watcher image=MSU-MR-1.png post_id=123
+```
+
+**Verbose logging (--verbose flag):**
+```
+2024-09-29T15:45:01Z DBG Parsed timestamp component=watcher timestamp=2024-09-29T15:30:00Z
+2024-09-29T15:45:01Z DBG NORAD ID component=watcher norad_id=40069
+2024-09-29T15:45:01Z DBG Frequency component=watcher frequency_mhz=137.9
+2024-09-29T15:45:01Z DBG Modulation component=watcher modulation=LRPT
+2024-09-29T15:45:01Z DBG Found datasets component=watcher count=2
+2024-09-29T15:45:01Z DBG Dataset component=watcher index=1 name=MSU-MR
+2024-09-29T15:45:01Z DBG Found CBOR data component=watcher product=MSU-MR bytes=245760
+2024-09-29T15:45:02Z DBG Found images component=watcher product=MSU-MR count=6
 ```
 
 ## Error Handling
