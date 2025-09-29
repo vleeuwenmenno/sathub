@@ -13,6 +13,9 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 
 ### Current Features
 
+<details>
+<summary>Current Features</summary>
+
 - [x] Responsive web interface
 - [x] Docker-based development environment
 - [x] Database using GORM with SQLite (easily switchable to MariaDB or Postgres)
@@ -32,13 +35,20 @@ SatHub provides a comprehensive solution for satellite enthusiasts and operators
 - [x] Docker-based production environment
 - [x] GitHub Workfows that publish and compile docker images for prod
 
+</details>
+
 ### Planned Features
+
+<details>
+<summary>Planned Features</summary>
 
 - [ ] API rate limiting
 - [ ] Data export functionality
 - [ ] Achievements for users
 - [ ] Notifications (Email, Shoutrr) (e.g. new post from followed station, station offline, etc)
 - [ ] Quick access to popular stations
+
+</details>
 
 ## Tech Stack
 
@@ -108,6 +118,8 @@ For local development without Docker:
    ```
 
 ## Development Setup
+
+For detailed development setup with Caddy reverse proxy (recommended for proper hostnames and CORS-free development), see [README.dev.md](README.dev.md).
 
 ### Using Docker (Recommended)
 

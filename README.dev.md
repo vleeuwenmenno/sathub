@@ -17,14 +17,13 @@ This setup uses Caddy as a reverse proxy to provide proper hostnames for local d
 
 1. **Start all services:**
    ```bash
-   docker-compose up -d
+   make up
    ```
 
 2. **Access the applications:**
    - **Frontend:** https://sathub.local:4444 (HTTP redirects to HTTPS)
    - **API:** https://api.sathub.local:4444 (HTTP redirects to HTTPS)
    - **MinIO Console:** http://localhost:9001 (admin/minioadmin)
-   - **Object Storage:** https://obj.sathub.local:4444 (for direct image access)
 
 ## Services
 
@@ -41,14 +40,6 @@ This setup uses Caddy as a reverse proxy to provide proper hostnames for local d
 Routes requests to appropriate services:
 - `sathub.local` → Frontend
 - `api.sathub.local` → Backend API
-- `obj.sathub.local` → MinIO (with CORS headers)
-
-### Environment Variables
-The backend uses these MinIO settings:
-- `MINIO_ENDPOINT=http://obj.sathub.local`
-- `MINIO_BUCKET=sathub-images`
-- `MINIO_ACCESS_KEY=minioadmin`
-- `MINIO_SECRET_KEY=minioadmin`
 
 ## Image Storage
 
@@ -63,7 +54,7 @@ sathub-images/
 │   │   └── image3.jpg
 ```
 
-Images are served directly from MinIO via `obj.sathub.local`, eliminating database load and improving performance.
+Images are served via the backend API which fetches it from MinIO, this avoids CORS issues but still allows faster performance than storing it in the database.
 
 ## Troubleshooting
 
