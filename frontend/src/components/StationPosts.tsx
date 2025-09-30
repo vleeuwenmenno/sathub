@@ -358,7 +358,7 @@ const StationPosts: React.FC = () => {
               )}
               
               {/* Station Health */}
-              <StationHealthGraph stationId={stationId!} />
+              <StationHealthGraph stationId={stationId!} stationName={station.name} />
             </Stack>
           </Grid>
         </Grid>

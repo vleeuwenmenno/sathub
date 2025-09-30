@@ -10,18 +10,23 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Button,
 } from "@mui/joy";
+import { BarChart as BarChartIcon } from "@mui/icons-material";
 import { getStationUptime, type StationUptimeData } from "../api";
+import StationHealthDialog from "./StationHealthDialog";
 
 interface StationHealthGraphProps {
   stationId: string;
+  stationName?: string;
 }
 
-const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId }) => {
+const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stationName }) => {
   const [uptimeData, setUptimeData] = useState<StationUptimeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(7);
+  const [days, setDays] = useState(1);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadUptimeData = async () => {
@@ -145,25 +150,31 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId }) =>
   const stats = uptimeData ? calculateStats(uptimeData) : null;
 
   return (
-    <Card>
-      <CardContent>
-        <Stack spacing={2}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography level="title-md">
-              Station Health
-            </Typography>
-            <Select
-              size="sm"
-              value={days}
-              onChange={(_: any, value: number | null) => value && setDays(value)}
-              sx={{ minWidth: 120 }}
-            >
-              <Option value={1}>Last 24h</Option>
-              <Option value={7}>Last 7 days</Option>
-              <Option value={30}>Last 30 days</Option>
-              <Option value={90}>Last 90 days</Option>
-            </Select>
-          </Box>
+    <>
+      <StationHealthDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        stationId={stationId}
+        stationName={stationName || "Station"}
+      />
+      <Card>
+        <CardContent>
+          <Stack spacing={2}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography level="title-md">
+                Station Health
+              </Typography>
+              <Select
+                size="sm"
+                value={days}
+                onChange={(_: any, value: number | null) => value && setDays(value)}
+                sx={{ minWidth: 120 }}
+              >
+                <Option value={1}>Last 24h</Option>
+                <Option value={3}>Last 3 days</Option>
+                <Option value={7}>Last 7 days</Option>
+              </Select>
+            </Box>
 
           {stats && (
             <Stack spacing={1.5}>
@@ -220,11 +231,23 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId }) =>
                   </Typography>
                 )}
               </Box>
+
+              {/* View Details Button */}
+              <Button
+                fullWidth
+                variant="soft"
+                color="primary"
+                startDecorator={<BarChartIcon />}
+                onClick={() => setDialogOpen(true)}
+              >
+                View Detailed Health Graph
+              </Button>
             </Stack>
           )}
         </Stack>
       </CardContent>
     </Card>
+    </>
   );
 };
 
