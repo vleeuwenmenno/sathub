@@ -71,13 +71,15 @@ This setup uses Caddy as a reverse proxy to provide proper hostnames for local d
    ```
 
 2. **Access the applications:**
-   - **Frontend:** https://sathub.local:4444 (HTTP redirects to HTTPS)
-   - **API:** https://api.sathub.local:4444 (HTTP redirects to HTTPS)
+   - **Frontend:** https://sathub.local:9999 (HTTP redirects to HTTPS)
+   - **API:** https://api.sathub.local:9999 (HTTP redirects to HTTPS)
    - **MinIO Console:** http://localhost:9001 (admin/minioadmin)
+
+- Note: You likely have to browse to the API URL once and accept the self-signed certificate.
 
 #### Services
 
-- **Caddy** (Ports 9999/4444): Reverse proxy with automatic HTTPS and HTTP redirects
+- **Caddy** (Ports 9999): Reverse proxy
 - **Frontend** (Port 5173): React/Vite development server
 - **Backend** (Port 4001): Go API server
 - **MinIO** (Port 9000): Object storage server
