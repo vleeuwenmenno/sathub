@@ -573,7 +573,7 @@ const AdminUserManagement: React.FC = () => {
         open={userDetailsModal.open}
         onClose={() => setUserDetailsModal({ open: false, user: null })}
       >
-        <ModalDialog sx={{ maxWidth: 600, width: '90%' }}>
+        <ModalDialog sx={{ maxWidth: 600, width: '90%', maxHeight: '90vh', overflow: 'auto' }}>
           <ModalClose />
           {loadingDetails ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
