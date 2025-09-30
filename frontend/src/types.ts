@@ -105,7 +105,7 @@ export interface PostComment {
 
 export interface CreateCommentRequest {
   content: string;
-  parent_id?: number;
+  parent_id?: string;
 }
 
 export interface UpdateCommentRequest {

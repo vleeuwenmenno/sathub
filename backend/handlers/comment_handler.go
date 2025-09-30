@@ -22,7 +22,7 @@ type CommentRequest struct {
 
 // CommentResponse represents a comment in responses
 type CommentResponse struct {
-	ID                uint   `json:"id"`
+	ID                string `json:"id"`
 	UserID            string `json:"user_id"`
 	Username          string `json:"username"`
 	DisplayName       string `json:"display_name,omitempty"`
@@ -108,7 +108,7 @@ func GetCommentsForPost(c *gin.Context) {
 		}
 
 		commentResp := CommentResponse{
-			ID:                comment.ID,
+			ID:                comment.ID.String(),
 			UserID:            comment.UserID.String(),
 			Username:          comment.User.Username,
 			DisplayName:       comment.User.DisplayName,
@@ -215,7 +215,7 @@ func CreateComment(c *gin.Context) {
 				UserID:    post.Station.UserID,
 				Type:      "comment",
 				Message:   fmt.Sprintf("%s commented on your post (%s)", commenterName, post.SatelliteName),
-				RelatedID: fmt.Sprintf("%d:%d", uint(postID), comment.ID), // postId:commentId for navigation
+				RelatedID: fmt.Sprintf("%d:%s", uint(postID), comment.ID.String()), // postId:commentId for navigation
 				IsRead:    false,
 			}
 
@@ -248,7 +248,7 @@ func CreateComment(c *gin.Context) {
 	}
 
 	response := CommentResponse{
-		ID:                comment.ID,
+		ID:                comment.ID.String(),
 		UserID:            comment.UserID.String(),
 		Username:          comment.User.Username,
 		DisplayName:       comment.User.DisplayName,
@@ -272,7 +272,8 @@ func UpdateComment(c *gin.Context) {
 		return
 	}
 
-	commentID, err := strconv.ParseUint(c.Param("commentId"), 10, 32)
+	commentIDStr := c.Param("commentId")
+	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid comment ID")
 		return
@@ -288,7 +289,7 @@ func UpdateComment(c *gin.Context) {
 
 	// Find comment and verify ownership
 	var comment models.Comment
-	if err := db.Where("id = ? AND user_id = ?", uint(commentID), userID).First(&comment).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", commentID, userID).First(&comment).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Comment not found or not owned by user")
 			return
@@ -328,7 +329,7 @@ func UpdateComment(c *gin.Context) {
 	isLiked = err == nil
 
 	response := CommentResponse{
-		ID:                comment.ID,
+		ID:                comment.ID.String(),
 		UserID:            comment.UserID.String(),
 		Username:          comment.User.Username,
 		DisplayName:       comment.User.DisplayName,
@@ -352,7 +353,8 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 
-	commentID, err := strconv.ParseUint(c.Param("commentId"), 10, 32)
+	commentIDStr := c.Param("commentId")
+	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid comment ID")
 		return
@@ -362,7 +364,7 @@ func DeleteComment(c *gin.Context) {
 
 	// Find comment and verify ownership
 	var comment models.Comment
-	if err := db.Where("id = ? AND user_id = ?", uint(commentID), userID).First(&comment).Error; err != nil {
+	if err := db.Where("id = ? AND user_id = ?", commentID, userID).First(&comment).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Comment not found or not owned by user")
 			return
@@ -378,7 +380,7 @@ func DeleteComment(c *gin.Context) {
 	}
 
 	// Log comment deletion
-	utils.LogCommentAction(c, models.ActionCommentDelete, uint(commentID), models.AuditMetadata{
+	utils.LogCommentAction(c, models.ActionCommentDelete, commentID, models.AuditMetadata{
 		"content_length": len(comment.Content),
 	})
 

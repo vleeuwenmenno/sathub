@@ -84,6 +84,7 @@ func InitDatabase() {
 // RunMigrations runs database migrations
 func RunMigrations() error {
 	log.Println("Running database migrations...")
+
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},

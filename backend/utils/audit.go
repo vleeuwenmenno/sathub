@@ -96,8 +96,8 @@ func LogPostAction(c *gin.Context, action models.AuditAction, postID uint, metad
 }
 
 // LogCommentAction logs actions performed on comments
-func LogCommentAction(c *gin.Context, action models.AuditAction, commentID uint, metadata models.AuditMetadata) error {
-	return LogAuditEvent(c, action, models.TargetTypeComment, fmt.Sprintf("%d", commentID), metadata)
+func LogCommentAction(c *gin.Context, action models.AuditAction, commentID uuid.UUID, metadata models.AuditMetadata) error {
+	return LogAuditEvent(c, action, models.TargetTypeComment, commentID.String(), metadata)
 }
 
 // LogSystemAction logs system-level actions
