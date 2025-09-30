@@ -364,7 +364,7 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Get all comment IDs for comments by this user
-	var userCommentIDs []uint
+	var userCommentIDs []uuid.UUID
 	if err := tx.Model(&models.Comment{}).Where("user_id = ?", targetUserID).Pluck("id", &userCommentIDs).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to find user comments")
@@ -372,7 +372,7 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Get all comment IDs for comments on user's posts
-	var postCommentIDs []uint
+	var postCommentIDs []uuid.UUID
 	if len(postIDs) > 0 {
 		if err := tx.Model(&models.Comment{}).Where("post_id IN ?", postIDs).Pluck("id", &postCommentIDs).Error; err != nil {
 			tx.Rollback()

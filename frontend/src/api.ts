@@ -581,7 +581,7 @@ export const deleteComment = async (commentId: number): Promise<void> => {
 };
 
 // Comment Like API functions
-export const likeComment = async (commentId: number): Promise<{ liked: boolean }> => {
+export const likeComment = async (commentId: string): Promise<{ liked: boolean }> => {
   const res = await api.post(`/comments/likes/${commentId}`);
   return res.data.data;
 };

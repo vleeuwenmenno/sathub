@@ -11,7 +11,7 @@ type CommentLike struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
-	CommentID uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"comment_id"`
+	CommentID uuid.UUID `gorm:"type:uuid;not null;index;constraint:OnDelete:CASCADE" json:"comment_id"`
 	Comment   Comment   `gorm:"foreignKey:CommentID" json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 }

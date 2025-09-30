@@ -33,3 +33,7 @@ clean: down
 # Create a new release
 release:
 	./release.sh
+
+# This will run automigration
+migrate:
+	docker compose up migrate

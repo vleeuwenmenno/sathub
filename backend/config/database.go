@@ -81,9 +81,93 @@ func InitDatabase() {
 	log.Println("Database connection established successfully")
 }
 
+// runCommentUUIDMigration runs the migration to convert comment IDs to UUIDs
+func runCommentUUIDMigration() error {
+	log.Println("Running comment UUID migration...")
+
+	// Check if we need to migrate (only for PostgreSQL and if comments table exists with bigint id)
+	var dbType string
+	if os.Getenv("DB_TYPE") == "postgres" {
+		dbType = "postgres"
+	} else {
+		dbType = "sqlite"
+	}
+
+	if dbType == "postgres" {
+		// Check if comments table exists and has id as bigint
+		var count int
+		err := DB.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'comments'").Scan(&count).Error
+		if err != nil || count == 0 {
+			// Table does not exist yet, skip migration
+			log.Println("Comments table does not exist, skipping UUID migration")
+			return nil
+		}
+
+		// Check if id column is bigint
+		var columnType string
+		err = DB.Raw("SELECT data_type FROM information_schema.columns WHERE table_name = 'comments' AND column_name = 'id'").Scan(&columnType).Error
+		if err != nil {
+			log.Printf("Error checking column type: %v, skipping migration", err)
+			return nil
+		}
+
+		if columnType == "bigint" {
+			log.Println("Detected bigint comment IDs, running migration to UUIDs...")
+
+			// Run the migration SQL
+			migrationSQL := `
+				-- Add a temporary UUID column to comments table
+				ALTER TABLE comments ADD COLUMN id_uuid UUID DEFAULT gen_random_uuid();
+
+				-- Update the temporary column with new UUIDs for existing comments
+				UPDATE comments SET id_uuid = gen_random_uuid() WHERE id_uuid IS NULL;
+
+				-- Update comment_likes to use the new UUIDs (cast bigint to uuid)
+				UPDATE comment_likes
+				SET comment_id = comments.id_uuid
+				FROM comments
+				WHERE comment_likes.comment_id = comments.id;
+
+				-- Change comment_likes.comment_id to UUID type
+				ALTER TABLE comment_likes ALTER COLUMN comment_id TYPE UUID USING comment_id::uuid;
+
+				-- Drop the old bigint id column from comments
+				ALTER TABLE comments DROP COLUMN id;
+
+				-- Rename the UUID column to id
+				ALTER TABLE comments RENAME COLUMN id_uuid TO id;
+
+				-- Make the new id column the primary key
+				ALTER TABLE comments ADD CONSTRAINT comments_pkey PRIMARY KEY (id);
+
+				-- Update the foreign key constraint in comment_likes
+				ALTER TABLE comment_likes DROP CONSTRAINT IF EXISTS fk_comment_likes_comment;
+				ALTER TABLE comment_likes ADD CONSTRAINT fk_comment_likes_comment
+					FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE;
+			`
+
+			if err := DB.Exec(migrationSQL).Error; err != nil {
+				return fmt.Errorf("failed to run comment UUID migration: %w", err)
+			}
+
+			log.Println("Comment UUID migration completed successfully")
+		} else {
+			log.Println("Comment IDs are already UUIDs, skipping migration")
+		}
+	}
+
+	return nil
+}
+
 // RunMigrations runs database migrations
 func RunMigrations() error {
 	log.Println("Running database migrations...")
+
+	// Run comment UUID migration first if needed
+	if err := runCommentUUIDMigration(); err != nil {
+		return err
+	}
+
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},

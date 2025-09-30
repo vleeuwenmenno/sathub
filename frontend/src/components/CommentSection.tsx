@@ -550,7 +550,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
               onEditContentChange={setEditContent}
               submitting={editingSubmitting}
               isNewlyPosted={newlyPostedCommentId === comment.id}
-              isHighlighted={highlightedCommentId === comment.id.toString()}
+              isHighlighted={highlightedCommentId === comment.id}
             />
           ))
         )}

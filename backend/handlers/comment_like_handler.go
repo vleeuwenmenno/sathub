@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/middleware"
@@ -30,7 +29,8 @@ func LikeComment(c *gin.Context) {
 		return
 	}
 
-	commentID, err := strconv.ParseUint(c.Param("commentId"), 10, 32)
+	commentIDStr := c.Param("commentId")
+	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid comment ID")
 		return
@@ -40,7 +40,7 @@ func LikeComment(c *gin.Context) {
 
 	// Check if comment exists and is accessible (comment's post must be accessible)
 	var comment models.Comment
-	if err := db.Preload("Post").Preload("Post.Station").Where("comments.id = ?", uint(commentID)).First(&comment).Error; err != nil {
+	if err := db.Preload("Post").Preload("Post.Station").Where("comments.id = ?", commentID).First(&comment).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Comment not found")
 			return
@@ -57,7 +57,7 @@ func LikeComment(c *gin.Context) {
 
 	// Check if user already liked this comment
 	var existingLike models.CommentLike
-	err = db.Where("user_id = ? AND comment_id = ?", userID, uint(commentID)).First(&existingLike).Error
+	err = db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&existingLike).Error
 
 	if err == nil {
 		// User already liked, so unlike (delete the like)
@@ -67,14 +67,14 @@ func LikeComment(c *gin.Context) {
 		}
 
 		// Log comment unlike
-		utils.LogCommentAction(c, models.ActionCommentUnlike, uint(commentID), models.AuditMetadata{})
+		utils.LogCommentAction(c, models.ActionCommentUnlike, commentID, models.AuditMetadata{})
 
 		utils.SuccessResponse(c, http.StatusOK, "Comment unliked successfully", gin.H{"liked": false})
 	} else if err == gorm.ErrRecordNotFound {
 		// User hasn't liked, so like (create the like)
 		like := models.CommentLike{
 			UserID:    userID,
-			CommentID: uint(commentID),
+			CommentID: commentID,
 		}
 		if err := db.Create(&like).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to like comment")
@@ -89,7 +89,7 @@ func LikeComment(c *gin.Context) {
 		}()
 
 		// Log comment like
-		utils.LogCommentAction(c, models.ActionCommentLike, uint(commentID), models.AuditMetadata{})
+		utils.LogCommentAction(c, models.ActionCommentLike, commentID, models.AuditMetadata{})
 		utils.SuccessResponse(c, http.StatusCreated, "Comment liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")
