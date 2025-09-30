@@ -231,8 +231,9 @@ const Detail: React.FC = () => {
       const hash = window.location.hash.substring(1); // Remove #
       if (hash.startsWith('comment-')) {
         const commentId = hash.replace('comment-', '');
-        // Wait a bit for comments to load, then scroll and highlight
-        const timer = setTimeout(() => {
+        
+        // Function to scroll and highlight when element is found
+        const scrollToComment = () => {
           const element = document.getElementById(hash);
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -244,10 +245,27 @@ const Detail: React.FC = () => {
             setTimeout(() => {
               setHighlightedCommentId(null);
             }, 3000);
+            return true;
           }
-        }, 1000); // Wait 1 second for comments to load
+          return false;
+        };
 
-        return () => clearTimeout(timer);
+        // Try immediately first
+        if (scrollToComment()) {
+          return;
+        }
+
+        // If not found, poll every 100ms for up to 2 seconds
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds / 100ms
+        const interval = setInterval(() => {
+          attempts++;
+          if (scrollToComment() || attempts >= maxAttempts) {
+            clearInterval(interval);
+          }
+        }, 100);
+
+        return () => clearInterval(interval);
       }
     }
   }, []);

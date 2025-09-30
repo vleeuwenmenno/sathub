@@ -306,18 +306,19 @@ const NotificationDropdown: React.FC = () => {
           )}
         </Box>
 
-        {notifications.length > 0 && (
-          <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-            <Button
-              size="sm"
-              variant="plain"
-              onClick={() => window.location.href = '/notifications'}
-              sx={{ fontSize: '0.75rem' }}
-            >
-              View all notifications
-            </Button>
-          </Box>
-        )}
+        <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+          <Button
+            size="sm"
+            variant="plain"
+            onClick={() => {
+              setOpen(false);
+              window.location.href = '/notifications';
+            }}
+            sx={{ fontSize: '0.75rem' }}
+          >
+            View all notifications
+          </Button>
+        </Box>
       </Menu>
       </Box>
     </ClickAwayListener>
