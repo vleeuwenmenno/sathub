@@ -1,6 +1,19 @@
-# Database Seeding Script
+# Database Seeding
 
-This script populates the database with test data for development and testing purposes.
+This project includes both manual seeding scripts for development and automatic seeding for production deployments.
+
+## Automatic Seeding (Production)
+
+The application automatically seeds essential data on startup:
+
+- **Achievements**: Predefined achievement definitions are seeded if they don't exist
+- **Future data**: The auto-seed system is extensible for additional essential data
+
+Auto-seeding runs every time the application starts and only adds missing data, making it safe for production deployments.
+
+## Manual Seeding (Development)
+
+The manual seeding script populates the database with test data for development and testing purposes.
 
 ## What it creates
 

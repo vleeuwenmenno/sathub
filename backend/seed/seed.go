@@ -121,6 +121,33 @@ func createTestImageData() []byte {
 	return imageData
 }
 
+// AutoSeed checks for missing essential data and seeds it automatically
+// This runs on application startup to ensure required data exists
+func AutoSeed() error {
+	db := config.GetDB()
+
+	// Check if achievements already exist
+	var count int64
+	if err := db.Model(&models.Achievement{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to check achievements count: %w", err)
+	}
+
+	if count == 0 {
+		fmt.Println("No achievements found, seeding achievements...")
+		if err := seedAchievements(); err != nil {
+			return fmt.Errorf("failed to auto-seed achievements: %w", err)
+		}
+		fmt.Println("Achievements auto-seeded successfully!")
+	} else {
+		fmt.Printf("Achievements already exist (%d found), skipping auto-seed\n", count)
+	}
+
+	// Future: Add checks for other essential data here
+	// e.g., check for admin user, default settings, etc.
+
+	return nil
+}
+
 // seedAchievements creates the predefined achievements
 func seedAchievements() error {
 	db := config.GetDB()

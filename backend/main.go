@@ -32,6 +32,11 @@ func main() {
 	config.InitDatabase()
 	defer config.CloseDatabase()
 
+	// Auto-seed essential data if missing
+	if err := seed.AutoSeed(); err != nil {
+		log.Fatalf("Auto-seeding failed: %v", err)
+	}
+
 	// Initialize storage
 	utils.InitStorage()
 
