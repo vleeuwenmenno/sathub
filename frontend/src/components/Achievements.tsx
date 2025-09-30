@@ -69,6 +69,23 @@ const Achievements: React.FC = () => {
     userAchievements.map((ua) => [ua.achievement.id, ua.unlocked_at])
   );
 
+  // Handler to scroll to and highlight an achievement
+  const handleAchievementClick = (achievementId: string) => {
+    const element = document.getElementById(`achievement-${achievementId}`);
+    if (element) {
+      // Scroll to the achievement
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight the achievement
+      setHighlightedId(achievementId);
+      
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedId(null);
+      }, 3000);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -124,6 +141,15 @@ const Achievements: React.FC = () => {
                 variant="soft"
                 color="success"
                 startDecorator={<span>{ua.achievement.icon}</span>}
+                onClick={() => handleAchievementClick(ua.achievement.id)}
+                sx={{
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "sm",
+                  },
+                }}
               >
                 {ua.achievement.name}
               </Chip>
