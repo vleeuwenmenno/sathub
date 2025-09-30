@@ -12,9 +12,10 @@ import {
   Chip,
   Button,
 } from "@mui/joy";
-import { BarChart as BarChartIcon } from "@mui/icons-material";
+import { BarChart as BarChartIcon, Notifications as NotificationsIcon } from "@mui/icons-material";
 import { getStationUptime, type StationUptimeData } from "../api";
 import StationHealthDialog from "./StationHealthDialog";
+import StationNotificationSettingsDialog from "./StationNotificationSettingsDialog";
 
 interface StationHealthGraphProps {
   stationId: string;
@@ -27,6 +28,7 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadUptimeData = async () => {
@@ -157,6 +159,12 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
         stationId={stationId}
         stationName={stationName || "Station"}
       />
+      <StationNotificationSettingsDialog
+        open={notificationDialogOpen}
+        onClose={() => setNotificationDialogOpen(false)}
+        stationId={stationId}
+        stationName={stationName || "Station"}
+      />
       <Card>
         <CardContent>
           <Stack spacing={2}>
@@ -232,16 +240,27 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
                 )}
               </Box>
 
-              {/* View Details Button */}
-              <Button
-                fullWidth
-                variant="soft"
-                color="primary"
-                startDecorator={<BarChartIcon />}
-                onClick={() => setDialogOpen(true)}
-              >
-                View Detailed Health Graph
-              </Button>
+              {/* Action Buttons */}
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  fullWidth
+                  variant="soft"
+                  color="primary"
+                  startDecorator={<BarChartIcon />}
+                  onClick={() => setDialogOpen(true)}
+                >
+                  View Detailed Health Graph
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  color="neutral"
+                  startDecorator={<NotificationsIcon />}
+                  onClick={() => setNotificationDialogOpen(true)}
+                >
+                  Notification Settings
+                </Button>
+              </Box>
             </Stack>
           )}
         </Stack>

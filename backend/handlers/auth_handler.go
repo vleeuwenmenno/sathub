@@ -48,15 +48,16 @@ type AuthResponse struct {
 
 // UserInfo represents user information in responses
 type UserInfo struct {
-	ID                 string `json:"id"`
-	Username           string `json:"username"`
-	Email              string `json:"email,omitempty"`
-	Role               string `json:"role"`
-	TwoFactorEnabled   bool   `json:"two_factor_enabled"`
-	DisplayName        string `json:"display_name,omitempty"`
-	ProfilePictureURL  string `json:"profile_picture_url,omitempty"`
-	HasProfilePicture  bool   `json:"has_profile_picture"`
-	EmailNotifications bool   `json:"email_notifications"`
+	ID                        string `json:"id"`
+	Username                  string `json:"username"`
+	Email                     string `json:"email,omitempty"`
+	Role                      string `json:"role"`
+	TwoFactorEnabled          bool   `json:"two_factor_enabled"`
+	DisplayName               string `json:"display_name,omitempty"`
+	ProfilePictureURL         string `json:"profile_picture_url,omitempty"`
+	HasProfilePicture         bool   `json:"has_profile_picture"`
+	EmailNotifications        bool   `json:"email_notifications"`
+	StationEmailNotifications bool   `json:"station_email_notifications"`
 }
 
 // Register handles user registration
@@ -281,15 +282,16 @@ func Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:                 user.ID.String(),
-			Username:           user.Username,
-			Email:              user.Email.String,
-			Role:               user.Role,
-			TwoFactorEnabled:   user.TwoFactorEnabled,
-			DisplayName:        user.DisplayName,
-			ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasProfilePicture:  len(user.ProfilePicture) > 0,
-			EmailNotifications: user.EmailNotifications,
+			ID:                        user.ID.String(),
+			Username:                  user.Username,
+			Email:                     user.Email.String,
+			Role:                      user.Role,
+			TwoFactorEnabled:          user.TwoFactorEnabled,
+			DisplayName:               user.DisplayName,
+			ProfilePictureURL:         generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture:         len(user.ProfilePicture) > 0,
+			EmailNotifications:        user.EmailNotifications,
+			StationEmailNotifications: user.StationEmailNotifications,
 		},
 	}
 
@@ -381,15 +383,16 @@ func RefreshTokens(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		User: UserInfo{
-			ID:                 user.ID.String(),
-			Username:           user.Username,
-			Email:              user.Email.String,
-			Role:               user.Role,
-			TwoFactorEnabled:   user.TwoFactorEnabled,
-			DisplayName:        user.DisplayName,
-			ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-			HasProfilePicture:  len(user.ProfilePicture) > 0,
-			EmailNotifications: user.EmailNotifications,
+			ID:                        user.ID.String(),
+			Username:                  user.Username,
+			Email:                     user.Email.String,
+			Role:                      user.Role,
+			TwoFactorEnabled:          user.TwoFactorEnabled,
+			DisplayName:               user.DisplayName,
+			ProfilePictureURL:         generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+			HasProfilePicture:         len(user.ProfilePicture) > 0,
+			EmailNotifications:        user.EmailNotifications,
+			StationEmailNotifications: user.StationEmailNotifications,
 		},
 	}
 
@@ -436,10 +439,11 @@ func Logout(c *gin.Context) {
 
 // UpdateProfileRequest represents the request body for updating user profile
 type UpdateProfileRequest struct {
-	Email              string `json:"email,omitempty"`
-	Password           string `json:"password,omitempty"`
-	DisplayName        string `json:"display_name,omitempty"`
-	EmailNotifications *bool  `json:"email_notifications,omitempty"`
+	Email                     string `json:"email,omitempty"`
+	Password                  string `json:"password,omitempty"`
+	DisplayName               string `json:"display_name,omitempty"`
+	EmailNotifications        *bool  `json:"email_notifications,omitempty"`
+	StationEmailNotifications *bool  `json:"station_email_notifications,omitempty"`
 }
 
 // UpdateProfile handles updating current user profile
@@ -590,8 +594,13 @@ func UpdateProfile(c *gin.Context) {
 		user.EmailNotifications = *req.EmailNotifications
 	}
 
+	// Update station email notifications preference if provided
+	if req.StationEmailNotifications != nil {
+		user.StationEmailNotifications = *req.StationEmailNotifications
+	}
+
 	// Save changes if password, display name, or email notifications was updated
-	if req.Password != "" || req.DisplayName != "" || req.EmailNotifications != nil {
+	if req.Password != "" || req.DisplayName != "" || req.EmailNotifications != nil || req.StationEmailNotifications != nil {
 		if err := db.Save(&user).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to update profile")
 			return
@@ -622,15 +631,16 @@ func GetProfile(c *gin.Context) {
 	}
 
 	userInfo := UserInfo{
-		ID:                 user.ID.String(),
-		Username:           user.Username,
-		Email:              user.Email.String,
-		Role:               user.Role,
-		TwoFactorEnabled:   user.TwoFactorEnabled,
-		DisplayName:        user.DisplayName,
-		ProfilePictureURL:  generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
-		HasProfilePicture:  len(user.ProfilePicture) > 0,
-		EmailNotifications: user.EmailNotifications,
+		ID:                        user.ID.String(),
+		Username:                  user.Username,
+		Email:                     user.Email.String,
+		Role:                      user.Role,
+		TwoFactorEnabled:          user.TwoFactorEnabled,
+		DisplayName:               user.DisplayName,
+		ProfilePictureURL:         generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00")),
+		HasProfilePicture:         len(user.ProfilePicture) > 0,
+		EmailNotifications:        user.EmailNotifications,
+		StationEmailNotifications: user.StationEmailNotifications,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)

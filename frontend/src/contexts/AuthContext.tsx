@@ -7,6 +7,7 @@ interface AuthContextType extends AuthState {
   verifyTwoFactor: (code: string) => Promise<void>;
   verifyRecoveryCode: (code: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   loading: boolean;
 }
 
@@ -125,6 +126,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
+  const refreshUser = async () => {
+    if (authState.token) {
+      try {
+        const user = await getProfile();
+        setAuthState(prev => ({
+          ...prev,
+          user,
+        }));
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+      }
+    }
+  };
+
   const logout = async () => {
     try {
       await apiLogout();
@@ -151,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyTwoFactor,
     verifyRecoveryCode,
     logout,
+    refreshUser,
     loading,
   };
 

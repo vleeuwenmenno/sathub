@@ -11,24 +11,25 @@ import (
 )
 
 type User struct {
-	ID                 uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	Username           string         `gorm:"uniqueIndex;not null" json:"username"`
-	Email              sql.NullString `gorm:"unique" json:"email,omitempty"`
-	EmailConfirmed     bool           `gorm:"default:false" json:"email_confirmed"`
-	Approved           bool           `gorm:"default:false" json:"approved"`
-	Password           string         `gorm:"not null" json:"-"`
-	Role               string         `gorm:"default:user" json:"role"`
-	Banned             bool           `gorm:"default:false" json:"banned"`
-	BannedAt           sql.NullTime   `json:"banned_at,omitempty"`
-	TwoFactorEnabled   bool           `gorm:"default:false" json:"two_factor_enabled"`
-	TwoFactorSecret    string         `gorm:"size:128" json:"-"`  // Store encrypted
-	RecoveryCodes      string         `gorm:"type:text" json:"-"` // Store encrypted JSON array of recovery codes
-	DisplayName        string         `gorm:"size:100" json:"display_name,omitempty"`
-	ProfilePicture     []byte         `json:"-"`
-	ProfilePictureType string         `gorm:"size:50" json:"-"`
-	EmailNotifications bool           `gorm:"default:false" json:"email_notifications"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+	ID                        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	Username                  string         `gorm:"uniqueIndex;not null" json:"username"`
+	Email                     sql.NullString `gorm:"unique" json:"email,omitempty"`
+	EmailConfirmed            bool           `gorm:"default:false" json:"email_confirmed"`
+	Approved                  bool           `gorm:"default:false" json:"approved"`
+	Password                  string         `gorm:"not null" json:"-"`
+	Role                      string         `gorm:"default:user" json:"role"`
+	Banned                    bool           `gorm:"default:false" json:"banned"`
+	BannedAt                  sql.NullTime   `json:"banned_at,omitempty"`
+	TwoFactorEnabled          bool           `gorm:"default:false" json:"two_factor_enabled"`
+	TwoFactorSecret           string         `gorm:"size:128" json:"-"`  // Store encrypted
+	RecoveryCodes             string         `gorm:"type:text" json:"-"` // Store encrypted JSON array of recovery codes
+	DisplayName               string         `gorm:"size:100" json:"display_name,omitempty"`
+	ProfilePicture            []byte         `json:"-"`
+	ProfilePictureType        string         `gorm:"size:50" json:"-"`
+	EmailNotifications        bool           `gorm:"default:false" json:"email_notifications"`
+	StationEmailNotifications bool           `gorm:"default:true" json:"station_email_notifications"`
+	CreatedAt                 time.Time      `json:"created_at"`
+	UpdatedAt                 time.Time      `json:"updated_at"`
 }
 
 // HashPassword hashes the user's password using bcrypt

@@ -25,7 +25,7 @@ import { useAuth } from "../contexts/AuthContext";
 import TwoFactorSetup from "./TwoFactorSetup";
 
 const UserSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Profile section states
@@ -64,6 +64,7 @@ const UserSettings: React.FC = () => {
 
   // Notification settings states
   const [emailNotifications, setEmailNotifications] = useState(user?.email_notifications || false);
+  const [stationEmailNotifications, setStationEmailNotifications] = useState(user?.station_email_notifications ?? true);
 
   useEffect(() => {
     const fetchTwoFactorStatus = async () => {
@@ -104,6 +105,7 @@ const UserSettings: React.FC = () => {
       setEmail(user.email || "");
       setTwoFactorEnabled(user.two_factor_enabled || false);
       setEmailNotifications(user.email_notifications || false);
+      setStationEmailNotifications(user.station_email_notifications ?? true);
     }
   }, [user]);
 
@@ -324,6 +326,27 @@ const UserSettings: React.FC = () => {
 
   const handleNotificationToggle = (checked: boolean) => {
     handleUpdateNotificationSettings(checked);
+  };
+
+  const handleStationNotificationToggle = async (checked: boolean) => {
+    try {
+      setNotificationLoading(true);
+      // Clear notification-specific messages
+      setNotificationSuccess(null);
+      setNotificationError(null);
+
+      await updateProfile({ station_email_notifications: checked });
+      setStationEmailNotifications(checked);
+      setNotificationSuccess("Station notification settings updated successfully");
+      // Refresh user data in context
+      await refreshUser();
+    } catch (err: any) {
+      setNotificationError(err.response?.data?.error || "Failed to update station notification settings");
+      // Revert the checkbox state on error
+      setStationEmailNotifications(!checked);
+    } finally {
+      setNotificationLoading(false);
+    }
   };
 
   return (
@@ -635,11 +658,19 @@ const UserSettings: React.FC = () => {
           <Typography sx={{ mb: 2 }}>
             Choose how you want to be notified about activity on your posts and achievements.
           </Typography>
-          <FormControl>
+          <FormControl sx={{ mb: 2 }}>
             <Checkbox
               label="Receive email notifications for achievements, comments, and likes"
               checked={emailNotifications}
               onChange={(e) => handleNotificationToggle(e.target.checked)}
+              disabled={notificationLoading}
+            />
+          </FormControl>
+          <FormControl>
+            <Checkbox
+              label="Receive email notifications for station health alerts"
+              checked={stationEmailNotifications}
+              onChange={(e) => handleStationNotificationToggle(e.target.checked)}
               disabled={notificationLoading}
             />
           </FormControl>

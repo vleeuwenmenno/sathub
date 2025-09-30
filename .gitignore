@@ -119,6 +119,7 @@ uploads/
 build/
 dist/
 data/
+backend/sathub-backend
 backend/sathub-ui-backend
 client/bin/
 client/sathub-ui-client

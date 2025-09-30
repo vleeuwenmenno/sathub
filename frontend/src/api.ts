@@ -150,6 +150,7 @@ export const updateProfile = async (data: {
   password?: string;
   display_name?: string;
   email_notifications?: boolean;
+  station_email_notifications?: boolean;
 }): Promise<User> => {
   const res = await api.put("/auth/profile", data);
   return res.data.data; // Extract from the nested data structure
@@ -798,5 +799,36 @@ export const getAuditLogs = async (
   if (filters.date_to) params.set("date_to", filters.date_to);
 
   const res = await api.get(`/admin/audit-logs?${params}`);
+  return res.data.data;
+};
+
+// Station Notification Settings API functions
+export interface StationNotificationRule {
+  id?: string; // Optional for new rules, required for existing
+  type: 'down_minutes' | 'back_online' | 'low_uptime';
+  threshold?: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StationNotificationSettings {
+  id: string;
+  station_id: string;
+  rules: StationNotificationRule[];
+  created_at: string;
+  updated_at: string;
+}
+
+export const getStationNotificationSettings = async (stationId: string): Promise<StationNotificationSettings> => {
+  const res = await api.get(`/stations/${stationId}/notification-settings`);
+  return res.data.data;
+};
+
+export const updateStationNotificationSettings = async (
+  stationId: string,
+  rules: StationNotificationRule[]
+): Promise<StationNotificationSettings> => {
+  const res = await api.put(`/stations/${stationId}/notification-settings`, { rules });
   return res.data.data;
 };

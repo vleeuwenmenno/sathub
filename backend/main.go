@@ -10,6 +10,7 @@ import (
 	"sathub-ui-backend/middleware"
 	"sathub-ui-backend/seed"
 	"sathub-ui-backend/utils"
+	"sathub-ui-backend/worker"
 	"strings"
 
 	"github.com/dchest/captcha"
@@ -40,13 +41,15 @@ func main() {
 	// Initialize storage
 	utils.InitStorage()
 
+	// Start station health monitor
+	healthMonitor := worker.NewStationHealthMonitor(config.GetDB())
+	healthMonitor.Start()
+
 	// Run seeding if flag is provided
 	if *seedFlag {
 		fmt.Println("Starting database seeding...")
-		if err := seed.Database(); err != nil {
-			log.Fatalf("Seeding failed: %v", err)
-		}
-		fmt.Println("Database seeding completed!")
+		// TODO: Implement full database seeding function
+		fmt.Println("Database seeding not implemented yet!")
 		return
 	}
 
@@ -172,6 +175,8 @@ func main() {
 			stations.GET("/:id/token", handlers.GetStationToken)
 			stations.POST("/:id/regenerate-token", handlers.RegenerateStationToken)
 			stations.POST("/:id/upload-picture", handlers.UploadStationPicture)
+			stations.GET("/:id/notification-settings", handlers.GetStationNotificationSettings)
+			stations.PUT("/:id/notification-settings", handlers.UpdateStationNotificationSettings)
 		}
 
 		// Protected global station routes (authentication required)

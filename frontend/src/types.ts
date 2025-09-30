@@ -84,6 +84,7 @@ export interface User {
   profile_picture_url?: string;
   has_profile_picture: boolean;
   email_notifications?: boolean;
+  station_email_notifications?: boolean;
 }
 
 export interface PostComment {
@@ -126,7 +127,7 @@ export interface UserAchievement {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'achievement' | 'comment' | 'like';
+  type: 'achievement' | 'comment' | 'like' | 'station_down' | 'station_online' | 'station_low_uptime';
   message: string;
   related_id: string | null;
   is_read: boolean;

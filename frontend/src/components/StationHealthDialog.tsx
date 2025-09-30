@@ -124,9 +124,16 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
         totalPeriodMs > 0 ? (onlineTimeMs / totalPeriodMs) * 100 : 0;
     }
 
+    // Calculate time since last check-in
+    let timeSinceLastCheckIn = null;
+    if (data.data.length > 0) {
+      const lastEventTime = new Date(data.data[data.data.length - 1].timestamp).getTime();
+      timeSinceLastCheckIn = new Date().getTime() - lastEventTime;
+    }
+
     // Calculate average time between check-ins
     if (data.data.length < 2) {
-      return { totalEvents, onlineEvents, uptimePercentage, avgInterval: null };
+      return { totalEvents, onlineEvents, uptimePercentage, timeSinceLastCheckIn, avgInterval: null };
     }
 
     const timestamps = data.data.map((d) => new Date(d.timestamp).getTime());
@@ -144,6 +151,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
       totalEvents,
       onlineEvents,
       uptimePercentage,
+      timeSinceLastCheckIn,
       avgInterval,
       longestGap,
     };
@@ -288,6 +296,17 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
                     </Chip>
                   </Typography>
                 </Box>
+
+                {stats.timeSinceLastCheckIn && (
+                  <Box sx={{ p: 2, bgcolor: "background.level1", borderRadius: "md" }}>
+                    <Typography level="body-sm" color="neutral">
+                      Time Since Last Check-in
+                    </Typography>
+                    <Typography level="h4" fontWeight="bold">
+                      {formatInterval(stats.timeSinceLastCheckIn)}
+                    </Typography>
+                  </Box>
+                )}
 
                 {stats.avgInterval && (
                   <Box sx={{ p: 2, bgcolor: "background.level1", borderRadius: "md" }}>
