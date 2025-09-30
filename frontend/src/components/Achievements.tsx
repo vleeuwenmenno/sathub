@@ -88,7 +88,27 @@ const Achievements: React.FC = () => {
         Track your progress and unlock achievements as you explore the world of satellite data!
       </Typography>
 
-      <Grid container spacing={3}>
+      {userAchievements.length > 0 && (
+        <Box sx={{ mt: 4, p: 3, bgcolor: "background.surface", borderRadius: "lg" }}>
+          <Typography level="h3" sx={{ mb: 2 }}>
+            Recent Achievements
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {userAchievements.slice(0, 5).map((ua) => (
+              <Chip
+                key={ua.achievement.id}
+                variant="soft"
+                color="success"
+                startDecorator={<span>{ua.achievement.icon}</span>}
+              >
+                {ua.achievement.name}
+              </Chip>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      <Grid container spacing={3} sx={{ mt: 3 }}>
         {allAchievements.map((achievement) => {
           const isUnlocked = unlockedMap.has(achievement.id);
           const unlockedAt = unlockedMap.get(achievement.id);
@@ -96,8 +116,8 @@ const Achievements: React.FC = () => {
           return (
             <Grid key={achievement.id} xs={12} sm={6} md={4}>
               <Card
-                variant={isUnlocked ? "solid" : "outlined"}
-                color={isUnlocked ? "primary" : "neutral"}
+                variant="outlined"
+                color={isUnlocked ? "success" : "neutral"}
                 sx={{
                   height: "100%",
                   opacity: isUnlocked ? 1 : 0.7,
@@ -154,26 +174,6 @@ const Achievements: React.FC = () => {
           );
         })}
       </Grid>
-
-      {userAchievements.length > 0 && (
-        <Box sx={{ mt: 4, p: 3, bgcolor: "background.surface", borderRadius: "lg" }}>
-          <Typography level="h3" sx={{ mb: 2 }}>
-            Recent Achievements
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {userAchievements.slice(0, 5).map((ua) => (
-              <Chip
-                key={ua.achievement.id}
-                variant="soft"
-                color="primary"
-                startDecorator={<span>{ua.achievement.icon}</span>}
-              >
-                {ua.achievement.name}
-              </Chip>
-            ))}
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 };
