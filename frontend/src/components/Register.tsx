@@ -10,7 +10,9 @@ import {
   FormControl,
   FormLabel,
   Input,
+  IconButton,
 } from '@mui/joy';
+import { Refresh } from '@mui/icons-material';
 import { register as apiRegister, getCaptcha } from '../api';
 
 const Register: React.FC = () => {
@@ -25,15 +27,17 @@ const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const fetchCaptcha = async () => {
+    try {
+      const res = await getCaptcha();
+      setCaptchaId(res.captcha_id);
+      setCaptchaAnswer('');
+    } catch (err) {
+      console.error('Failed to load captcha', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchCaptcha = async () => {
-      try {
-        const res = await getCaptcha();
-        setCaptchaId(res.captcha_id);
-      } catch (err) {
-        console.error('Failed to load captcha', err);
-      }
-    };
     fetchCaptcha();
   }, []);
 
@@ -138,9 +142,14 @@ const Register: React.FC = () => {
             <FormControl>
               <FormLabel>Captcha</FormLabel>
               {captchaId && (
-                <Box sx={{ mb: 1 }}>
-                  <img src={`/captcha/${captchaId}.png`} alt="Captcha" />
-                </Box>
+                <Sheet sx={{ mb: 1, p: 2, bgcolor: 'background.surface', borderRadius: 'md', border: '1px solid', borderColor: 'divider', position: 'relative' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <img src={`/captcha/${captchaId}.png`} alt="Captcha" />
+                  </Box>
+                  <IconButton onClick={fetchCaptcha} size="sm" sx={{ position: 'absolute', top: 8, right: 8 }}>
+                    <Refresh />
+                  </IconButton>
+                </Sheet>
               )}
               <Input
                 value={captchaAnswer}
