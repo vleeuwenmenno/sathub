@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -8,10 +9,10 @@ import {
   Badge,
   List,
   ListItem,
-  ListItemButton,
   ListItemDecorator,
   Divider,
   CircularProgress,
+  Stack,
 } from "@mui/joy";
 import { ClickAwayListener } from "@mui/material";
 import {
@@ -20,6 +21,7 @@ import {
   Comment,
   Favorite,
   CheckCircle,
+  OpenInNew,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -32,6 +34,7 @@ import type { Notification, NotificationResponse } from "../types";
 
 const NotificationDropdown: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -48,17 +51,25 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (showLoading: boolean = true) => {
     if (!isAuthenticated) return;
 
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const result: NotificationResponse = await getNotifications(1, 10);
-      setNotifications(result.notifications);
+      // Filter for unread notifications only and sort by newest first
+      const unreadNotifications = result.notifications
+        .filter(n => !n.is_read)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setNotifications(unreadNotifications);
     } catch (err) {
       console.error("Failed to fetch notifications", err);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -75,13 +86,14 @@ const NotificationDropdown: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchNotifications();
       fetchUnreadCount();
 
-      // Poll for updates every 5 seconds for live updates
+      // Poll for updates every 5 seconds
       const interval = setInterval(() => {
         fetchUnreadCount();
-        fetchNotifications();
+        // Fetch notifications silently (without loading spinner) to avoid flicker
+        // This keeps the list updated even when dropdown is open
+        fetchNotifications(false);
       }, 5000);
 
       return () => clearInterval(interval);
@@ -91,10 +103,8 @@ const NotificationDropdown: React.FC = () => {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markNotificationAsRead(notificationId);
-      // Update local state
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-      );
+      // Remove the notification from the dropdown (since we only show unread)
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Failed to mark notification as read", err);
@@ -105,13 +115,48 @@ const NotificationDropdown: React.FC = () => {
     try {
       setMarkingAll(true);
       await markAllNotificationsAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      // Clear all notifications from dropdown (since we only show unread)
+      setNotifications([]);
       setUnreadCount(0);
     } catch (err) {
       console.error("Failed to mark all notifications as read", err);
     } finally {
       setMarkingAll(false);
     }
+  };
+
+  const handleNavigate = (notification: Notification) => {
+    // Close the dropdown
+    setOpen(false);
+
+    // Navigate based on notification type
+    if (notification.related_id) {
+      switch (notification.type) {
+        case 'achievement':
+          navigate(`/user/achievements#achievement-${notification.related_id}`);
+          break;
+        case 'comment':
+          // RelatedID format: "postId:commentId"
+          const [postId, commentId] = notification.related_id.split(':');
+          if (postId && commentId) {
+            navigate(`/post/${postId}#comment-${commentId}`);
+          }
+          break;
+        case 'like':
+          navigate(`/post/${notification.related_id}`);
+          break;
+        default:
+          // No navigation for unknown types
+          break;
+      }
+    }
+  };
+
+  const handleMarkAsReadAndOpen = async (notification: Notification) => {
+    // Mark as read (will remove from dropdown)
+    await handleMarkAsRead(notification.id);
+    // Navigate to the related page
+    handleNavigate(notification);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -192,25 +237,25 @@ const NotificationDropdown: React.FC = () => {
           ) : notifications.length === 0 ? (
             <Box sx={{ p: 2, textAlign: 'center' }}>
               <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                No notifications yet
+                No unread notifications
               </Typography>
             </Box>
           ) : (
             <List sx={{ gap: 0 }}>
               {notifications.map((notification, index) => (
                 <React.Fragment key={notification.id}>
-                  <ListItem>
-                    <ListItemButton
-                      onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
-                      sx={{
-                        py: 1.5,
-                        px: 2,
-                        bgcolor: notification.is_read ? 'transparent' : 'primary.softBg',
-                        '&:hover': {
-                          bgcolor: notification.is_read ? 'neutral.softHoverBg' : 'primary.softHoverBg',
-                        },
-                      }}
-                    >
+                  <ListItem
+                    sx={{
+                      py: 1.5,
+                      px: 2,
+                      bgcolor: 'primary.softBg',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 1,
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
                       <ListItemDecorator sx={{ alignSelf: 'flex-start', mt: 0.5 }}>
                         {getNotificationIcon(notification.type)}
                       </ListItemDecorator>
@@ -218,7 +263,7 @@ const NotificationDropdown: React.FC = () => {
                         <Typography
                           level="body-sm"
                           sx={{
-                            fontWeight: notification.is_read ? 'normal' : 'bold',
+                            fontWeight: 'bold',
                             mb: 0.5,
                           }}
                         >
@@ -228,19 +273,31 @@ const NotificationDropdown: React.FC = () => {
                           {formatTimeAgo(notification.created_at)}
                         </Typography>
                       </Box>
-                      {!notification.is_read && (
-                        <IconButton
+                    </Box>
+                    <Stack direction="row" spacing={1} sx={{ width: '100%', pl: 4 }}>
+                      <Button
+                        size="sm"
+                        variant="outlined"
+                        color="neutral"
+                        startDecorator={<CheckCircle />}
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        sx={{ flex: 1 }}
+                      >
+                        Mark Read
+                      </Button>
+                      {notification.related_id && (
+                        <Button
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkAsRead(notification.id);
-                          }}
-                          sx={{ ml: 1 }}
+                          variant="solid"
+                          color="primary"
+                          startDecorator={<OpenInNew />}
+                          onClick={() => handleMarkAsReadAndOpen(notification)}
+                          sx={{ flex: 1 }}
                         >
-                          <CheckCircle sx={{ fontSize: 16 }} />
-                        </IconButton>
+                          Open
+                        </Button>
                       )}
-                    </ListItemButton>
+                    </Stack>
                   </ListItem>
                   {index < notifications.length - 1 && <Divider />}
                 </React.Fragment>

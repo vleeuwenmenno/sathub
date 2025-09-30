@@ -87,7 +87,7 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				UserID:    userID,
 				Type:      "achievement",
 				Message:   "You unlocked the achievement: " + achievement.Name,
-				RelatedID: achievement.ID,
+				RelatedID: achievement.ID.String(),
 				IsRead:    false,
 			}
 

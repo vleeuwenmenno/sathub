@@ -224,6 +224,24 @@ const Detail: React.FC = () => {
     loadStationPicture();
   }, [station]);
 
+  // Handle hash-based scrolling to specific comment
+  useEffect(() => {
+    if (window.location.hash) {
+      const hash = window.location.hash.substring(1); // Remove #
+      if (hash.startsWith('comment-')) {
+        // Wait a bit for comments to load, then scroll
+        const timer = setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 1000); // Wait 1 second for comments to load
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
   const handleDeletePost = () => {
     navigate('/');
   };

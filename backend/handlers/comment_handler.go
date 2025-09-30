@@ -198,11 +198,24 @@ func CreateComment(c *gin.Context) {
 	// Create notification for post owner if commenter is not the owner
 	if post.Station.UserID.String() != userIDStr {
 		go func() {
+			// Load the commenter's user data
+			var commenter models.User
+			if err := db.Where("id = ?", userID).First(&commenter).Error; err != nil {
+				fmt.Printf("Failed to get commenter info: %v\n", err)
+				return
+			}
+
+			// Use display name if available, otherwise use username
+			commenterName := commenter.Username
+			if commenter.DisplayName != "" {
+				commenterName = commenter.DisplayName
+			}
+
 			notification := models.Notification{
 				UserID:    post.Station.UserID,
 				Type:      "comment",
-				Message:   comment.User.Username + " commented on your post",
-				RelatedID: uuid.Nil, // We'll use post ID in message or store separately
+				Message:   fmt.Sprintf("%s commented on your post (%s)", commenterName, post.SatelliteName),
+				RelatedID: fmt.Sprintf("%d:%d", uint(postID), comment.ID), // postId:commentId for navigation
 				IsRead:    false,
 			}
 
@@ -214,7 +227,7 @@ func CreateComment(c *gin.Context) {
 			var postOwner models.User
 			if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
 				go func() {
-					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, comment.User.Username); err != nil {
+					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, commenterName); err != nil {
 						fmt.Printf("Failed to send comment email notification: %v\n", err)
 					}
 				}()

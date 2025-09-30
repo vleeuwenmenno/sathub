@@ -86,18 +86,24 @@ func LikePost(c *gin.Context) {
 		// Create notification for post owner if liker is not the owner
 		if post.Station.UserID.String() != userIDStr {
 			go func() {
-				// Get the liker's username
+				// Get the liker's info
 				var liker models.User
 				if err := db.Where("id = ?", userID).First(&liker).Error; err != nil {
 					fmt.Printf("Failed to get liker info: %v\n", err)
 					return
 				}
 
+				// Use display name if available, otherwise use username
+				likerName := liker.Username
+				if liker.DisplayName != "" {
+					likerName = liker.DisplayName
+				}
+
 				notification := models.Notification{
 					UserID:    post.Station.UserID,
 					Type:      "like",
-					Message:   liker.Username + " liked your post",
-					RelatedID: uuid.Nil,
+					Message:   fmt.Sprintf("%s liked your post (%s)", likerName, post.SatelliteName),
+					RelatedID: strconv.Itoa(int(post.ID)), // Post ID for navigation
 					IsRead:    false,
 				}
 

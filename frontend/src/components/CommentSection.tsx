@@ -120,6 +120,7 @@ const CommentItem: React.FC<{
   return (
     <Box>
       <Card
+        id={`comment-${comment.id}`}
         variant="outlined"
         sx={{
           mb: 2,

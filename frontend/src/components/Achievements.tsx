@@ -40,6 +40,19 @@ const Achievements: React.FC = () => {
     fetchAchievements();
   }, []);
 
+  // Handle hash-based scrolling to specific achievement
+  useEffect(() => {
+    if (!loading && window.location.hash) {
+      const hash = window.location.hash.substring(1); // Remove #
+      if (hash.startsWith('achievement-')) {
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [loading, allAchievements]);
+
   // Create a map of unlocked achievements for quick lookup
   const unlockedMap = new Map(
     userAchievements.map((ua) => [ua.achievement.id, ua.unlocked_at])
@@ -116,6 +129,7 @@ const Achievements: React.FC = () => {
           return (
             <Grid key={achievement.id} xs={12} sm={6} md={4}>
               <Card
+                id={`achievement-${achievement.id}`}
                 variant="outlined"
                 color={isUnlocked ? "success" : "neutral"}
                 sx={{

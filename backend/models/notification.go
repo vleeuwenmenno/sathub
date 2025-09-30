@@ -13,7 +13,7 @@ type Notification struct {
 	User      User      `gorm:"foreignKey:UserID" json:"-"`
 	Type      string    `gorm:"size:50;not null" json:"type"` // achievement, comment, like
 	Message   string    `gorm:"type:text;not null" json:"message"`
-	RelatedID uuid.UUID `gorm:"type:uuid" json:"related_id,omitempty"` // ID of related entity (achievement, post, etc.)
+	RelatedID string    `gorm:"size:255" json:"related_id,omitempty"` // ID of related entity (achievement UUID, post ID, comment ID)
 	IsRead    bool      `gorm:"default:false" json:"is_read"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
