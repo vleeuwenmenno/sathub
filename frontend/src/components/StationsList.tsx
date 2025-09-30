@@ -20,6 +20,11 @@ import {
   AccordionSummary,
   AccordionDetails,
   AccordionGroup,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanel,
+  Divider,
 } from "@mui/joy";
 import {
   Delete,
@@ -28,6 +33,7 @@ import {
   VpnKey,
   Refresh,
   ContentCopy,
+  Download,
 } from "@mui/icons-material";
 import type { Station } from "../api";
 import { getApiBaseUrl } from "../config";
@@ -236,10 +242,6 @@ const StationsList: React.FC = () => {
         err.response?.data?.error || "Failed to update station visibility",
       );
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
   };
 
   if (loading) return <Typography>Loading stations...</Typography>;
@@ -519,45 +521,141 @@ const StationsList: React.FC = () => {
           })
         }
       >
-        <ModalDialog>
+        <ModalDialog sx={{ maxWidth: 700, maxHeight: "90vh", overflow: "auto" }}>
           <ModalClose />
           <Typography level="h4">
             Station API Token - {tokenDialog.station?.name}
           </Typography>
-          <Typography level="body-sm" sx={{ mb: 2 }}>
-            This API token allows external applications and satellite ground stations to authenticate with your station for uploading data and health monitoring. Keep it secure and regenerate if compromised.
-          </Typography>
+          
+          <Tabs defaultValue={0} sx={{ mt: 2 }}>
+            <TabList>
+              <Tab>🚀 Quick Start</Tab>
+              <Tab>⚙️ Developer API</Tab>
+            </TabList>
+            
+            <TabPanel value={0} sx={{ p: 3 }}>
+              <Typography level="body-lg" sx={{ mb: 2 }}>
+                Get started with the SatHub client to automatically upload satellite data from your ground station.
+              </Typography>
 
-          <Typography level="title-md" sx={{ mb: 1 }}>
-            Available API Endpoints
-          </Typography>
-          <AccordionGroup sx={{ mb: 2 }}>
-            <Accordion>
-              <AccordionSummary>
-                <Typography level="body-sm" fontWeight="bold">
-                  POST {baseUrl}/api/posts
+              <Divider sx={{ my: 2 }} />
+
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                📥 Step 1: Download the SatHub Client
+              </Typography>
+              <Typography level="body-sm" sx={{ mb: 2 }}>
+                Download the latest client for your platform:
+              </Typography>
+              <Button
+                component="a"
+                href="https://github.com/vleeuwenmenno/sathub/releases"
+                target="_blank"
+                startDecorator={<Download />}
+                fullWidth
+                sx={{ mb: 3 }}
+              >
+                Download from GitHub Releases
+              </Button>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                🔑 Step 2: Your Station API Token
+              </Typography>
+              <Typography level="body-sm" sx={{ mb: 1 }}>
+                Copy your unique station token. You'll need this to connect the client to your station.
+              </Typography>
+              <Alert color="warning" sx={{ mb: 2 }}>
+                <Typography level="body-sm">
+                  ⚠️ Keep this token secure! Anyone with this token can upload data to your station.
                 </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
-                  Create new satellite data posts. Send JSON payload with satellite data.
-                </Typography>
-                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
-                  cURL Example:
-                </Typography>
-                <Box sx={{ position: "relative" }}>
-                  <Box
-                    component="pre"
-                    sx={{
-                      backgroundColor: "background.level1",
-                      padding: 1,
-                      borderRadius: 1,
-                      fontSize: "0.75rem",
-                      overflow: "auto",
-                      mb: 1,
-                      pr: 4,
-                    }}
-                  >
+              </Alert>
+              <Input
+                fullWidth
+                value={tokenDialog.token}
+                readOnly
+                disabled={tokenDialog.loading}
+                onClick={(e: any) => e.target.select()}
+                endDecorator={
+                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                    <Tooltip title={copiedItems.has('quickstart-token') ? "Copied!" : "Copy to Clipboard"}>
+                      <IconButton
+                        size="sm"
+                        color={copiedItems.has('quickstart-token') ? "success" : "neutral"}
+                        onClick={() => copyWithFeedback(tokenDialog.token, 'quickstart-token')}
+                      >
+                        {copiedItems.has('quickstart-token') ? <span>✓</span> : <ContentCopy />}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Regenerate Token">
+                      <IconButton
+                        size="sm"
+                        color="warning"
+                        loading={tokenDialog.loading}
+                        onClick={handleRegenerateToken}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ mb: 3 }}
+              />
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                🚀 Step 3: Run the Client
+              </Typography>
+              <Typography level="body-sm" sx={{ mb: 1 }}>
+                For detailed setup instructions and configuration options, visit:
+              </Typography>
+              <Button
+                component="a"
+                href="https://github.com/vleeuwenmenno/sathub?tab=readme-ov-file#quick-setup"
+                target="_blank"
+                variant="outlined"
+                fullWidth
+              >
+                📖 View Setup Guide on GitHub
+              </Button>
+            </TabPanel>
+
+            <TabPanel value={1} sx={{ p: 3 }}>
+              <Typography level="body-sm" sx={{ mb: 2 }}>
+                This API token allows external applications and satellite ground stations to authenticate with your station for uploading data and health monitoring. Keep it secure and regenerate if compromised.
+              </Typography>
+
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                Available API Endpoints
+              </Typography>
+              <AccordionGroup sx={{ mb: 2 }}>
+                <Accordion>
+                  <AccordionSummary>
+                    <Typography level="body-sm" fontWeight="bold">
+                      POST {baseUrl}/api/posts
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                      Create new satellite data posts. Send JSON payload with satellite data.
+                    </Typography>
+                    <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                      cURL Example:
+                    </Typography>
+                    <Box sx={{ position: "relative" }}>
+                      <Box
+                        component="pre"
+                        sx={{
+                          backgroundColor: "background.level1",
+                          padding: 1,
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          overflow: "auto",
+                          mb: 1,
+                          pr: 4,
+                        }}
+                      >
 {`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -H "Content-Type: application/json" \\
@@ -571,17 +669,17 @@ const StationsList: React.FC = () => {
     }
   }' \\
   ${baseUrl}/api/posts`}
-                  </Box>
-                  <IconButton
-                    size="sm"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "background.surface",
-                      "&:hover": { backgroundColor: "background.level2" },
-                    }}
-                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
+                      </Box>
+                      <IconButton
+                        size="sm"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          backgroundColor: "background.surface",
+                          "&:hover": { backgroundColor: "background.level2" },
+                        }}
+                        onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -594,236 +692,239 @@ const StationsList: React.FC = () => {
     }
   }' \\
   ${baseUrl}/api/posts`, 'posts-curl')}
-                  >
-                    {copiedItems.has('posts-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
-                  </IconButton>
-                </Box>
-              </AccordionDetails>
-            </Accordion>
+                      >
+                        {copiedItems.has('posts-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                      </IconButton>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
 
-            <Accordion>
-              <AccordionSummary>
-                <Typography level="body-sm" fontWeight="bold">
-                  POST {baseUrl}/api/posts/{"{postId}"}/images
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
-                  Upload images for existing posts. Use multipart/form-data with 'image' field.
-                </Typography>
-                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
-                  cURL Example:
-                </Typography>
-                <Box sx={{ position: "relative" }}>
-                  <Box
-                    component="pre"
-                    sx={{
-                      backgroundColor: "background.level1",
-                      padding: 1,
-                      borderRadius: 1,
-                      fontSize: "0.75rem",
-                      overflow: "auto",
-                      mb: 1,
-                      pr: 4,
-                    }}
-                  >
+                <Accordion>
+                  <AccordionSummary>
+                    <Typography level="body-sm" fontWeight="bold">
+                      POST {baseUrl}/api/posts/{"{postId}"}/images
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                      Upload images for existing posts. Use multipart/form-data with 'image' field.
+                    </Typography>
+                    <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                      cURL Example:
+                    </Typography>
+                    <Box sx={{ position: "relative" }}>
+                      <Box
+                        component="pre"
+                        sx={{
+                          backgroundColor: "background.level1",
+                          padding: 1,
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          overflow: "auto",
+                          mb: 1,
+                          pr: 4,
+                        }}
+                      >
 {`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -F "image=@/path/to/image.png" \\
   ${baseUrl}/api/posts/123/images`}
-                  </Box>
-                  <IconButton
-                    size="sm"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "background.surface",
-                      "&:hover": { backgroundColor: "background.level2" },
-                    }}
-                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
+                      </Box>
+                      <IconButton
+                        size="sm"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          backgroundColor: "background.surface",
+                          "&:hover": { backgroundColor: "background.level2" },
+                        }}
+                        onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   -F "image=@/path/to/image.png" \\
   ${baseUrl}/api/posts/123/images`, 'images-curl')}
-                  >
-                    {copiedItems.has('images-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
-                  </IconButton>
-                </Box>
-                <Typography level="body-xs" sx={{ color: "text.secondary" }}>
-                  <strong>Content-Type:</strong> multipart/form-data
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
+                      >
+                        {copiedItems.has('images-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                      </IconButton>
+                    </Box>
+                    <Typography level="body-xs" sx={{ color: "text.secondary" }}>
+                      <strong>Content-Type:</strong> multipart/form-data
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
 
-            <Accordion>
-              <AccordionSummary>
-                <Typography level="body-sm" fontWeight="bold">
-                  POST {baseUrl}/api/stations/health
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
-                  Health check endpoint. Call periodically to indicate station is online.
-                </Typography>
-                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
-                  cURL Example:
-                </Typography>
-                <Box sx={{ position: "relative" }}>
-                  <Box
-                    component="pre"
-                    sx={{
-                      backgroundColor: "background.level1",
-                      padding: 1,
-                      borderRadius: 1,
-                      fontSize: "0.75rem",
-                      overflow: "auto",
-                      mb: 1,
-                      pr: 4,
-                    }}
-                  >
+                <Accordion>
+                  <AccordionSummary>
+                    <Typography level="body-sm" fontWeight="bold">
+                      POST {baseUrl}/api/stations/health
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography level="body-xs" sx={{ color: "text.secondary", mb: 1 }}>
+                      Health check endpoint. Call periodically to indicate station is online.
+                    </Typography>
+                    <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                      cURL Example:
+                    </Typography>
+                    <Box sx={{ position: "relative" }}>
+                      <Box
+                        component="pre"
+                        sx={{
+                          backgroundColor: "background.level1",
+                          padding: 1,
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          overflow: "auto",
+                          mb: 1,
+                          pr: 4,
+                        }}
+                      >
 {`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
-                  </Box>
-                  <IconButton
-                    size="sm"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "background.surface",
-                      "&:hover": { backgroundColor: "background.level2" },
-                    }}
-                    onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
+                      </Box>
+                      <IconButton
+                        size="sm"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          backgroundColor: "background.surface",
+                          "&:hover": { backgroundColor: "background.level2" },
+                        }}
+                        onClick={() => copyWithFeedback(`curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`, 'health-curl')}
-                  >
-                    {copiedItems.has('health-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
-                  </IconButton>
-                </Box>
-                <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
-                  Cron Job Example (every 5 minutes):
-                </Typography>
-                <Box sx={{ position: "relative" }}>
-                  <Box
-                    component="pre"
-                    sx={{
-                      backgroundColor: "background.level1",
-                      padding: 1,
-                      borderRadius: 1,
-                      fontSize: "0.75rem",
-                      overflow: "auto",
-                      mb: 1,
-                      pr: 4,
-                    }}
-                  >
+                      >
+                        {copiedItems.has('health-curl') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                      </IconButton>
+                    </Box>
+                    <Typography level="body-xs" fontWeight="bold" sx={{ mb: 0.5 }}>
+                      Cron Job Example (every 5 minutes):
+                    </Typography>
+                    <Box sx={{ position: "relative" }}>
+                      <Box
+                        component="pre"
+                        sx={{
+                          backgroundColor: "background.level1",
+                          padding: 1,
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          overflow: "auto",
+                          mb: 1,
+                          pr: 4,
+                        }}
+                      >
 {`*/5 * * * * curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`}
-                  </Box>
-                  <IconButton
-                    size="sm"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "background.surface",
-                      "&:hover": { backgroundColor: "background.level2" },
-                    }}
-                    onClick={() => copyWithFeedback(`*/5 * * * * curl${curlInsecureFlag} -X POST \\
+                      </Box>
+                      <IconButton
+                        size="sm"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          backgroundColor: "background.surface",
+                          "&:hover": { backgroundColor: "background.level2" },
+                        }}
+                        onClick={() => copyWithFeedback(`*/5 * * * * curl${curlInsecureFlag} -X POST \\
   -H "Authorization: Station ${tokenDialog.token}" \\
   ${baseUrl}/api/stations/health`, 'health-cron')}
-                  >
-                    {copiedItems.has('health-cron') ? <span>✓</span> : <ContentCopy fontSize="small" />}
-                  </IconButton>
-                </Box>
-                <Typography level="body-xs" sx={{ color: "text.secondary" }}>
-                  This updates the station's "last seen" timestamp. Stations are considered online if last seen within the configured threshold (default: 5 minutes).
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-          </AccordionGroup>
+                      >
+                        {copiedItems.has('health-cron') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                      </IconButton>
+                    </Box>
+                    <Typography level="body-xs" sx={{ color: "text.secondary" }}>
+                      This updates the station's "last seen" timestamp. Stations are considered online if last seen within the configured threshold (default: 5 minutes).
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+              </AccordionGroup>
 
-          <Typography level="title-md" sx={{ mb: 1 }}>
-            Environment Variables (Bash)
-          </Typography>
-          <Typography level="body-sm" sx={{ mb: 1 }}>
-            Copy these export statements to set up your station scripts:
-          </Typography>
-          <Box sx={{ position: "relative", mb: 2 }}>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: "background.level1",
-                padding: 1,
-                borderRadius: 1,
-                fontSize: "0.75rem",
-                overflow: "auto",
-                mb: 1,
-                pr: 4,
-              }}
-            >
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                Environment Variables (Bash)
+              </Typography>
+              <Typography level="body-sm" sx={{ mb: 1 }}>
+                Copy these export statements to set up your station scripts:
+              </Typography>
+              <Box sx={{ position: "relative", mb: 2 }}>
+                <Box
+                  component="pre"
+                  sx={{
+                    backgroundColor: "background.level1",
+                    padding: 1,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    overflow: "auto",
+                    mb: 1,
+                    pr: 4,
+                  }}
+                >
 {`export STATION_TOKEN="${tokenDialog.token}"
 export API_BASE_URL="${baseUrl}/api"
 export HEALTH_CHECK_INTERVAL="300"
 export PROCESS_DELAY="10"`}
-            </Box>
-            <IconButton
-              size="sm"
-              sx={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                backgroundColor: "background.surface",
-                "&:hover": { backgroundColor: "background.level2" },
-              }}
-              onClick={() => copyWithFeedback(`export STATION_TOKEN="${tokenDialog.token}"
+                </Box>
+                <IconButton
+                  size="sm"
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    backgroundColor: "background.surface",
+                    "&:hover": { backgroundColor: "background.level2" },
+                  }}
+                  onClick={() => copyWithFeedback(`export STATION_TOKEN="${tokenDialog.token}"
 export API_BASE_URL="${baseUrl}/api"
 export HEALTH_CHECK_INTERVAL="300"
 export PROCESS_DELAY="10"`, 'env-vars')}
-            >
-              {copiedItems.has('env-vars') ? <span>✓</span> : <ContentCopy fontSize="small" />}
-            </IconButton>
-          </Box>
-
-          <Typography level="title-md" sx={{ mb: 1 }}>
-            Authentication
-          </Typography>
-          <Typography level="body-sm" sx={{ mb: 2 }}>
-            Include the token in the Authorization header:{" "}
-            <code>Station {tokenDialog.token}</code>
-          </Typography>
-
-          <Input
-            fullWidth
-            value={tokenDialog.token}
-            readOnly
-            disabled={tokenDialog.loading}
-            onClick={(e: any) => e.target.select()}
-            endDecorator={
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Tooltip title="Copy to Clipboard">
-                  <IconButton
-                    size="sm"
-                    onClick={() => copyToClipboard(tokenDialog.token)}
-                  >
-                    <ContentCopy />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Regenerate Token">
-                  <IconButton
-                    size="sm"
-                    color="warning"
-                    loading={tokenDialog.loading}
-                    onClick={handleRegenerateToken}
-                  >
-                    <Refresh />
-                  </IconButton>
-                </Tooltip>
+                >
+                  {copiedItems.has('env-vars') ? <span>✓</span> : <ContentCopy fontSize="small" />}
+                </IconButton>
               </Box>
-            }
-            sx={{ mb: 2 }}
-          />
+
+              <Typography level="title-md" sx={{ mb: 1 }}>
+                Authentication
+              </Typography>
+              <Typography level="body-sm" sx={{ mb: 2 }}>
+                Include the token in the Authorization header:{" "}
+                <code>Station {tokenDialog.token}</code>
+              </Typography>
+
+              <Input
+                fullWidth
+                value={tokenDialog.token}
+                readOnly
+                disabled={tokenDialog.loading}
+                onClick={(e: any) => e.target.select()}
+                endDecorator={
+                  <Box sx={{ display: "flex", gap: 0.5 }}>
+                    <Tooltip title={copiedItems.has('developer-token') ? "Copied!" : "Copy to Clipboard"}>
+                      <IconButton
+                        size="sm"
+                        color={copiedItems.has('developer-token') ? "success" : "neutral"}
+                        onClick={() => copyWithFeedback(tokenDialog.token, 'developer-token')}
+                      >
+                        {copiedItems.has('developer-token') ? <span>✓</span> : <ContentCopy />}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Regenerate Token">
+                      <IconButton
+                        size="sm"
+                        color="warning"
+                        loading={tokenDialog.loading}
+                        onClick={handleRegenerateToken}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ mb: 2 }}
+              />
+            </TabPanel>
+          </Tabs>
         </ModalDialog>
       </Modal>
     </Box>
