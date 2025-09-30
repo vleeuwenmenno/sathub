@@ -11,6 +11,8 @@ import {
   Alert,
   Chip,
   Button,
+  IconButton,
+  Tooltip,
 } from "@mui/joy";
 import { BarChart as BarChartIcon, Notifications as NotificationsIcon } from "@mui/icons-material";
 import { getStationUptime, type StationUptimeData } from "../api";
@@ -168,20 +170,32 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
       <Card>
         <CardContent>
           <Stack spacing={2}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
               <Typography level="title-md">
                 Station Health
               </Typography>
-              <Select
-                size="sm"
-                value={days}
-                onChange={(_: any, value: number | null) => value && setDays(value)}
-                sx={{ minWidth: 120 }}
-              >
-                <Option value={1}>Last 24h</Option>
-                <Option value={3}>Last 3 days</Option>
-                <Option value={7}>Last 7 days</Option>
-              </Select>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Select
+                  size="sm"
+                  value={days}
+                  onChange={(_: any, value: number | null) => value && setDays(value)}
+                  sx={{ minWidth: 120 }}
+                >
+                  <Option value={1}>Last 24h</Option>
+                  <Option value={3}>Last 3 days</Option>
+                  <Option value={7}>Last 7 days</Option>
+                </Select>
+                <Tooltip title="Notification Settings" size="sm">
+                  <IconButton
+                    size="sm"
+                    variant="outlined"
+                    color="neutral"
+                    onClick={() => setNotificationDialogOpen(true)}
+                  >
+                    <NotificationsIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
 
           {stats && (
@@ -240,27 +254,16 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
                 )}
               </Box>
 
-              {/* Action Buttons */}
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  fullWidth
-                  variant="soft"
-                  color="primary"
-                  startDecorator={<BarChartIcon />}
-                  onClick={() => setDialogOpen(true)}
-                >
-                  View Detailed Health Graph
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="neutral"
-                  startDecorator={<NotificationsIcon />}
-                  onClick={() => setNotificationDialogOpen(true)}
-                >
-                  Notification Settings
-                </Button>
-              </Box>
+              {/* Action Button */}
+              <Button
+                fullWidth
+                variant="soft"
+                color="primary"
+                startDecorator={<BarChartIcon />}
+                onClick={() => setDialogOpen(true)}
+              >
+                View Detailed Health Graph
+              </Button>
             </Stack>
           )}
         </Stack>
