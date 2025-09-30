@@ -51,6 +51,7 @@ const (
 	ActionPostCreate      AuditAction = "post_create"
 	ActionPostDelete      AuditAction = "post_delete"
 	ActionPostImageUpload AuditAction = "post_image_upload"
+	ActionPostCBORUpload  AuditAction = "post_cbor_upload"
 	ActionPostLike        AuditAction = "post_like"
 	ActionPostUnlike      AuditAction = "post_unlike"
 

@@ -90,6 +90,7 @@ func RunMigrations() error {
 		&models.RefreshToken{},
 		&models.Station{},
 		&models.Post{},
+		&models.PostCBOR{},
 		&models.PostImage{},
 		&models.Like{},
 		&models.Comment{},

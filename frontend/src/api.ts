@@ -331,12 +331,11 @@ export const createPost = async (
     timestamp: string;
     satellite_name: string;
     metadata?: string;
-    cbor?: Uint8Array;
   },
 ): Promise<Post> => {
   const res = await axios.post(`${API_BASE}/posts`, data, {
     headers: {
-      Authorization: `Bearer ${stationToken}`,
+      Authorization: `Station ${stationToken}`,
     },
   });
   return res.data.data;
@@ -351,7 +350,23 @@ export const uploadPostImage = async (
   formData.append("image", file);
   const res = await axios.post(`${API_BASE}/posts/${postId}/images`, formData, {
     headers: {
-      Authorization: `Bearer ${stationToken}`,
+      Authorization: `Station ${stationToken}`,
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data.data;
+};
+
+export const uploadPostCBOR = async (
+  stationToken: string,
+  postId: number,
+  file: File,
+): Promise<{ id: number; filename: string }> => {
+  const formData = new FormData();
+  formData.append("cbor", file);
+  const res = await axios.post(`${API_BASE}/posts/${postId}/cbor`, formData, {
+    headers: {
+      Authorization: `Station ${stationToken}`,
       "Content-Type": "multipart/form-data",
     },
   });
@@ -389,6 +404,11 @@ export const getPostImageBlob = async (
     responseType: "blob",
   });
   return URL.createObjectURL(res.data);
+};
+
+export const getPostCBOR = async (postId: number): Promise<any> => {
+  const res = await api.get(`/posts/${postId}/cbor?format=json`);
+  return res.data;
 };
 
 export const getDatabasePostDetail = async (id: string): Promise<DatabasePostDetail> => {

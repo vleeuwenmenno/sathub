@@ -346,12 +346,11 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 
 	fw.logger.Info().Str("product", selectedProduct).Int("images", len(imagePaths)).Msg("Selected product for upload")
 
-	// Create post with combined metadata
+	// Create post with metadata
 	postReq := PostRequest{
 		Timestamp:     dataset.Timestamp.Format(time.RFC3339),
 		SatelliteName: dataset.SatelliteName,
 		Metadata:      fw.mapToJSON(dataset.Metadata),
-		CBOR:          cborData,
 	}
 
 	post, err := fw.apiClient.CreatePost(postReq)
@@ -360,6 +359,14 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 	}
 
 	fw.logger.Info().Uint("post_id", post.ID).Str("satellite", post.SatelliteName).Msg("Created post")
+
+	// Upload CBOR file
+	if err := fw.apiClient.UploadCBOR(post.ID, cborPath); err != nil {
+		fw.logger.Warn().Err(err).Str("cbor", cborPath).Msg("Failed to upload CBOR")
+		// Continue with image uploads even if CBOR fails
+	} else {
+		fw.logger.Info().Str("cbor", filepath.Base(cborPath)).Uint("post_id", post.ID).Msg("Uploaded CBOR")
+	}
 
 	// Upload all images
 	for _, imagePath := range imagePaths {

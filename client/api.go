@@ -20,7 +20,6 @@ type PostRequest struct {
 	Timestamp     string `json:"timestamp"`
 	SatelliteName string `json:"satellite_name"`
 	Metadata      string `json:"metadata,omitempty"`
-	CBOR          []byte `json:"cbor,omitempty"`
 }
 
 // PostResponse represents the API response for a created post
@@ -166,6 +165,74 @@ func (c *APIClient) UploadImage(postID uint, imagePath string) error {
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("image upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// UploadCBOR uploads a CBOR file for a post
+func (c *APIClient) UploadCBOR(postID uint, cborPath string) error {
+	url := fmt.Sprintf("%s/api/posts/%d/cbor", c.baseURL, postID)
+
+	file, err := os.Open(cborPath)
+	if err != nil {
+		return fmt.Errorf("failed to open CBOR file: %w", err)
+	}
+	defer file.Close()
+
+	// Read first 512 bytes to detect content type (though CBOR is application/cbor)
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("failed to read file header: %w", err)
+	}
+	contentType := http.DetectContentType(buffer[:n])
+	// Override with CBOR content type if detected as something else
+	if contentType != "application/cbor" {
+		contentType = "application/cbor"
+	}
+
+	// Reset file pointer to beginning
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to reset file pointer: %w", err)
+	}
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	// Create form file part with proper headers
+	filename := filepath.Base(cborPath)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="cbor"; filename="%s"`, filename))
+	h.Set("Content-Type", contentType)
+	part, err := writer.CreatePart(h)
+	if err != nil {
+		return fmt.Errorf("failed to create form part: %w", err)
+	}
+
+	if _, err := io.Copy(part, file); err != nil {
+		return fmt.Errorf("failed to copy file data: %w", err)
+	}
+
+	writer.Close()
+
+	httpReq, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Station %s", c.stationToken))
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("CBOR upload failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
 	return nil

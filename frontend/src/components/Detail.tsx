@@ -16,7 +16,7 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import type { DatabasePostDetail } from '../types';
 import type { Station } from '../api';
-import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob, getProfilePictureUrl } from '../api';
+import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob, getProfilePictureUrl, getPostCBOR } from '../api';
 import LikeButton from './LikeButton';
 import DeletePostButton from './DeletePostButton';
 import CommentSection from './CommentSection';
@@ -121,6 +121,8 @@ const Detail: React.FC = () => {
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
   const [stationImageBlob, setStationImageBlob] = useState<string | null>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
+  const [cborData, setCborData] = useState<any>(null);
+  const [loadingCBOR, setLoadingCBOR] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -224,6 +226,25 @@ const Detail: React.FC = () => {
 
     loadStationPicture();
   }, [station]);
+
+  useEffect(() => {
+    if (!detail?.id) return;
+
+    const loadCBOR = async () => {
+      setLoadingCBOR(true);
+      try {
+        const cborJson = await getPostCBOR(detail.id);
+        setCborData(cborJson);
+      } catch (error) {
+        console.error('Failed to load CBOR data:', error);
+        // CBOR might not exist for this post, which is fine
+      } finally {
+        setLoadingCBOR(false);
+      }
+    };
+
+    loadCBOR();
+  }, [detail?.id]);
 
   // Handle hash-based scrolling to specific comment
   useEffect(() => {
@@ -655,6 +676,34 @@ const Detail: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* CBOR Data */}
+            <Card>
+              <CardContent>
+                <Typography level="h3" sx={{ mb: 2 }}>CBOR Data</Typography>
+                {loadingCBOR ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                    <CircularProgress size="sm" />
+                  </Box>
+                ) : cborData ? (
+                  <Box sx={{
+                    maxHeight: '300px',
+                    overflow: 'auto',
+                    bgcolor: 'neutral.softBg',
+                    p: 1,
+                    borderRadius: 'sm'
+                  }}>
+                    <pre style={{ fontSize: '0.7rem', margin: 0, whiteSpace: 'pre-wrap' }}>
+                      {JSON.stringify(cborData, null, 2)}
+                    </pre>
+                  </Box>
+                ) : (
+                  <Typography level="body-sm" color="neutral">
+                    No CBOR data available for this post
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
           </Stack>
         </Grid>
       </Grid>

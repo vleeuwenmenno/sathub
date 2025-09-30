@@ -13,14 +13,14 @@
       "cwd": "${workspaceFolder}/client",
       "args": ["--insecure"],
       "env": {
-        "STATION_TOKEN": "c59b9cf7d315e5b2e5003978139c237c",
+        "STATION_TOKEN": "474fbec57e238e6ffcfa2075ada16b45",
         "API_URL": "https://api.sathub.local:9999",
         "WATCH_PATHS": "./data",
         "PROCESSED_DIR": "./data/processed",
         "LOG_LEVEL": "info",
         "RETRY_COUNT": "3",
         "RETRY_DELAY": "5",
-        "PROCESS_DELAY": "60",
+        "PROCESS_DELAY": "5",
         "HEALTH_CHECK_INTERVAL": "60"
       }
     }

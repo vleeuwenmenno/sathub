@@ -21,8 +21,7 @@ import (
 type PostRequest struct {
 	Timestamp     string `json:"timestamp" binding:"required"`
 	SatelliteName string `json:"satellite_name" binding:"required,min=1,max=100"`
-	Metadata      string `json:"metadata"`       // JSON string
-	CBOR          []byte `json:"cbor,omitempty"` // Optional CBOR blob
+	Metadata      string `json:"metadata"` // JSON string
 }
 
 // PostResponse represents a post in responses
@@ -266,7 +265,6 @@ func CreatePost(c *gin.Context) {
 		Timestamp:     timestamp,
 		SatelliteName: req.SatelliteName,
 		Metadata:      req.Metadata,
-		CBOR:          req.CBOR,
 	}
 
 	if err := db.Create(&post).Error; err != nil {
@@ -291,7 +289,6 @@ func CreatePost(c *gin.Context) {
 		"station_id":     stationID,
 		"satellite_name": req.SatelliteName,
 		"has_metadata":   req.Metadata != "",
-		"has_cbor":       len(req.CBOR) > 0,
 	})
 
 	response := buildPostResponseWithUser(post, db, "") // New post, no likes yet
@@ -392,6 +389,193 @@ func UploadPostImage(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "Image uploaded successfully", response)
 }
 
+// PostCBORResponse represents a CBOR file in responses
+type PostCBORResponse struct {
+	ID       uint   `json:"id"`
+	Filename string `json:"filename"`
+}
+
+// UploadPostCBOR handles uploading CBOR files for a post using station token
+func UploadPostCBOR(c *gin.Context) {
+	stationID, exists := middleware.GetCurrentStationID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "Station not authenticated")
+		return
+	}
+
+	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Verify post belongs to the station
+	var post models.Post
+	if err := db.Where("id = ? AND station_id = ?", uint(postID), stationID).First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Post not found or not owned by station")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	// Check if post already has a CBOR file
+	var existingCBOR models.PostCBOR
+	if err := db.Where("post_id = ?", uint(postID)).First(&existingCBOR).Error; err == nil {
+		utils.ValidationErrorResponse(c, "Post already has a CBOR file")
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		utils.InternalErrorResponse(c, "Failed to check existing CBOR")
+		return
+	}
+
+	// Get uploaded file
+	file, err := c.FormFile("cbor")
+	if err != nil {
+		utils.ValidationErrorResponse(c, "No CBOR file provided")
+		return
+	}
+
+	// Open the uploaded file
+	src, err := file.Open()
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to open uploaded file")
+		return
+	}
+	defer src.Close()
+
+	// Read file data into byte slice
+	fileData := make([]byte, file.Size)
+	if _, err := src.Read(fileData); err != nil {
+		utils.InternalErrorResponse(c, "Failed to read file data")
+		return
+	}
+
+	// Validate CBOR format and SatDump structure
+	if _, err := utils.ValidateSatDumpCBOR(fileData); err != nil {
+		utils.ValidationErrorResponse(c, fmt.Sprintf("Invalid CBOR file: %s", err.Error()))
+		return
+	}
+
+	// Create post CBOR record
+	postCBOR := models.PostCBOR{
+		PostID:   uint(postID),
+		CBORData: fileData,
+		Filename: file.Filename,
+	}
+
+	if err := db.Create(&postCBOR).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to save CBOR record")
+		return
+	}
+
+	// Log CBOR upload (system action since it's done by station token)
+	utils.LogSystemAction(c, models.ActionPostCBORUpload, models.AuditMetadata{
+		"post_id":   postID,
+		"cbor_id":   postCBOR.ID,
+		"filename":  postCBOR.Filename,
+		"file_size": len(fileData),
+	})
+
+	response := PostCBORResponse{
+		ID:       postCBOR.ID,
+		Filename: postCBOR.Filename,
+	}
+
+	utils.SuccessResponse(c, http.StatusCreated, "CBOR uploaded successfully", response)
+}
+
+// GetPostCBOR serves post CBOR files
+func GetPostCBOR(c *gin.Context) {
+	fmt.Printf("GetPostCBOR called for post ID: %s\n", c.Param("id"))
+
+	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		fmt.Printf("Invalid post ID: %s\n", c.Param("id"))
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	fmt.Printf("Parsed post ID: %d\n", postID)
+
+	db := config.GetDB()
+
+	// Check if user is authenticated (for private posts)
+	userID, isAuthenticated := middleware.GetCurrentUserID(c)
+	fmt.Printf("User authenticated: %v, userID: %s\n", isAuthenticated, userID)
+
+	// First check if the post exists and is accessible
+	var post models.Post
+	postQuery := db.Where("posts.id = ?", uint(postID))
+	if !isAuthenticated {
+		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
+	} else {
+		postQuery = postQuery.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID)
+	}
+
+	fmt.Printf("Checking post accessibility...\n")
+	if err := postQuery.First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			fmt.Printf("Post not found or not accessible for post ID: %d\n", postID)
+			utils.NotFoundResponse(c, "Post not found or not accessible")
+			return
+		}
+		fmt.Printf("Error fetching post: %v\n", err)
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	fmt.Printf("Post found, station ID: %s\n", post.StationID)
+
+	// Now get the CBOR data for this post
+	var cbor models.PostCBOR
+	fmt.Printf("Fetching CBOR data for post ID: %d\n", postID)
+	if err := db.Where("post_id = ?", uint(postID)).First(&cbor).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			fmt.Printf("CBOR not found for post %d\n", postID)
+			utils.NotFoundResponse(c, "CBOR not found for this post")
+			return
+		}
+		fmt.Printf("Error fetching CBOR for post %d: %v\n", postID, err)
+		utils.InternalErrorResponse(c, "Failed to fetch CBOR")
+		return
+	}
+
+	fmt.Printf("Found CBOR for post %d, data length: %d, filename: %s\n", postID, len(cbor.CBORData), cbor.Filename)
+
+	// Check if client wants JSON format
+	format := c.Query("format")
+	fmt.Printf("Requested format: %s\n", format)
+	if format == "json" {
+		fmt.Printf("Decoding CBOR to JSON for post %d\n", postID)
+		// Decode CBOR to JSON
+		var jsonData interface{}
+		if err := utils.DecodeCBORToJSON(cbor.CBORData, &jsonData); err != nil {
+			fmt.Printf("CBOR decode error for post %d: %v\n", postID, err)
+			fmt.Printf("CBOR data length: %d\n", len(cbor.CBORData))
+			utils.InternalErrorResponse(c, "Failed to decode CBOR to JSON")
+			return
+		}
+
+		fmt.Printf("CBOR decoded successfully, jsonData: %+v\n", jsonData)
+		fmt.Printf("CBOR decoded successfully, returning JSON\n")
+		c.Header("Content-Type", "application/json")
+		c.JSON(http.StatusOK, jsonData)
+		return
+	}
+
+	fmt.Printf("Returning CBOR binary data\n")
+	// Set content type and headers
+	c.Header("Content-Type", "application/cbor")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", cbor.Filename))
+
+	// Return CBOR data
+	c.Data(http.StatusOK, "application/cbor", cbor.CBORData)
+}
+
 // DeletePost handles deleting a post (only if owned by the authenticated user)
 func DeletePost(c *gin.Context) {
 	userID, exists := middleware.GetCurrentUserID(c)
@@ -455,6 +639,12 @@ func DeletePost(c *gin.Context) {
 	// Delete image records from database
 	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post images")
+		return
+	}
+
+	// Delete associated CBOR records from database
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCBOR{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post CBOR")
 		return
 	}
 
