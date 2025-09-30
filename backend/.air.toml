@@ -2,6 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
+  args_bin = []
   cmd = "go build -o ./tmp/main ."
   bin = "./tmp/main"
   full_bin = "./tmp/main"

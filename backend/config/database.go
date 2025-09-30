@@ -14,7 +14,7 @@ import (
 
 var DB *gorm.DB
 
-// InitDatabase initializes the database connection and runs migrations
+// InitDatabase initializes the database connection WITHOUT running migrations
 func InitDatabase() {
 	var err error
 
@@ -78,8 +78,13 @@ func InitDatabase() {
 		log.Println("Connected to SQLite database")
 	}
 
-	// Run auto migrations
-	err = DB.AutoMigrate(
+	log.Println("Database connection established successfully")
+}
+
+// RunMigrations runs database migrations
+func RunMigrations() error {
+	log.Println("Running database migrations...")
+	err := DB.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},
 		&models.Station{},
@@ -101,9 +106,10 @@ func InitDatabase() {
 		&models.StationNotificationRule{},
 	)
 	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
-	log.Println("Database initialized successfully")
+	log.Println("Database migrations completed successfully")
+	return nil
 }
 
 // GetDB returns the database instance

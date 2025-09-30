@@ -1,9 +1,6 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"log"
 	"os"
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/handlers"
@@ -17,41 +14,71 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	// Parse command line flags
-	seedFlag := flag.Bool("seed", false, "Run database seeding")
-	flag.Parse()
+var rootCmd = &cobra.Command{
+	Use:   "sathub-ui-backend",
+	Short: "SatHub Backend Server",
+	Long:  `SatHub is a satellite ground station management platform backend service.`,
+}
 
+var apiCmd = &cobra.Command{
+	Use:   "api",
+	Short: "Start the API server",
+	Long:  `Start the HTTP API server for handling client requests.`,
+	Run:   runAPIServer,
+}
+
+var healthMonitorCmd = &cobra.Command{
+	Use:   "health-monitor-worker",
+	Short: "Start the health monitor worker",
+	Long:  `Start the background worker that monitors station health and sends notifications.`,
+	Run:   runHealthMonitorWorker,
+}
+
+var migrateCmd = &cobra.Command{
+	Use:   "auto-migrate",
+	Short: "Run database migrations",
+	Long:  `Run database auto-migrations and seed essential data.`,
+	Run:   runMigrations,
+}
+
+func init() {
+	// Initialize logger
+	utils.InitLogger()
+
+	// Add commands
+	rootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(healthMonitorCmd)
+	rootCmd.AddCommand(migrateCmd)
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		utils.Logger.Fatal().Err(err).Msg("Failed to execute command")
+		os.Exit(1)
+	}
+}
+
+func initializeCommon() {
 	// Load environment variables
 	if err := godotenv.Load(".env.development"); err != nil {
-		log.Println("Warning: .env.development file not found, using system environment variables")
-	}
-
-	// Initialize database
-	config.InitDatabase()
-	defer config.CloseDatabase()
-
-	// Auto-seed essential data if missing
-	if err := seed.AutoSeed(); err != nil {
-		log.Fatalf("Auto-seeding failed: %v", err)
+		utils.Logger.Warn().Msg(".env.development file not found, using system environment variables")
 	}
 
 	// Initialize storage
 	utils.InitStorage()
 
-	// Start station health monitor
-	healthMonitor := worker.NewStationHealthMonitor(config.GetDB())
-	healthMonitor.Start()
+	// Initialize database
+	config.InitDatabase()
+}
 
-	// Run seeding if flag is provided
-	if *seedFlag {
-		fmt.Println("Starting database seeding...")
-		// TODO: Implement full database seeding function
-		fmt.Println("Database seeding not implemented yet!")
-		return
-	}
+func runAPIServer(cmd *cobra.Command, args []string) {
+	utils.Logger.Info().Msg("Starting API server")
+
+	initializeCommon()
+	defer config.CloseDatabase()
 
 	// Set Gin mode from environment
 	if mode := os.Getenv("GIN_MODE"); mode != "" {
@@ -320,8 +347,43 @@ func main() {
 		port = "4001"
 	}
 
-	log.Printf("Starting server on port %s", port)
+	utils.Logger.Info().Str("port", port).Msg("Starting API server")
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("Failed to start server:", err)
+		utils.Logger.Fatal().Err(err).Msg("Failed to start API server")
 	}
+}
+
+func runHealthMonitorWorker(cmd *cobra.Command, args []string) {
+	utils.Logger.Info().Msg("Starting health monitor worker")
+
+	initializeCommon()
+	defer config.CloseDatabase()
+
+	// Start station health monitor
+	healthMonitor := worker.NewStationHealthMonitor(config.GetDB())
+	healthMonitor.Start()
+
+	utils.Logger.Info().Msg("Health monitor worker started successfully")
+
+	// Keep the worker running
+	select {}
+}
+
+func runMigrations(cmd *cobra.Command, args []string) {
+	utils.Logger.Info().Msg("Running database migrations")
+
+	initializeCommon()
+	defer config.CloseDatabase()
+
+	// Run database migrations
+	if err := config.RunMigrations(); err != nil {
+		utils.Logger.Fatal().Err(err).Msg("Database migration failed")
+	}
+
+	// Auto-seed essential data if missing
+	if err := seed.AutoSeed(); err != nil {
+		utils.Logger.Fatal().Err(err).Msg("Auto-seeding failed")
+	}
+
+	utils.Logger.Info().Msg("Database migrations and seeding completed successfully")
 }

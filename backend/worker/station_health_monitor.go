@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"sathub-ui-backend/models"
@@ -24,7 +23,7 @@ func NewStationHealthMonitor(db *gorm.DB) *StationHealthMonitor {
 
 // Start begins the monitoring process
 func (m *StationHealthMonitor) Start() {
-	log.Println("Starting station health monitor...")
+	utils.Logger.Info().Msg("Starting station health monitor")
 
 	// Run initial check
 	m.checkStations()
@@ -40,19 +39,19 @@ func (m *StationHealthMonitor) Start() {
 
 // checkStations performs health checks on all stations with notification settings
 func (m *StationHealthMonitor) checkStations() {
-	log.Println("Checking station health...")
+	utils.Logger.Debug().Msg("Checking station health")
 
 	var settings []models.StationNotificationSettings
 	if err := m.db.Preload("Station").Preload("Rules").Find(&settings).Error; err != nil {
-		log.Printf("Failed to fetch notification settings: %v", err)
+		utils.Logger.Error().Err(err).Msg("Failed to fetch notification settings")
 		return
 	}
 
-	log.Printf("Found %d stations with notification settings", len(settings))
+	utils.Logger.Debug().Int("count", len(settings)).Msg("Found stations with notification settings")
 
 	for _, setting := range settings {
 		if err := m.checkStationHealth(setting); err != nil {
-			log.Printf("Failed to check station %s health: %v", setting.StationID, err)
+			utils.Logger.Error().Err(err).Str("station_id", setting.StationID).Msg("Failed to check station health")
 		}
 	}
 }
@@ -64,13 +63,17 @@ func (m *StationHealthMonitor) checkStationHealth(setting models.StationNotifica
 		return fmt.Errorf("station not loaded for setting %s", setting.ID)
 	}
 
-	log.Printf("Checking station %s (%s) - %d rules", station.Name, station.ID, len(setting.Rules))
+	utils.Logger.Debug().
+		Str("station_name", station.Name).
+		Str("station_id", station.ID).
+		Int("rules_count", len(setting.Rules)).
+		Msg("Checking station")
 
 	// Get the latest uptime record
 	var lastUptime models.StationUptime
 	if err := m.db.Where("station_id = ?", station.ID).Order("timestamp DESC").First(&lastUptime).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			log.Printf("No uptime records for station %s, skipping", station.ID)
+			utils.Logger.Debug().Str("station_id", station.ID).Msg("No uptime records for station, skipping")
 			// No uptime records yet, skip
 			return nil
 		}
@@ -82,39 +85,56 @@ func (m *StationHealthMonitor) checkStationHealth(setting models.StationNotifica
 	timeSinceLastSeen := now.Sub(lastSeen)
 	isCurrentlyOnline := timeSinceLastSeen <= time.Duration(station.OnlineThreshold)*time.Minute
 
-	log.Printf("Station %s: last seen %v ago, online threshold %d min, currently online: %v",
-		station.ID, timeSinceLastSeen, station.OnlineThreshold, isCurrentlyOnline)
+	utils.Logger.Debug().
+		Str("station_id", station.ID).
+		Dur("time_since_last_seen", timeSinceLastSeen).
+		Int("online_threshold_min", station.OnlineThreshold).
+		Bool("currently_online", isCurrentlyOnline).
+		Msg("Station status")
 
 	// Check each enabled rule
 	for _, rule := range setting.Rules {
 		if !rule.Enabled {
-			log.Printf("Rule %s for station %s is disabled, skipping", rule.Type, station.ID)
+			utils.Logger.Debug().
+				Str("rule_type", string(rule.Type)).
+				Str("station_id", station.ID).
+				Msg("Rule disabled, skipping")
 			continue
 		}
 
-		log.Printf("Checking rule %s (threshold: %v) for station %s", rule.Type, rule.Threshold, station.ID)
+		utils.Logger.Debug().
+			Str("rule_type", string(rule.Type)).
+			Str("station_id", station.ID).
+			Msg("Checking rule")
 
 		switch rule.Type {
 		case "down_minutes":
 			if rule.Threshold != nil && *rule.Threshold > 0 {
 				downThreshold := time.Duration(*rule.Threshold) * time.Minute
-				log.Printf("Down rule: time since last seen %v, threshold %v, is currently online: %v",
-					timeSinceLastSeen, downThreshold, isCurrentlyOnline)
+				utils.Logger.Debug().
+					Dur("time_since_last_seen", timeSinceLastSeen).
+					Dur("threshold", downThreshold).
+					Bool("currently_online", isCurrentlyOnline).
+					Msg("Evaluating down rule")
 
 				if !isCurrentlyOnline && timeSinceLastSeen >= downThreshold {
-					log.Printf("Station %s is down and meets threshold, checking for recent notifications", station.ID)
+					utils.Logger.Info().Str("station_id", station.ID).Msg("Station is down and meets threshold, checking for recent notifications")
 					// Check if we already sent a notification for this down period
 					if !m.hasRecentDownNotification(station.ID, lastSeen, *rule.Threshold) {
-						log.Printf("Sending down notification for station %s", station.ID)
+						utils.Logger.Info().Str("station_id", station.ID).Msg("Sending down notification")
 						if err := m.sendStationDownNotification(station, *rule.Threshold, lastSeen); err != nil {
 							return err
 						}
 					} else {
-						log.Printf("Recent down notification already exists for station %s", station.ID)
+						utils.Logger.Debug().Str("station_id", station.ID).Msg("Recent down notification already exists")
 					}
 				} else {
-					log.Printf("Station %s down conditions not met: online=%v, timeSince=%v, threshold=%v",
-						station.ID, isCurrentlyOnline, timeSinceLastSeen, downThreshold)
+					utils.Logger.Debug().
+						Str("station_id", station.ID).
+						Bool("online", isCurrentlyOnline).
+						Dur("time_since", timeSinceLastSeen).
+						Dur("threshold", downThreshold).
+						Msg("Station down conditions not met")
 				}
 			}
 		case "back_online":

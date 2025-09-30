@@ -1,5 +1,23 @@
 name: development-sathub
 services:
+  migrate:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+    command: ["go", "run", ".", "auto-migrate"]
+    depends_on:
+      postgres:
+        condition: service_started
+    restart: "no"
+
   backend:
     build: ./backend
     ports:
@@ -20,8 +38,33 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_EXTERNAL_URL=https://obj.sathub.local:9999
+    command: ["air", "-c", ".air.toml", "--", "api"]
     depends_on:
-      - postgres
+      migrate:
+        condition: service_completed_successfully
+
+  health-monitor-worker:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+      - FRONTEND_URL=https://sathub.local:9999
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_EXTERNAL_URL=https://obj.sathub.local:9999
+    command: ["air", "-c", ".air.toml", "--", "health-monitor-worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
   postgres:
     image: postgres:15-alpine
