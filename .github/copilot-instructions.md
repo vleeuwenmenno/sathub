@@ -52,6 +52,28 @@ make seed
 docker compose exec backend go run main.go --seed
 ```
 
+#### Direct Database Access & Debugging
+
+For direct database queries and debugging:
+
+```bash
+# Connect to PostgreSQL database
+docker compose exec postgres psql -U sathub -d sathub
+
+# Query station uptimes (example)
+docker compose exec postgres psql -U sathub -d sathub -c "SELECT * FROM station_uptimes LIMIT 5"
+
+# Other useful queries:
+# List all tables
+docker compose exec postgres psql -U sathub -d sathub -c "\dt"
+
+# Count records in a table
+docker compose exec postgres psql -U sathub -d sathub -c "SELECT COUNT(*) FROM posts"
+
+# View table schema
+docker compose exec postgres psql -U sathub -d sathub -c "\d station_uptimes"
+```
+
 **Important**: Seeding requires the backend container to be running first (`make up`)
 
 ### File Structure Conventions
