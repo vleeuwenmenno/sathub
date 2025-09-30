@@ -149,6 +149,7 @@ func main() {
 				protected.GET("/profile", handlers.GetProfile)
 				protected.PUT("/profile", handlers.UpdateProfile)
 				protected.POST("/profile/upload-picture", handlers.UploadProfilePicture)
+				protected.DELETE("/profile/picture", handlers.DeleteProfilePicture)
 				protected.POST("/enable-2fa", handlers.EnableTwoFactor)
 				protected.POST("/verify-2fa-setup", handlers.VerifyTwoFactorSetup)
 				protected.POST("/disable-2fa", handlers.DisableTwoFactor)

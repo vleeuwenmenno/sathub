@@ -521,6 +521,11 @@ export const uploadProfilePicture = async (file: File): Promise<{ profile_pictur
   return res.data.data; // Extract from the nested data structure
 };
 
+export const deleteProfilePicture = async (): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
+  const res = await api.delete("/auth/profile/picture");
+  return res.data.data; // Extract from the nested data structure
+};
+
 export const getProfilePictureBlob = async (
   pictureUrl: string,
 ): Promise<string> => {

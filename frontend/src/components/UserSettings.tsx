@@ -19,6 +19,7 @@ import {
   disableTwoFactor,
   regenerateRecoveryCodes,
   uploadProfilePicture,
+  deleteProfilePicture,
   getProfilePictureBlob,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
