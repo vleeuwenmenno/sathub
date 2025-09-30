@@ -21,14 +21,15 @@ import (
 )
 
 var (
-	token        string
-	watchPath    string
-	apiURL       string
-	processedDir string
-	processDelay int
-	verbose      bool
-	insecure     bool
-	logger       zerolog.Logger
+	token               string
+	watchPath           string
+	apiURL              string
+	processedDir        string
+	processDelay        int
+	healthCheckInterval int
+	verbose             bool
+	insecure            bool
+	logger              zerolog.Logger
 )
 
 var rootCmd = &cobra.Command{
@@ -98,7 +99,14 @@ func init() {
 	defaultWatch := os.Getenv("WATCH_PATHS")
 	defaultAPI := getEnvWithDefault("API_URL", "https://api.sathub.de")
 	defaultProcessed := getEnvWithDefault("PROCESSED_DIR", "./processed")
+	defaultHealthCheckInterval := getEnvWithDefault("HEALTH_CHECK_INTERVAL", "300")
+	interval, err := strconv.Atoi(defaultHealthCheckInterval)
+	if err != nil || interval <= 0 {
+		interval = 300
+	}
+	healthCheckInterval = interval
 
+	// Define command line flags
 	rootCmd.Flags().StringVarP(&token, "token", "t", defaultToken, "Station API token (required, or set STATION_TOKEN env var)")
 	rootCmd.Flags().StringVarP(&watchPath, "watch", "w", defaultWatch, "Directory path to watch for new images (required, or set WATCH_PATHS env var)")
 	rootCmd.Flags().StringVarP(&apiURL, "api", "a", defaultAPI, "SatHub API URL")
@@ -106,6 +114,7 @@ func init() {
 	rootCmd.Flags().IntVar(&processDelay, "process-delay", 60, "Delay in seconds before processing new directories")
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Skip TLS certificate verification (for self-signed certificates)")
+	rootCmd.Flags().IntVar(&healthCheckInterval, "health-interval", 300, "Health check interval in seconds")
 
 	// Only mark as required if not set via environment
 	if defaultToken == "" {
@@ -130,6 +139,12 @@ func runClient() error {
 		Str("watch_path", watchPath).
 		Str("processed_dir", processedDir).
 		Msg("Starting SatHub Data Client")
+
+	// Log intervals
+	logger.Info().
+		Int("health_check_interval", healthCheckInterval).
+		Int("process_delay", processDelay).
+		Msg("Configuration parameters")
 
 	// Create configuration from command line arguments
 	config := NewConfig(apiURL, token, watchPath, processedDir, time.Duration(processDelay)*time.Second)
@@ -163,7 +178,7 @@ func runClient() error {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Periodic health check
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(time.Duration(healthCheckInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -177,7 +192,7 @@ func runClient() error {
 			if err := apiClient.StationHealth(); err != nil {
 				logger.Warn().Err(err).Msg("Health check failed")
 			} else {
-				logger.Debug().Msg("Health check successful")
+				logger.Info().Msg("Health check successful")
 			}
 		}
 	}

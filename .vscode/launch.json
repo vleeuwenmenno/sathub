@@ -20,7 +20,8 @@
         "LOG_LEVEL": "info",
         "RETRY_COUNT": "3",
         "RETRY_DELAY": "5",
-        "PROCESS_DELAY": "60"
+        "PROCESS_DELAY": "60",
+        "HEALTH_CHECK_INTERVAL": "60"
       }
     }
   ]
