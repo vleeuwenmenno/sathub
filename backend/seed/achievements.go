@@ -36,12 +36,6 @@ func seedAchievements() error {
 			Criteria:    `{"type": "posts_created", "value": 1}`,
 		},
 		{
-			Name:        "Data Contributor",
-			Description: "Upload 10 posts",
-			Icon:        "📊",
-			Criteria:    `{"type": "posts_created", "value": 10}`,
-		},
-		{
 			Name:        "Pro Sharer",
 			Description: "Upload 50 posts",
 			Icon:        "⭐",
