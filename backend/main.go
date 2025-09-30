@@ -195,6 +195,7 @@ func main() {
 
 		// Station details (authentication required)
 		api.GET("/stations/:id/details", middleware.AuthRequired(), handlers.GetStationDetails)
+		api.GET("/stations/:id/uptime", middleware.AuthRequired(), handlers.GetStationUptime)
 
 		// Protected global user routes (authentication required)
 		protectedGlobalUsers := api.Group("/users")

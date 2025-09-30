@@ -191,6 +191,16 @@ export interface Station {
   };
 }
 
+export interface StationUptimeData {
+  station_id: string;
+  days: number;
+  online_threshold: number;
+  data: Array<{
+    timestamp: string;
+    event: string;
+  }>;
+}
+
 export interface CreateStationRequest {
   name: string;
   location: string;
@@ -389,6 +399,14 @@ export const getStationDetails = async (
   stationId: string,
 ): Promise<Station> => {
   const res = await api.get(`/stations/${stationId}/details`);
+  return res.data.data;
+};
+
+export const getStationUptime = async (
+  stationId: string,
+  days: number = 7,
+): Promise<StationUptimeData> => {
+  const res = await api.get(`/stations/${stationId}/uptime?days=${days}`);
   return res.data.data;
 };
 

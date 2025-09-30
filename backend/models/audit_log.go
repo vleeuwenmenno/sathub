@@ -53,6 +53,9 @@ const (
 	ActionPostImageUpload AuditAction = "post_image_upload"
 	ActionPostLike        AuditAction = "post_like"
 	ActionPostUnlike      AuditAction = "post_unlike"
+
+	// Achievement actions
+	ActionAchievementUnlock AuditAction = "achievement_unlock"
 )
 
 // AuditTargetType represents the type of resource being acted upon

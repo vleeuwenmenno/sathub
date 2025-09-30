@@ -100,7 +100,34 @@ func LogCommentAction(c *gin.Context, action models.AuditAction, commentID uint,
 	return LogAuditEvent(c, action, models.TargetTypeComment, fmt.Sprintf("%d", commentID), metadata)
 }
 
-// LogSystemAction logs system-level actions (no specific target)
+// LogSystemAction logs system-level actions
 func LogSystemAction(c *gin.Context, action models.AuditAction, metadata models.AuditMetadata) error {
 	return LogAuditEvent(c, action, models.TargetTypeSystem, "", metadata)
+}
+
+// LogAchievementUnlock logs when a user unlocks an achievement
+func LogAchievementUnlock(userID uuid.UUID, achievementID uuid.UUID, achievementName string) error {
+	db := config.GetDB()
+
+	auditLog := models.AuditLog{
+		UserID:     &userID,
+		Action:     models.ActionAchievementUnlock,
+		TargetType: models.TargetTypeUser,
+		TargetID:   userID.String(),
+		Metadata: models.AuditMetadata{
+			"achievement_id":   achievementID.String(),
+			"achievement_name": achievementName,
+		},
+		IPAddress: "", // Not available without context
+		UserAgent: "", // Not available without context
+	}
+
+	// Create audit log entry asynchronously to avoid blocking the main operation
+	go func() {
+		if err := db.Create(&auditLog).Error; err != nil {
+			println("Failed to create achievement unlock audit log:", err.Error())
+		}
+	}()
+
+	return nil
 }

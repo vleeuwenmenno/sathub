@@ -11,8 +11,10 @@ import (
 )
 
 type AchievementCriteria struct {
-	Type  string `json:"type"`
-	Value int    `json:"value"`
+	Type          string  `json:"type"`
+	Value         int     `json:"value"`
+	PeriodDays    int     `json:"period_days,omitempty"`    // For uptime achievements
+	UptimePercent float64 `json:"uptime_percent,omitempty"` // For uptime achievements
 }
 
 type AchievementResult struct {
@@ -25,6 +27,7 @@ type AchievementResult struct {
 
 // CheckAchievements checks all achievements for a user and awards any newly unlocked ones
 func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
+	log.Printf("DEBUG: Checking achievements for user %s", userID)
 	db := config.GetDB()
 
 	// Get all achievements
@@ -74,6 +77,11 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				continue
 			}
 
+			// Log the achievement unlock for audit purposes
+			if err := LogAchievementUnlock(userID, achievement.ID, achievement.Name); err != nil {
+				log.Printf("Failed to log achievement unlock for %s: %v", achievement.Name, err)
+			}
+
 			newAchievements = append(newAchievements, AchievementResult{
 				AchievementID: achievement.ID,
 				Name:          achievement.Name,
@@ -98,8 +106,10 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 			// Send email notification if user has email notifications enabled
 			var user models.User
 			if err := db.Where("id = ?", userID).First(&user).Error; err == nil && user.EmailNotifications {
+				achievementName := achievement.Name
+				achievementDesc := achievement.Description
 				go func() {
-					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievement.Name, achievement.Description); err != nil {
+					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievementName, achievementDesc); err != nil {
 						log.Printf("Failed to send achievement email notification: %v", err)
 					}
 				}()
@@ -173,10 +183,132 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 		db.Model(&models.Comment{}).Joins("JOIN posts ON comments.post_id = posts.id").Joins("JOIN stations ON posts.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
 		return count >= int64(criteria.Value)
 
+	case "health_checks_performed":
+		// Check if user has any stations that have performed health checks
+		var count int64
+		db.Model(&models.StationUptime{}).Joins("JOIN stations ON station_uptimes.station_id = stations.id").Where("stations.user_id = ?", userID).Count(&count)
+		return count >= int64(criteria.Value)
+
+	case "station_uptime_percent":
+		return checkStationUptimeCriteria(userID, criteria)
+
 	default:
 		log.Printf("Unknown achievement criteria type: %s", criteria.Type)
 		return false
 	}
+}
+
+// checkStationUptimeCriteria checks if a user meets uptime-based achievement criteria
+func checkStationUptimeCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
+	db := config.GetDB()
+
+	// Get all stations for this user
+	var stations []models.Station
+	if err := db.Where("user_id = ?", userID).Find(&stations).Error; err != nil {
+		log.Printf("Failed to get stations for user %s: %v", userID, err)
+		return false
+	}
+
+	if len(stations) == 0 {
+		return false
+	}
+
+	// Check if any station meets the uptime criteria
+	for _, station := range stations {
+		if checkSingleStationUptime(station.ID, criteria) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checkSingleStationUptime calculates uptime percentage for a single station
+func checkSingleStationUptime(stationID string, criteria AchievementCriteria) bool {
+	db := config.GetDB()
+
+	// Calculate the start date based on period_days
+	startDate := time.Now().AddDate(0, 0, -criteria.PeriodDays)
+
+	log.Printf("DEBUG: Checking station %s for %d days, startDate: %v, now: %v", stationID, criteria.PeriodDays, startDate, time.Now())
+
+	// Get uptime records for the station within the time range
+	var uptimes []models.StationUptime
+	if err := db.Where("station_id = ? AND timestamp >= ?", stationID, startDate).Order("timestamp ASC").Find(&uptimes).Error; err != nil {
+		log.Printf("Failed to get uptime data for station %s: %v", stationID, err)
+		return false
+	}
+
+	log.Printf("DEBUG: Found %d uptime records for station %s", len(uptimes), stationID)
+
+	if len(uptimes) == 0 {
+		return false
+	}
+
+	log.Printf("DEBUG: First record timestamp: %v, startDate: %v, After check: %v", uptimes[0].Timestamp, startDate, uptimes[0].Timestamp.After(startDate))
+
+	// Check if the station has been running for most of the required period
+	// Allow a small tolerance (e.g., 90% of the period) to account for timing variations
+	minRequiredPeriod := time.Duration(float64(criteria.PeriodDays) * 24 * float64(time.Hour) * 0.9) // 90% of period
+	actualRunningTime := time.Since(uptimes[0].Timestamp)
+	if actualRunningTime < minRequiredPeriod {
+		log.Printf("DEBUG: Station %s hasn't been running long enough (running for %v, need at least %v)", stationID, actualRunningTime, minRequiredPeriod)
+		return false
+	}
+
+	// Get the station to get online_threshold
+	var station models.Station
+	if err := db.Where("id = ?", stationID).First(&station).Error; err != nil {
+		log.Printf("Failed to get station %s: %v", stationID, err)
+		return false
+	}
+
+	// Calculate uptime percentage using the same logic as the frontend
+	now := time.Now().UnixMilli()
+	startTime := uptimes[0].Timestamp.UnixMilli()
+	totalPeriodMs := now - startTime
+
+	var onlineTimeMs int64
+
+	// Calculate online time between consecutive events
+	for i := 0; i < len(uptimes)-1; i++ {
+		currentTime := uptimes[i].Timestamp.UnixMilli()
+		nextTime := uptimes[i+1].Timestamp.UnixMilli()
+		gapMs := nextTime - currentTime
+		thresholdMs := int64(station.OnlineThreshold) * 60 * 1000 // Convert minutes to milliseconds
+
+		if gapMs <= thresholdMs {
+			// Station was online for the entire gap
+			onlineTimeMs += gapMs
+		} else {
+			// Station was online for threshold minutes, then offline
+			onlineTimeMs += thresholdMs
+		}
+	}
+
+	// Handle the current period from last event to now
+	if len(uptimes) > 0 {
+		lastEventTime := uptimes[len(uptimes)-1].Timestamp.UnixMilli()
+		timeSinceLastEvent := now - lastEventTime
+		thresholdMs := int64(station.OnlineThreshold) * 60 * 1000
+
+		if timeSinceLastEvent <= thresholdMs {
+			// Station is currently online
+			onlineTimeMs += timeSinceLastEvent
+		} else {
+			// Station went offline after threshold
+			onlineTimeMs += thresholdMs
+		}
+	}
+
+	uptimePercentage := float64(0)
+	if totalPeriodMs > 0 {
+		uptimePercentage = (float64(onlineTimeMs) / float64(totalPeriodMs)) * 100
+	}
+
+	log.Printf("DEBUG: Station %s uptime percentage: %.2f%% (required: %.2f%%)", stationID, uptimePercentage, criteria.UptimePercent)
+
+	return uptimePercentage >= criteria.UptimePercent
 }
 
 // GetUserAchievements returns all achievements for a user

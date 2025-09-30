@@ -17,6 +17,7 @@ import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
 import DeletePostButton from "./DeletePostButton";
+import StationHealthGraph from "./StationHealthGraph";
 import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString: string): string => {
@@ -355,6 +356,9 @@ const StationPosts: React.FC = () => {
                   </CardContent>
                 </Card>
               )}
+              
+              {/* Station Health */}
+              <StationHealthGraph stationId={stationId!} />
             </Stack>
           </Grid>
         </Grid>

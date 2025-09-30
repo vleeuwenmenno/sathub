@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,10 @@ import (
 )
 
 func main() {
+	testScenario85 := flag.Bool("test-85", false, "Run the 85% uptime test scenario instead of full seeding")
+	testScenario90 := flag.Bool("test-90", false, "Run the 90.5% uptime test scenario (adds to existing 85% scenario)")
+	flag.Parse()
+
 	fmt.Println("Starting database seeding...")
 
 	// Set database path for seeding (use local path if not set)
@@ -21,8 +26,20 @@ func main() {
 	config.InitDatabase()
 	defer config.CloseDatabase()
 
-	// Run seeding
-	if err := seed.Database(); err != nil {
+	// Run seeding based on flag
+	var err error
+	if *testScenario90 {
+		fmt.Println("Running 90% uptime test scenario...")
+		err = seed.TestScenario90PercentUptime()
+	} else if *testScenario85 {
+		fmt.Println("Running 85% uptime test scenario...")
+		err = seed.TestScenario85PercentUptime()
+	} else {
+		fmt.Println("Running full database seeding...")
+		err = seed.Database()
+	}
+
+	if err != nil {
 		log.Fatalf("Seeding failed: %v", err)
 	}
 

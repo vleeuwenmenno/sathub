@@ -96,6 +96,7 @@ func InitDatabase() {
 		&models.Notification{},
 		&models.Setting{},
 		&models.AuditLog{},
+		&models.StationUptime{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)

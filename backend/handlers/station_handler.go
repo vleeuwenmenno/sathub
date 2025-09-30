@@ -35,9 +35,18 @@ func isStationOnline(lastSeen *time.Time, thresholdMinutes int) bool {
 
 // buildStationResponse creates a StationResponse from a Station model
 func buildStationResponse(station models.Station) StationResponse {
+	db := config.GetDB()
+	var lastUptime models.StationUptime
+	var lastSeen *time.Time
+
+	// Get the latest uptime record for this station
+	if err := db.Where("station_id = ?", station.ID).Order("timestamp DESC").First(&lastUptime).Error; err == nil {
+		lastSeen = &lastUptime.Timestamp
+	}
+
 	var lastSeenStr *string
-	if station.LastSeen != nil {
-		formatted := station.LastSeen.Format("2006-01-02T15:04:05Z07:00")
+	if lastSeen != nil {
+		formatted := lastSeen.Format("2006-01-02T15:04:05Z07:00")
 		lastSeenStr = &formatted
 	}
 
@@ -52,7 +61,7 @@ func buildStationResponse(station models.Station) StationResponse {
 		Equipment:       station.Equipment,
 		IsPublic:        station.IsPublic,
 		LastSeen:        lastSeenStr,
-		IsOnline:        isStationOnline(station.LastSeen, station.OnlineThreshold),
+		IsOnline:        isStationOnline(lastSeen, station.OnlineThreshold),
 		OnlineThreshold: station.OnlineThreshold,
 		CreatedAt:       station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:       station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
@@ -767,14 +776,88 @@ func StationHealth(c *gin.Context) {
 	db := config.GetDB()
 	now := time.Now()
 
-	// Update the station's last seen timestamp
-	if err := db.Model(&models.Station{}).Where("id = ?", stationID).Update("last_seen", now).Error; err != nil {
-		utils.InternalErrorResponse(c, "Failed to update station health")
+	// Record the station's uptime event
+	uptime := models.StationUptime{
+		StationID: stationID,
+		Timestamp: now,
+		Event:     "online",
+	}
+	if err := db.Create(&uptime).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to record station health")
 		return
+	}
+
+	// Get the station to check achievements for its owner
+	var station models.Station
+	if err := db.Where("id = ?", stationID).First(&station).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to get station information")
+		return
+	}
+
+	// Check for achievements after station health check
+	if _, err := utils.CheckAchievements(station.UserID); err != nil {
+		fmt.Printf("Failed to check achievements for user %s: %v\n", station.UserID, err)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Health check successful", gin.H{
 		"status":    "online",
 		"timestamp": now.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+// GetStationUptime handles retrieving station uptime data for health graphs
+func GetStationUptime(c *gin.Context) {
+	stationID := c.Param("id")
+	if stationID == "" {
+		utils.ValidationErrorResponse(c, "Invalid station ID")
+		return
+	}
+
+	// Parse query parameters
+	daysStr := c.DefaultQuery("days", "7")
+	days, err := strconv.Atoi(daysStr)
+	if err != nil || days < 1 || days > 365 {
+		utils.ValidationErrorResponse(c, "Invalid days parameter (1-365)")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Get the station to include online_threshold
+	var station models.Station
+	if err := db.Where("id = ?", stationID).First(&station).Error; err != nil {
+		utils.NotFoundResponse(c, "Station not found")
+		return
+	}
+
+	// Calculate the start date
+	startDate := time.Now().AddDate(0, 0, -days)
+
+	// Get uptime records for the station within the time range
+	var uptimes []models.StationUptime
+	if err := db.Where("station_id = ? AND timestamp >= ?", stationID, startDate).Order("timestamp ASC").Find(&uptimes).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch station uptime data")
+		return
+	}
+
+	// Transform the data for the frontend
+	type UptimePoint struct {
+		Timestamp string `json:"timestamp"`
+		Event     string `json:"event"`
+	}
+
+	uptimeData := make([]UptimePoint, len(uptimes))
+	for i, uptime := range uptimes {
+		uptimeData[i] = UptimePoint{
+			Timestamp: uptime.Timestamp.Format("2006-01-02T15:04:05Z07:00"),
+			Event:     uptime.Event,
+		}
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Station uptime data retrieved successfully", gin.H{
+		"station_id":       stationID,
+		"days":             days,
+		"online_threshold": station.OnlineThreshold,
+		"data":             uptimeData,
 	})
 }
