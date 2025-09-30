@@ -779,6 +779,49 @@ func GetProfilePicture(c *gin.Context) {
 	c.Data(http.StatusOK, contentType, user.ProfilePicture)
 }
 
+// DeleteProfilePicture handles removing a profile picture for the current user
+func DeleteProfilePicture(c *gin.Context) {
+	userID, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Get current user
+	var user models.User
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to find user")
+		return
+	}
+
+	// Check if user has a profile picture to delete
+	if len(user.ProfilePicture) == 0 {
+		utils.ValidationErrorResponse(c, "No profile picture to delete")
+		return
+	}
+
+	// Clear profile picture data
+	user.ProfilePicture = nil
+	user.ProfilePictureType = ""
+
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete profile picture")
+		return
+	}
+
+	// Log profile picture deletion
+	utils.LogUserAction(c, models.ActionUserProfilePicture, user.ID, models.AuditMetadata{})
+
+	response := map[string]interface{}{
+		"profile_picture_url": "",
+		"has_profile_picture": false,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Profile picture deleted successfully", response)
+}
+
 // ForgotPasswordRequest represents the request body for forgot password
 type ForgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`

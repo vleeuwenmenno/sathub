@@ -10,7 +10,6 @@ import {
   FormLabel,
   Alert,
   Avatar,
-  Stack,
   Checkbox,
 } from "@mui/joy";
 import {
@@ -46,12 +45,15 @@ const UserSettings: React.FC = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [twoFactorLoading, setTwoFactorLoading] = useState(false);
   const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
   
   // Success/Error states
   const [error, setError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [twoFactorSuccess, setTwoFactorSuccess] = useState<string | null>(null);
+  const [notificationSuccess, setNotificationSuccess] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
   
   // 2FA states
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
@@ -93,6 +95,16 @@ const UserSettings: React.FC = () => {
 
     fetchTwoFactorStatus();
     fetchProfilePicture();
+  }, [user]);
+
+  // Update form fields when user data becomes available
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.display_name || "");
+      setEmail(user.email || "");
+      setTwoFactorEnabled(user.two_factor_enabled || false);
+      setEmailNotifications(user.email_notifications || false);
+    }
   }, [user]);
 
   const handleUpdatePassword = async () => {
@@ -202,11 +214,12 @@ const UserSettings: React.FC = () => {
 
   const handleUpdateProfile = async () => {
     const updates: { display_name?: string; email?: string } = {};
-    let hasUpdates = false;
+    let hasProfileUpdates = false;
+    let hasPictureUpdate = !!profilePictureFile;
 
     if (displayName.trim() !== (user?.display_name || "")) {
       updates.display_name = displayName.trim();
-      hasUpdates = true;
+      hasProfileUpdates = true;
     }
 
     if (email.trim() !== (user?.email || "")) {
@@ -215,10 +228,10 @@ const UserSettings: React.FC = () => {
         return;
       }
       updates.email = email.trim();
-      hasUpdates = true;
+      hasProfileUpdates = true;
     }
 
-    if (!hasUpdates) {
+    if (!hasProfileUpdates && !hasPictureUpdate) {
       setError("No changes to save");
       return;
     }
@@ -226,10 +239,36 @@ const UserSettings: React.FC = () => {
     try {
       setProfileLoading(true);
       clearMessages();
-      
-      await updateProfile(updates);
-      
-      if (updates.email) {
+
+      // Upload profile picture first if one is selected
+      if (hasPictureUpdate && profilePictureFile) {
+        const uploadResult = await uploadProfilePicture(profilePictureFile);
+
+        // Update the profile picture URL immediately from the upload response
+        if (uploadResult.profile_picture_url) {
+          // Remove /api/ prefix if it exists since the api client already includes it
+          const cleanUrl = uploadResult.profile_picture_url.startsWith('/api/')
+            ? uploadResult.profile_picture_url.substring(5) // Remove '/api/'
+            : uploadResult.profile_picture_url;
+          const blobUrl = await getProfilePictureBlob(cleanUrl);
+          setProfilePictureUrl(blobUrl);
+        }
+
+        setProfilePictureFile(null);
+        setProfilePicturePreview(null);
+      }
+
+      // Update profile info if there are changes
+      if (hasProfileUpdates) {
+        await updateProfile(updates);
+      }
+
+      // Set appropriate success message
+      if (hasPictureUpdate && hasProfileUpdates) {
+        setProfileSuccess("Profile updated successfully");
+      } else if (hasPictureUpdate) {
+        setProfileSuccess("Profile picture uploaded successfully");
+      } else if (updates.email) {
         setProfileSuccess(
           "Email change confirmation sent. Please check your new email address to confirm the change."
         );
@@ -244,47 +283,47 @@ const UserSettings: React.FC = () => {
     }
   };
 
-  const handleUploadProfilePicture = async () => {
-    if (!profilePictureFile) return;
-
+  const handleClearProfilePicture = async () => {
     try {
       setProfileLoading(true);
       clearMessages();
 
-      const result = await uploadProfilePicture(profilePictureFile);
+      await deleteProfilePicture();
 
-      // Update the profile picture URL immediately from the upload response
-      if (result.profile_picture_url) {
-        // Remove /api/ prefix if it exists since the api client already includes it
-        const cleanUrl = result.profile_picture_url.startsWith('/api/')
-          ? result.profile_picture_url.substring(5) // Remove '/api/'
-          : result.profile_picture_url;
-        const blobUrl = await getProfilePictureBlob(cleanUrl);
-        setProfilePictureUrl(blobUrl);
-      }
-
-      setProfileSuccess("Profile picture uploaded successfully");
+      // Clear the profile picture from state
+      setProfilePictureUrl(null);
       setProfilePictureFile(null);
       setProfilePicturePreview(null);
+
+      setProfileSuccess("Profile picture cleared successfully");
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to upload profile picture");
+      setError(err.response?.data?.error || "Failed to clear profile picture");
     } finally {
       setProfileLoading(false);
     }
   };
 
-  const handleUpdateNotificationSettings = async () => {
+  const handleUpdateNotificationSettings = async (enabled: boolean) => {
     try {
-      setProfileLoading(true);
-      clearMessages();
+      setNotificationLoading(true);
+      // Clear notification-specific messages
+      setNotificationSuccess(null);
+      setNotificationError(null);
 
-      await updateProfile({ email_notifications: emailNotifications });
-      setProfileSuccess("Notification settings updated successfully");
+      await updateProfile({ email_notifications: enabled });
+      setEmailNotifications(enabled);
+      setNotificationSuccess("Notification settings updated successfully");
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to update notification settings");
+      setNotificationError(err.response?.data?.error || "Failed to update notification settings");
+      // Revert the checkbox state on error
+      setEmailNotifications(!enabled);
     } finally {
-      setProfileLoading(false);
+      setNotificationLoading(false);
     }
+  };
+
+  const handleNotificationToggle = (checked: boolean) => {
+    handleUpdateNotificationSettings(checked);
   };
 
   return (
@@ -357,18 +396,26 @@ const UserSettings: React.FC = () => {
             />
             
             {profilePictureFile && (
-              <Stack spacing={1} alignItems="center">
+              <Box sx={{ textAlign: 'center', mt: 1 }}>
                 <Typography level="body-sm">
                   Selected: {profilePictureFile.name}
                 </Typography>
+              </Box>
+            )}
+
+            {/* Clear Profile Picture Button - only show if user has a profile picture */}
+            {(profilePictureUrl || user?.has_profile_picture) && !profilePictureFile && (
+              <Box sx={{ textAlign: 'center', mt: 1 }}>
                 <Button
                   size="sm"
-                  onClick={handleUploadProfilePicture}
+                  color="danger"
+                  variant="outlined"
+                  onClick={handleClearProfilePicture}
                   loading={profileLoading}
                 >
-                  Upload Picture
+                  Clear Profile Picture
                 </Button>
-              </Stack>
+              </Box>
             )}
           </Box>
 
@@ -398,7 +445,8 @@ const UserSettings: React.FC = () => {
             loading={profileLoading}
             disabled={
               displayName.trim() === (user?.display_name || "") &&
-              email.trim() === (user?.email || "")
+              email.trim() === (user?.email || "") &&
+              !profilePictureFile
             }
           >
             Save Changes
@@ -571,6 +619,19 @@ const UserSettings: React.FC = () => {
           <Typography level="h3" sx={{ mb: 2 }}>
             Notification Settings
           </Typography>
+          
+          {notificationSuccess && (
+            <Alert color="success" sx={{ mb: 2 }}>
+              {notificationSuccess}
+            </Alert>
+          )}
+          
+          {notificationError && (
+            <Alert color="danger" sx={{ mb: 2 }}>
+              {notificationError}
+            </Alert>
+          )}
+          
           <Typography sx={{ mb: 2 }}>
             Choose how you want to be notified about activity on your posts and achievements.
           </Typography>
@@ -578,16 +639,10 @@ const UserSettings: React.FC = () => {
             <Checkbox
               label="Receive email notifications for achievements, comments, and likes"
               checked={emailNotifications}
-              onChange={(e) => setEmailNotifications(e.target.checked)}
+              onChange={(e) => handleNotificationToggle(e.target.checked)}
+              disabled={notificationLoading}
             />
           </FormControl>
-          <Button
-            onClick={handleUpdateNotificationSettings}
-            loading={profileLoading}
-            sx={{ mt: 2 }}
-          >
-            Save Notification Settings
-          </Button>
         </CardContent>
       </Card>
 
