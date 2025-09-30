@@ -862,8 +862,9 @@ const StationsList: React.FC = () => {
                   }}
                 >
 {`export STATION_TOKEN="${tokenDialog.token}"
-export API_BASE_URL="${baseUrl}/api"
+export API_URL="${baseUrl}"
 export HEALTH_CHECK_INTERVAL="300"
+export WATCH_PATHS="./data"
 export PROCESS_DELAY="10"`}
                 </Box>
                 <IconButton
@@ -876,8 +877,9 @@ export PROCESS_DELAY="10"`}
                     "&:hover": { backgroundColor: "background.level2" },
                   }}
                   onClick={() => copyWithFeedback(`export STATION_TOKEN="${tokenDialog.token}"
-export API_BASE_URL="${baseUrl}/api"
+export API_URL="${baseUrl}"
 export HEALTH_CHECK_INTERVAL="300"
+export WATCH_PATHS="./data"
 export PROCESS_DELAY="10"`, 'env-vars')}
                 >
                   {copiedItems.has('env-vars') ? <span>✓</span> : <ContentCopy fontSize="small" />}

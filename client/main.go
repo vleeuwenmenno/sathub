@@ -100,21 +100,27 @@ func init() {
 	defaultAPI := getEnvWithDefault("API_URL", "https://api.sathub.de")
 	defaultProcessed := getEnvWithDefault("PROCESSED_DIR", "./processed")
 	defaultHealthCheckInterval := getEnvWithDefault("HEALTH_CHECK_INTERVAL", "300")
-	interval, err := strconv.Atoi(defaultHealthCheckInterval)
-	if err != nil || interval <= 0 {
-		interval = 300
+	defaultProcessDelay := getEnvWithDefault("PROCESS_DELAY", "60")
+
+	// Parse int values from environment
+	healthInterval, err := strconv.Atoi(defaultHealthCheckInterval)
+	if err != nil || healthInterval <= 0 {
+		healthInterval = 300
 	}
-	healthCheckInterval = interval
+	procDelay, err := strconv.Atoi(defaultProcessDelay)
+	if err != nil || procDelay <= 0 {
+		procDelay = 60
+	}
 
 	// Define command line flags
 	rootCmd.Flags().StringVarP(&token, "token", "t", defaultToken, "Station API token (required, or set STATION_TOKEN env var)")
 	rootCmd.Flags().StringVarP(&watchPath, "watch", "w", defaultWatch, "Directory path to watch for new images (required, or set WATCH_PATHS env var)")
-	rootCmd.Flags().StringVarP(&apiURL, "api", "a", defaultAPI, "SatHub API URL")
-	rootCmd.Flags().StringVarP(&processedDir, "processed", "p", defaultProcessed, "Directory to move processed files")
-	rootCmd.Flags().IntVar(&processDelay, "process-delay", 60, "Delay in seconds before processing new directories")
+	rootCmd.Flags().StringVarP(&apiURL, "api", "a", defaultAPI, "SatHub API URL (or set API_URL env var)")
+	rootCmd.Flags().StringVarP(&processedDir, "processed", "p", defaultProcessed, "Directory to move processed files (or set PROCESSED_DIR env var)")
+	rootCmd.Flags().IntVar(&processDelay, "process-delay", procDelay, "Delay in seconds before processing new directories (or set PROCESS_DELAY env var)")
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Skip TLS certificate verification (for self-signed certificates)")
-	rootCmd.Flags().IntVar(&healthCheckInterval, "health-interval", 300, "Health check interval in seconds")
+	rootCmd.Flags().IntVar(&healthCheckInterval, "health-interval", healthInterval, "Health check interval in seconds (or set HEALTH_CHECK_INTERVAL env var)")
 
 	// Only mark as required if not set via environment
 	if defaultToken == "" {
