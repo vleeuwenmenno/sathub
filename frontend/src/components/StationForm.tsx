@@ -39,6 +39,7 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
     online_threshold: 5, // default 5 minutes
   });
   const [isPublic, setIsPublic] = useState(true);
+  const [usePreciseLocation, setUsePreciseLocation] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -242,6 +243,8 @@ const StationForm: React.FC<StationFormProps> = ({ mode }) => {
               longitude={formData.longitude}
               placeholder="Enter station location"
               required
+              usePreciseLocation={usePreciseLocation}
+              onPreciseLocationChange={setUsePreciseLocation}
             />
 
             <FormControl>

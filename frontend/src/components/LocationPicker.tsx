@@ -16,6 +16,7 @@ import {
   ModalDialog,
   ModalClose,
   Divider,
+  Switch,
 } from '@mui/joy';
 import { LocationOn, Map as MapIcon } from '@mui/icons-material';
 import 'leaflet/dist/leaflet.css';
@@ -40,6 +41,8 @@ interface LocationPickerProps {
   longitude?: number;
   placeholder?: string;
   required?: boolean;
+  usePreciseLocation?: boolean;
+  onPreciseLocationChange?: (usePrecise: boolean) => void;
 }
 
 interface LocationMarkerProps {
@@ -65,6 +68,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   longitude,
   placeholder = "Enter location name",
   required = false,
+  usePreciseLocation = false,
+  onPreciseLocationChange,
 }) => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [mapPosition, setMapPosition] = useState<LatLng | null>(
@@ -96,6 +101,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   };
 
   const reverseGeocode = async (lat: number, lng: number) => {
+    // Apply fuzzing if not using precise location
+    const finalLat = usePreciseLocation ? lat : Math.round(lat * 100) / 100;
+    const finalLng = usePreciseLocation ? lng : Math.round(lng * 100) / 100;
+    
     try {
       // Using OpenStreetMap Nominatim for reverse geocoding (free, no API key required)
       const response = await fetch(
@@ -125,19 +134,19 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           locationName = parts.slice(0, 3).join(', ').trim();
         }
         
-        onChange(locationName, lat, lng);
+        onChange(locationName, finalLat, finalLng);
       } else if (data && data.display_name) {
         // Fallback to simplified display name
         const parts = data.display_name.split(',');
         const locationName = parts.slice(0, 3).join(', ').trim();
-        onChange(locationName, lat, lng);
+        onChange(locationName, finalLat, finalLng);
       }
     } catch (error) {
       console.error('Failed to reverse geocode:', error);
-      // Fallback to coordinates with reduced precision
-      const simpleLat = Math.round(lat * 1000) / 1000;
-      const simpleLng = Math.round(lng * 1000) / 1000;
-      onChange(`${simpleLat.toFixed(3)}, ${simpleLng.toFixed(3)}`, lat, lng);
+      // Fallback to coordinates with appropriate precision
+      const displayLat = usePreciseLocation ? lat.toFixed(6) : finalLat.toFixed(2);
+      const displayLng = usePreciseLocation ? lng.toFixed(6) : finalLng.toFixed(2);
+      onChange(`${displayLat}, ${displayLng}`, finalLat, finalLng);
     }
   };
 
@@ -179,32 +188,36 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               locationName = data.display_name;
             }
             
-            // Use the city's approximate center coordinates (reduced precision)
-            const cityLat = Math.round(latitude * 100) / 100; // Round to ~1km precision
-            const cityLng = Math.round(longitude * 100) / 100;
+            // Use the city's approximate center coordinates (or precise if enabled)
+            const finalLat = usePreciseLocation ? latitude : Math.round(latitude * 100) / 100;
+            const finalLng = usePreciseLocation ? longitude : Math.round(longitude * 100) / 100;
             
-            const newPos = new LatLng(cityLat, cityLng);
+            const newPos = new LatLng(finalLat, finalLng);
             setMapPosition(newPos);
             setMapCenter(newPos);
-            onChange(locationName, cityLat, cityLng);
+            onChange(locationName, finalLat, finalLng);
           } else {
-            // Fallback to reduced precision coordinates
-            const cityLat = Math.round(latitude * 100) / 100;
-            const cityLng = Math.round(longitude * 100) / 100;
-            const newPos = new LatLng(cityLat, cityLng);
+            // Fallback to coordinates with appropriate precision
+            const finalLat = usePreciseLocation ? latitude : Math.round(latitude * 100) / 100;
+            const finalLng = usePreciseLocation ? longitude : Math.round(longitude * 100) / 100;
+            const newPos = new LatLng(finalLat, finalLng);
             setMapPosition(newPos);
             setMapCenter(newPos);
-            onChange(`${cityLat.toFixed(2)}, ${cityLng.toFixed(2)}`, cityLat, cityLng);
+            const displayLat = usePreciseLocation ? finalLat.toFixed(6) : finalLat.toFixed(2);
+            const displayLng = usePreciseLocation ? finalLng.toFixed(6) : finalLng.toFixed(2);
+            onChange(`${displayLat}, ${displayLng}`, finalLat, finalLng);
           }
         } catch (error) {
           console.error('Failed to get city location:', error);
-          // Fallback to reduced precision coordinates
-          const cityLat = Math.round(latitude * 100) / 100;
-          const cityLng = Math.round(longitude * 100) / 100;
-          const newPos = new LatLng(cityLat, cityLng);
+          // Fallback to coordinates with appropriate precision
+          const finalLat = usePreciseLocation ? latitude : Math.round(latitude * 100) / 100;
+          const finalLng = usePreciseLocation ? longitude : Math.round(longitude * 100) / 100;
+          const newPos = new LatLng(finalLat, finalLng);
           setMapPosition(newPos);
           setMapCenter(newPos);
-          onChange(`${cityLat.toFixed(2)}, ${cityLng.toFixed(2)}`, cityLat, cityLng);
+          const displayLat = usePreciseLocation ? finalLat.toFixed(6) : finalLat.toFixed(2);
+          const displayLng = usePreciseLocation ? finalLng.toFixed(6) : finalLng.toFixed(2);
+          onChange(`${displayLat}, ${displayLng}`, finalLat, finalLng);
         }
         
         setIsLocating(false);
@@ -266,7 +279,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           {mapPosition && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography level="body-xs" sx={{ color: 'success.500' }}>
-                📍 Coordinates: {mapPosition.lat.toFixed(3)}, {mapPosition.lng.toFixed(3)}
+                📍 Coordinates: {usePreciseLocation ? mapPosition.lat.toFixed(6) : mapPosition.lat.toFixed(2)}, {usePreciseLocation ? mapPosition.lng.toFixed(6) : mapPosition.lng.toFixed(2)}
               </Typography>
               <Button
                 size="sm"
@@ -277,6 +290,30 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               >
                 Clear
               </Button>
+            </Box>
+          )}
+          {onPreciseLocationChange && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Switch
+                  checked={usePreciseLocation}
+                  onChange={(e) => onPreciseLocationChange(e.target.checked)}
+                  size="sm"
+                />
+                <Typography level="body-sm">
+                  Use precise location {usePreciseLocation ? '(exact coordinates)' : '(city-level ~1km precision)'}
+                </Typography>
+              </Box>
+              {!usePreciseLocation && (
+                <Typography level="body-xs" sx={{ mt: 0.5, color: 'neutral.600' }}>
+                  ℹ️ For privacy, coordinates are rounded to city-level precision (~1km). Enable precise location if you want to share exact coordinates.
+                </Typography>
+              )}
+              {usePreciseLocation && (
+                <Typography level="body-xs" sx={{ mt: 0.5, color: 'warning.600' }}>
+                  ⚠️ Precise location will show your exact coordinates publicly. Only enable if you're comfortable sharing this information.
+                </Typography>
+              )}
             </Box>
           )}
         </Stack>
