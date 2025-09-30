@@ -120,6 +120,7 @@ const Detail: React.FC = () => {
   const [imageBlobs, setImageBlobs] = useState<Record<number, string>>({});
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
   const [stationImageBlob, setStationImageBlob] = useState<string | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -229,11 +230,20 @@ const Detail: React.FC = () => {
     if (window.location.hash) {
       const hash = window.location.hash.substring(1); // Remove #
       if (hash.startsWith('comment-')) {
-        // Wait a bit for comments to load, then scroll
+        const commentId = hash.replace('comment-', '');
+        // Wait a bit for comments to load, then scroll and highlight
         const timer = setTimeout(() => {
           const element = document.getElementById(hash);
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Set highlighted comment
+            setHighlightedCommentId(commentId);
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+              setHighlightedCommentId(null);
+            }, 3000);
           }
         }, 1000); // Wait 1 second for comments to load
 
@@ -632,7 +642,7 @@ const Detail: React.FC = () => {
       </Grid>
 
       {/* Comments Section */}
-      <CommentSection postId={detail.id.toString()} />
+                  <CommentSection postId={id!} highlightedCommentId={highlightedCommentId} />
     </Box>
   );
 };

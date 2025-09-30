@@ -40,6 +40,7 @@ const formatDate = (dateString: string): string => {
 
 interface CommentSectionProps {
   postId: string;
+  highlightedCommentId?: string | null;
 }
 
 const CommentItem: React.FC<{
@@ -55,6 +56,7 @@ const CommentItem: React.FC<{
   onEditContentChange?: (content: string) => void;
   submitting?: boolean;
   isNewlyPosted?: boolean;
+  isHighlighted?: boolean;
 }> = ({
   comment,
   onEdit,
@@ -68,6 +70,7 @@ const CommentItem: React.FC<{
   onEditContentChange,
   submitting = false,
   isNewlyPosted = false,
+  isHighlighted = false,
 }) => {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [isLiked, setIsLiked] = useState(comment.is_liked);
@@ -128,7 +131,20 @@ const CommentItem: React.FC<{
             backgroundColor: 'success.softBg',
             borderColor: 'success.outlinedBorder',
             transition: 'all 0.3s ease-out',
-          })
+          }),
+          ...(isHighlighted && {
+            animation: "highlight-pulse 1.5s ease-in-out 2",
+            "@keyframes highlight-pulse": {
+              "0%, 100%": {
+                boxShadow: "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
+                transform: "scale(1)",
+              },
+              "50%": {
+                boxShadow: "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
+                transform: "scale(1.02)",
+              },
+            },
+          }),
         }}
       >
         <CardContent>
@@ -286,7 +302,7 @@ const CommentItem: React.FC<{
   );
 };
 
-const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedCommentId }) => {
   let user;
   try {
     const auth = useAuth();
@@ -534,6 +550,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
               onEditContentChange={setEditContent}
               submitting={editingSubmitting}
               isNewlyPosted={newlyPostedCommentId === comment.id}
+              isHighlighted={highlightedCommentId === comment.id.toString()}
             />
           ))
         )}

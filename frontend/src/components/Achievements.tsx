@@ -18,6 +18,7 @@ const Achievements: React.FC = () => {
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAchievements = async () => {
@@ -45,9 +46,19 @@ const Achievements: React.FC = () => {
     if (!loading && window.location.hash) {
       const hash = window.location.hash.substring(1); // Remove #
       if (hash.startsWith('achievement-')) {
+        const achievementId = hash.replace('achievement-', '');
         const element = document.getElementById(hash);
         if (element) {
+          // Scroll to the achievement
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Highlight the achievement
+          setHighlightedId(achievementId);
+          
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            setHighlightedId(null);
+          }, 3000);
         }
       }
     }
@@ -140,6 +151,20 @@ const Achievements: React.FC = () => {
                     transform: "translateY(-2px)",
                     boxShadow: "lg",
                   },
+                  // Highlight animation when coming from notification
+                  ...(highlightedId === achievement.id && {
+                    animation: "highlight-pulse 1.5s ease-in-out 2",
+                    "@keyframes highlight-pulse": {
+                      "0%, 100%": {
+                        boxShadow: "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
+                        transform: "scale(1)",
+                      },
+                      "50%": {
+                        boxShadow: "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
+                        transform: "scale(1.02)",
+                      },
+                    },
+                  }),
                 }}
               >
                 <CardContent>
