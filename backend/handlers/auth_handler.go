@@ -293,6 +293,14 @@ func Login(c *gin.Context) {
 		},
 	}
 
+	// Check for achievements after successful login
+	go func() {
+		if _, err := utils.CheckAchievements(user.ID); err != nil {
+			// Log error but don't fail login
+			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
+		}
+	}()
+
 	// Log successful login
 	utils.LogUserAction(c, models.ActionUserLogin, user.ID, models.AuditMetadata{
 		"username": user.Username,
