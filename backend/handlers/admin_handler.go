@@ -910,8 +910,8 @@ type AuditLogResponse struct {
 	TargetType string                 `json:"target_type"`
 	TargetID   string                 `json:"target_id,omitempty"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	IPAddress  string                 `json:"ip_address,omitempty"`
-	UserAgent  string                 `json:"user_agent,omitempty"`
+	IPAddress  *string                `json:"ip_address,omitempty"`
+	UserAgent  *string                `json:"user_agent,omitempty"`
 	CreatedAt  string                 `json:"created_at"`
 }
 

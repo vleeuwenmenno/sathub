@@ -117,7 +117,6 @@ services:
     image: caddy:2-alpine
     ports:
       - "9999:9999"
-      - "4444:4444"
     volumes:
       - ./docker/Caddyfile.dev:/etc/caddy/Caddyfile
       - caddy_data:/data

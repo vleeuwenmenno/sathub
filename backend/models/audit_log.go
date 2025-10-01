@@ -105,8 +105,8 @@ type AuditLog struct {
 	TargetType AuditTargetType `gorm:"type:varchar(20);not null;index" json:"target_type"`
 	TargetID   string          `gorm:"type:varchar(100);index" json:"target_id,omitempty"`
 	Metadata   AuditMetadata   `gorm:"type:jsonb" json:"metadata,omitempty"`
-	IPAddress  string          `gorm:"type:inet;index" json:"ip_address,omitempty"`
-	UserAgent  string          `gorm:"type:text" json:"user_agent,omitempty"`
+	IPAddress  *string         `gorm:"type:inet;index" json:"ip_address,omitempty"`
+	UserAgent  *string         `gorm:"type:text" json:"user_agent,omitempty"`
 	CreatedAt  time.Time       `json:"created_at"`
 }
 

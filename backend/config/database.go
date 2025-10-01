@@ -20,7 +20,8 @@ func InitDatabase() {
 
 	// Configure GORM
 	config := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		// Logger: logger.Default.LogMode(logger.Info), // Uncomment for detailed SQL logging
+		Logger: logger.Default.LogMode(logger.Warn),
 	}
 
 	// Check database type from environment

@@ -32,8 +32,8 @@ func LogAuditEvent(c *gin.Context, action models.AuditAction, targetType models.
 		TargetType: targetType,
 		TargetID:   targetID,
 		Metadata:   metadata,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
+		IPAddress:  &ipAddress,
+		UserAgent:  &userAgent,
 	}
 
 	if userID != nil {
@@ -118,8 +118,8 @@ func LogAchievementUnlock(userID uuid.UUID, achievementID uuid.UUID, achievement
 			"achievement_id":   achievementID.String(),
 			"achievement_name": achievementName,
 		},
-		IPAddress: "", // Not available without context
-		UserAgent: "", // Not available without context
+		IPAddress: nil, // Not available without context
+		UserAgent: nil, // Not available without context
 	}
 
 	// Create audit log entry asynchronously to avoid blocking the main operation
