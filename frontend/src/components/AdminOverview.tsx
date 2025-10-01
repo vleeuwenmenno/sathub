@@ -158,35 +158,66 @@ const AdminOverview: React.FC = () => {
         </Grid>
 
         <Grid xs={12} sm={6} md={4} lg={2.4}>
-          <Card
-            onClick={() => navigate('/admin/audit-logs')}
-            sx={{
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg',
-              },
-            }}
-          >
-            <CardContent>
-              <Stack spacing={1}>
-                <Typography level="h4" color="primary">
-                  📋 Audit Logs
-                </Typography>
-                <Typography level="h1">
-                  View
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  System activity logs
-                </Typography>
-                <Typography level="body-xs" color="primary" sx={{ mt: 1 }}>
-                  Click to view logs →
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+           <Card
+             onClick={() => navigate('/admin/stations')}
+             sx={{
+               cursor: 'pointer',
+               transition: 'all 0.2s ease',
+               '&:hover': {
+                 transform: 'translateY(-2px)',
+                 boxShadow: 'lg',
+               },
+             }}
+           >
+             <CardContent>
+               <Stack spacing={1}>
+                 <Typography level="h4" color="primary">
+                   📍 Stations
+                 </Typography>
+                 <Typography level="h1">
+                   {stats?.total_stations.toLocaleString() || 0}
+                 </Typography>
+                 <Typography level="body-sm" color="neutral">
+                   Total registered stations
+                 </Typography>
+                 <Typography level="body-xs" color="primary" sx={{ mt: 1 }}>
+                   Click to view map →
+                 </Typography>
+               </Stack>
+             </CardContent>
+           </Card>
+         </Grid>
+
+         <Grid xs={12} sm={6} md={4} lg={2.4}>
+           <Card
+             onClick={() => navigate('/admin/audit-logs')}
+             sx={{
+               cursor: 'pointer',
+               transition: 'all 0.2s ease',
+               '&:hover': {
+                 transform: 'translateY(-2px)',
+                 boxShadow: 'lg',
+               },
+             }}
+           >
+             <CardContent>
+               <Stack spacing={1}>
+                 <Typography level="h4" color="primary">
+                   📋 Audit Logs
+                 </Typography>
+                 <Typography level="h1">
+                   View
+                 </Typography>
+                 <Typography level="body-sm" color="neutral">
+                   System activity logs
+                 </Typography>
+                 <Typography level="body-xs" color="primary" sx={{ mt: 1 }}>
+                   Click to view logs →
+                 </Typography>
+               </Stack>
+             </CardContent>
+           </Card>
+         </Grid>
       </Grid>
 
       <Box sx={{ mt: 4 }}>
