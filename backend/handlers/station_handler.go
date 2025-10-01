@@ -217,13 +217,6 @@ func CreateStation(c *gin.Context) {
 		return
 	}
 
-	// Check for achievements after station creation
-	go func() {
-		if _, err := utils.CheckAchievements(userID); err != nil {
-			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
-		}
-	}()
-
 	// Log station creation
 	utils.LogStationAction(c, models.ActionStationCreate, station.ID, models.AuditMetadata{
 		"name":      station.Name,
@@ -792,11 +785,6 @@ func StationHealth(c *gin.Context) {
 	if err := db.Where("id = ?", stationID).First(&station).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to get station information")
 		return
-	}
-
-	// Check for achievements after station health check
-	if _, err := utils.CheckAchievements(station.UserID); err != nil {
-		fmt.Printf("Failed to check achievements for user %s: %v\n", station.UserID, err)
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Health check successful", gin.H{

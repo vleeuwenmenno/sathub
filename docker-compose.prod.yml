@@ -69,11 +69,11 @@ services:
       migration:
         condition: service_completed_successfully
 
-  health-monitor-worker:
+  worker:
     image: ghcr.io/vleeuwenmenno/sathub/backend:latest
-    container_name: sathub-health-monitor-worker
+    container_name: sathub-worker
     restart: unless-stopped
-    command: ["./main", "health-monitor-worker"]
+    command: ["./main", "worker"]
     environment:
       - GIN_MODE=release
 
@@ -154,7 +154,7 @@ services:
       - WATCHTOWER_INCLUDE_STOPPED=false
       - REPO_USER=${REPO_USER}
       - REPO_PASS=${REPO_PASS}
-    command: --interval 30 --cleanup --include-stopped=false sathub-backend sathub-health-monitor-worker sathub-frontend
+    command: --interval 30 --cleanup --include-stopped=false sathub-backend sathub-worker sathub-frontend
     networks:
       - sathub
 

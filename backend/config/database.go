@@ -20,7 +20,8 @@ func InitDatabase() {
 
 	// Configure GORM
 	config := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		// Logger: logger.Default.LogMode(logger.Info), // Uncomment for detailed SQL logging
+		Logger: logger.Default.LogMode(logger.Warn),
 	}
 
 	// Check database type from environment
@@ -128,7 +129,7 @@ func CloseDatabase() {
 	}
 
 	if err := sqlDB.Close(); err != nil {
-		log.Printf("Error closing database: %v", err)
+		log.Printf("Error closing database connection: %v", err)
 	} else {
 		log.Println("Database connection closed")
 	}

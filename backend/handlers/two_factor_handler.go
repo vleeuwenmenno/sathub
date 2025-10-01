@@ -363,9 +363,21 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		return
 	}
 
-	// Create refresh token record
+	// Generate UUID for the refresh token record
+	tokenID := uuid.New().String()
+
+	// Generate the refresh token with the predetermined ID
+	refreshToken, err := utils.GenerateRefreshToken(tokenID, user.ID.String())
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to generate refresh token")
+		return
+	}
+
+	// Create refresh token record with the token already set
 	refreshTokenRecord := models.RefreshToken{
+		ID:        tokenID,
 		UserID:    user.ID,
+		Token:     refreshToken,
 		ExpiresAt: time.Now().Add(utils.RefreshTokenExpiry),
 	}
 
@@ -373,16 +385,6 @@ func VerifyTwoFactorCode(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to create refresh token")
 		return
 	}
-
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID.String())
-	if err != nil {
-		utils.InternalErrorResponse(c, "Failed to generate refresh token")
-		return
-	}
-
-	// Update refresh token record with the actual token
-	refreshTokenRecord.Token = refreshToken
-	db.Save(&refreshTokenRecord)
 
 	response := AuthResponse{
 		AccessToken:  accessToken,
@@ -600,9 +602,21 @@ func VerifyRecoveryCode(c *gin.Context) {
 		return
 	}
 
-	// Create refresh token record
+	// Generate UUID for the refresh token record
+	tokenID := uuid.New().String()
+
+	// Generate the refresh token with the predetermined ID
+	refreshToken, err := utils.GenerateRefreshToken(tokenID, validUser.ID.String())
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to generate refresh token")
+		return
+	}
+
+	// Create refresh token record with the token already set
 	refreshTokenRecord := models.RefreshToken{
+		ID:        tokenID,
 		UserID:    validUser.ID,
+		Token:     refreshToken,
 		ExpiresAt: time.Now().Add(utils.RefreshTokenExpiry),
 	}
 
@@ -610,16 +624,6 @@ func VerifyRecoveryCode(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to create refresh token")
 		return
 	}
-
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, validUser.ID.String())
-	if err != nil {
-		utils.InternalErrorResponse(c, "Failed to generate refresh token")
-		return
-	}
-
-	// Update refresh token record with the actual token
-	refreshTokenRecord.Token = refreshToken
-	db.Save(&refreshTokenRecord)
 
 	response := AuthResponse{
 		AccessToken:  accessToken,

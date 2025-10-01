@@ -135,14 +135,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Check for achievements after user creation
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			// Log error but don't fail registration
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
-		}
-	}()
-
 	// Generate email confirmation token
 	confirmToken := utils.GenerateRandomString(32)
 
@@ -170,13 +162,6 @@ func Register(c *gin.Context) {
 		"email":    user.Email.String,
 		"role":     user.Role,
 	})
-
-	// Check for achievements after comment creation
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.ID, err)
-		}
-	}()
 
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully. Please check your email to confirm your account.", nil)
 }
@@ -257,9 +242,21 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Create refresh token record
+	// Generate UUID for the refresh token record
+	tokenID := uuid.New().String()
+
+	// Generate the refresh token with the predetermined ID
+	refreshToken, err := utils.GenerateRefreshToken(tokenID, user.ID.String())
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to generate refresh token")
+		return
+	}
+
+	// Create refresh token record with the token already set
 	refreshTokenRecord := models.RefreshToken{
+		ID:        tokenID,
 		UserID:    user.ID,
+		Token:     refreshToken,
 		ExpiresAt: time.Now().Add(utils.RefreshTokenExpiry),
 	}
 
@@ -267,16 +264,6 @@ func Login(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to create refresh token")
 		return
 	}
-
-	refreshToken, err := utils.GenerateRefreshToken(refreshTokenRecord.ID, user.ID.String())
-	if err != nil {
-		utils.InternalErrorResponse(c, "Failed to generate refresh token")
-		return
-	}
-
-	// Update refresh token record with the actual token
-	refreshTokenRecord.Token = refreshToken
-	db.Save(&refreshTokenRecord)
 
 	response := AuthResponse{
 		AccessToken:  accessToken,
@@ -294,14 +281,6 @@ func Login(c *gin.Context) {
 			StationEmailNotifications: user.StationEmailNotifications,
 		},
 	}
-
-	// Check for achievements after successful login
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			// Log error but don't fail login
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
-		}
-	}()
 
 	// Log successful login
 	utils.LogUserAction(c, models.ActionUserLogin, user.ID, models.AuditMetadata{
@@ -359,8 +338,21 @@ func RefreshTokens(c *gin.Context) {
 	// Delete old refresh token and create new one (token rotation)
 	db.Delete(&refreshTokenRecord)
 
+	// Generate UUID for the new refresh token record
+	newTokenID := uuid.New().String()
+
+	// Generate the refresh token with the predetermined ID
+	newRefreshToken, err := utils.GenerateRefreshToken(newTokenID, user.ID.String())
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to generate refresh token")
+		return
+	}
+
+	// Create the refresh token record with the token already set
 	newRefreshTokenRecord := models.RefreshToken{
+		ID:        newTokenID,
 		UserID:    user.ID,
+		Token:     newRefreshToken,
 		ExpiresAt: time.Now().Add(utils.RefreshTokenExpiry),
 	}
 
@@ -368,16 +360,6 @@ func RefreshTokens(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to create refresh token")
 		return
 	}
-
-	newRefreshToken, err := utils.GenerateRefreshToken(newRefreshTokenRecord.ID, user.ID.String())
-	if err != nil {
-		utils.InternalErrorResponse(c, "Failed to generate refresh token")
-		return
-	}
-
-	// Update refresh token record with the actual token
-	newRefreshTokenRecord.Token = newRefreshToken
-	db.Save(&newRefreshTokenRecord)
 
 	response := AuthResponse{
 		AccessToken:  accessToken,

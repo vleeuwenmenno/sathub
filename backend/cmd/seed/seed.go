@@ -59,8 +59,8 @@ func runSeed(cmd *cobra.Command, args []string) {
 		utils.Logger.Info().Msg("Running 85% uptime test scenario")
 		err = seed.TestScenario85PercentUptime()
 	} else {
-		utils.Logger.Info().Msg("Running auto-seed for essential data")
-		err = seed.AutoSeed()
+		utils.Logger.Info().Msg("Running development seed")
+		err = seed.DevelopmentSeed()
 	}
 
 	if err != nil {

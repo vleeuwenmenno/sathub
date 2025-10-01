@@ -177,23 +177,15 @@ func CreateComment(c *gin.Context) {
 	}
 
 	// Debug logging
-	fmt.Printf("Creating comment: UserID=%d, PostID=%d, Content=%s\n",
-		userID, uint(postID), req.Content)
+	utils.Logger.Info().Str("user_id", userID.String()).Uint("post_id", uint(postID)).Str("content", req.Content).Msg("Creating comment")
 
 	if err := db.Create(&comment).Error; err != nil {
-		fmt.Printf("Failed to create comment: %v\n", err)
+		utils.Logger.Error().Err(err).Msg("Failed to create comment")
 		utils.InternalErrorResponse(c, "Failed to create comment")
 		return
 	}
 
-	fmt.Printf("Comment created successfully with ID: %d\n", comment.ID)
-
-	// Check for achievements after comment creation
-	go func() {
-		if _, err := utils.CheckAchievements(userID); err != nil {
-			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
-		}
-	}()
+	utils.Logger.Info().Str("comment_id", comment.ID.String()).Msg("Comment created successfully")
 
 	// Create notification for post owner if commenter is not the owner
 	if post.Station.UserID.String() != userIDStr {
@@ -201,7 +193,7 @@ func CreateComment(c *gin.Context) {
 			// Load the commenter's user data
 			var commenter models.User
 			if err := db.Where("id = ?", userID).First(&commenter).Error; err != nil {
-				fmt.Printf("Failed to get commenter info: %v\n", err)
+				utils.Logger.Error().Err(err).Msg("Failed to get commenter info")
 				return
 			}
 
@@ -220,7 +212,7 @@ func CreateComment(c *gin.Context) {
 			}
 
 			if err := db.Create(&notification).Error; err != nil {
-				fmt.Printf("Failed to create comment notification: %v\n", err)
+				utils.Logger.Error().Err(err).Msg("Failed to create comment notification")
 			}
 
 			// Send email notification if user has email notifications enabled
@@ -228,7 +220,7 @@ func CreateComment(c *gin.Context) {
 			if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
 				go func() {
 					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, commenterName); err != nil {
-						fmt.Printf("Failed to send comment email notification: %v\n", err)
+						utils.Logger.Error().Err(err).Msg("Failed to send comment email notification")
 					}
 				}()
 			}

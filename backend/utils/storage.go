@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 	"sathub-ui-backend/config"
 	"strings"
@@ -21,7 +20,7 @@ var s3Client *s3.Client
 func InitStorage() {
 	cfg := config.GetStorageConfig()
 
-	log.Printf("Initializing storage: type=%s, endpoint=%s, bucket=%s", cfg.Type, cfg.Endpoint, cfg.Bucket)
+	Logger.Info().Str("type", cfg.Type).Str("endpoint", cfg.Endpoint).Str("bucket", cfg.Bucket).Msg("Initializing storage")
 
 	// Create S3 client (works with MinIO)
 	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
@@ -42,29 +41,29 @@ func InitStorage() {
 
 	// Ensure bucket exists
 	ensureBucketExists(cfg.Bucket)
-	log.Println("Storage initialized successfully")
+	Logger.Info().Msg("Storage initialized successfully")
 }
 
 // ensureBucketExists creates the bucket if it doesn't exist and sets public read policy
 func ensureBucketExists(bucketName string) {
-	log.Printf("Checking if bucket %s exists", bucketName)
+	Logger.Info().Str("bucket", bucketName).Msg("Checking if bucket exists")
 	_, err := s3Client.HeadBucket(context.TODO(), &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	})
 
 	if err != nil {
-		log.Printf("Bucket %s doesn't exist, creating it", bucketName)
+		Logger.Info().Str("bucket", bucketName).Msg("Bucket doesn't exist, creating it")
 		// Bucket doesn't exist, create it
 		_, err := s3Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 			Bucket: aws.String(bucketName),
 		})
 		if err != nil {
-			log.Printf("Failed to create bucket %s: %v", bucketName, err)
+			Logger.Error().Err(err).Str("bucket", bucketName).Msg("Failed to create bucket")
 			return
 		}
-		log.Printf("Successfully created bucket %s", bucketName)
+		Logger.Info().Str("bucket", bucketName).Msg("Successfully created bucket")
 	} else {
-		log.Printf("Bucket %s already exists", bucketName)
+		Logger.Info().Str("bucket", bucketName).Msg("Bucket already exists")
 	}
 
 	// Set bucket policy to allow public read access
@@ -80,16 +79,16 @@ func ensureBucketExists(bucketName string) {
 		]
 	}`
 
-	log.Printf("Setting public read policy for bucket %s", bucketName)
+	Logger.Info().Str("bucket", bucketName).Msg("Setting public read policy for bucket")
 	_, err = s3Client.PutBucketPolicy(context.TODO(), &s3.PutBucketPolicyInput{
 		Bucket: aws.String(bucketName),
 		Policy: aws.String(policy),
 	})
 
 	if err != nil {
-		log.Printf("Failed to set bucket policy for %s: %v", bucketName, err)
+		Logger.Error().Err(err).Str("bucket", bucketName).Msg("Failed to set bucket policy")
 	} else {
-		log.Printf("Successfully set public read policy for bucket %s", bucketName)
+		Logger.Info().Str("bucket", bucketName).Msg("Successfully set public read policy for bucket")
 	}
 }
 
@@ -104,7 +103,7 @@ func UploadImage(data []byte, filename string, contentType string, postID uint) 
 
 	key := fmt.Sprintf("images/post-%d/%s", postID, uniqueName)
 
-	log.Printf("Uploading image to MinIO: bucket=%s, key=%s, endpoint=%s", cfg.Bucket, key, cfg.Endpoint)
+	Logger.Info().Str("bucket", cfg.Bucket).Str("key", key).Str("endpoint", cfg.Endpoint).Msg("Uploading image to MinIO")
 
 	// Upload to S3/MinIO
 	_, err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -115,11 +114,11 @@ func UploadImage(data []byte, filename string, contentType string, postID uint) 
 	})
 
 	if err != nil {
-		log.Printf("Failed to upload image to MinIO: %v", err)
+		Logger.Error().Err(err).Msg("Failed to upload image to MinIO")
 		return "", fmt.Errorf("failed to upload image: %w", err)
 	}
 
-	log.Printf("Successfully uploaded image: %s", key)
+	Logger.Info().Str("key", key).Msg("Successfully uploaded image")
 
 	// Return the URL
 	url := fmt.Sprintf("%s/%s/%s", cfg.Endpoint, cfg.Bucket, key)

@@ -67,7 +67,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("SatHub Data Client v%s\n", VERSION)
+		logger.Info().Str("version", VERSION).Msg("SatHub Data Client")
 	},
 }
 
@@ -232,16 +232,16 @@ func installBinary() error {
 			if len(matches) > 1 {
 				installedVersion := matches[1]
 				if compareVersions(VERSION, installedVersion) <= 0 {
-					fmt.Printf("Current version (%s) is not newer than installed version (%s)\n", VERSION, installedVersion)
-					fmt.Println("Installation cancelled.")
+					logger.Info().Str("current_version", VERSION).Str("installed_version", installedVersion).Msg("Current version is not newer than installed version")
+					logger.Info().Msg("Installation cancelled.")
 					return nil
 				}
-				fmt.Printf("Upgrading from version %s to %s\n", installedVersion, VERSION)
+				logger.Info().Str("from", installedVersion).Str("to", VERSION).Msg("Upgrading")
 			}
 		}
 	}
 
-	fmt.Printf("Installing sathub-client v%s to %s...\n", VERSION, targetPath)
+	logger.Info().Str("version", VERSION).Str("path", targetPath).Msg("Installing sathub-client")
 
 	// Copy current executable to target path
 	if err := copyFile(currentExe, targetPath); err != nil {
@@ -253,8 +253,8 @@ func installBinary() error {
 		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
 
-	fmt.Println("Installation completed successfully!")
-	fmt.Printf("You can now run 'sathub-client' from anywhere.\n")
+	logger.Info().Msg("Installation completed successfully!")
+	logger.Info().Msg("You can now run 'sathub-client' from anywhere.")
 	return nil
 }
 
@@ -352,8 +352,8 @@ func installService() error {
 
 // updateServiceToken updates only the token in an existing service file
 func updateServiceToken(servicePath, currentToken string) error {
-	fmt.Printf("Current token: %s\n", maskToken(currentToken))
-	fmt.Print("Enter new station token: ")
+	logger.Info().Str("current_token", maskToken(currentToken)).Msg("Current token")
+	logger.Info().Msg("Enter new station token: ")
 	reader := bufio.NewReader(os.Stdin)
 	newToken, _ := reader.ReadString('\n')
 	newToken = strings.TrimSpace(newToken)

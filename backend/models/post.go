@@ -49,3 +49,17 @@ type PostCBOR struct {
 func (PostCBOR) TableName() string {
 	return "post_cbors"
 }
+
+type PostCADU struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	PostID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"post_id"`
+	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
+	CADUData  []byte    `gorm:"not null" json:"-"` // CADU binary data
+	Filename  string    `gorm:"not null" json:"filename"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// TableName returns the table name for PostCADU model
+func (PostCADU) TableName() string {
+	return "post_cadus"
+}
