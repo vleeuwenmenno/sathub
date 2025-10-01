@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/models"
 	"time"
@@ -27,7 +26,7 @@ type AchievementResult struct {
 
 // CheckAchievements checks all achievements for a user and awards any newly unlocked ones
 func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
-	log.Printf("DEBUG: Checking achievements for user %s", userID)
+	Logger.Debug().Str("user_id", userID.String()).Msg("Checking achievements for user")
 	db := config.GetDB()
 
 	// Get all achievements
@@ -59,7 +58,7 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 		// Parse criteria
 		var criteria AchievementCriteria
 		if err := json.Unmarshal([]byte(achievement.Criteria), &criteria); err != nil {
-			log.Printf("Failed to parse criteria for achievement %s: %v", achievement.Name, err)
+			Logger.Error().Err(err).Str("achievement", achievement.Name).Msg("Failed to parse criteria for achievement")
 			continue
 		}
 
@@ -73,13 +72,13 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 			}
 
 			if err := db.Create(&userAchievement).Error; err != nil {
-				log.Printf("Failed to award achievement %s to user %s: %v", achievement.Name, userID, err)
+				Logger.Error().Err(err).Str("achievement", achievement.Name).Str("user_id", userID.String()).Msg("Failed to award achievement to user")
 				continue
 			}
 
 			// Log the achievement unlock for audit purposes
 			if err := LogAchievementUnlock(userID, achievement.ID, achievement.Name); err != nil {
-				log.Printf("Failed to log achievement unlock for %s: %v", achievement.Name, err)
+				Logger.Error().Err(err).Str("achievement", achievement.Name).Msg("Failed to log achievement unlock")
 			}
 
 			newAchievements = append(newAchievements, AchievementResult{
@@ -100,7 +99,7 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 			}
 
 			if err := db.Create(&notification).Error; err != nil {
-				log.Printf("Failed to create notification for achievement %s: %v", achievement.Name, err)
+				Logger.Error().Err(err).Str("achievement", achievement.Name).Msg("Failed to create notification for achievement")
 			}
 
 			// Send email notification if user has email notifications enabled
@@ -110,7 +109,7 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				achievementDesc := achievement.Description
 				go func() {
 					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievementName, achievementDesc); err != nil {
-						log.Printf("Failed to send achievement email notification: %v", err)
+						Logger.Error().Err(err).Msg("Failed to send achievement email notification")
 					}
 				}()
 			}
@@ -193,7 +192,7 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 		return checkStationUptimeCriteria(userID, criteria)
 
 	default:
-		log.Printf("Unknown achievement criteria type: %s", criteria.Type)
+		Logger.Warn().Str("criteria_type", criteria.Type).Msg("Unknown achievement criteria type")
 		return false
 	}
 }
@@ -205,7 +204,7 @@ func checkStationUptimeCriteria(userID uuid.UUID, criteria AchievementCriteria) 
 	// Get all stations for this user
 	var stations []models.Station
 	if err := db.Where("user_id = ?", userID).Find(&stations).Error; err != nil {
-		log.Printf("Failed to get stations for user %s: %v", userID, err)
+		Logger.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to get stations for user")
 		return false
 	}
 
@@ -230,36 +229,36 @@ func checkSingleStationUptime(stationID string, criteria AchievementCriteria) bo
 	// Calculate the start date based on period_days
 	startDate := time.Now().AddDate(0, 0, -criteria.PeriodDays)
 
-	log.Printf("DEBUG: Checking station %s for %d days, startDate: %v, now: %v", stationID, criteria.PeriodDays, startDate, time.Now())
+	Logger.Debug().Str("station_id", stationID).Int("period_days", criteria.PeriodDays).Time("start_date", startDate).Msg("Checking station uptime")
 
 	// Get uptime records for the station within the time range
 	var uptimes []models.StationUptime
 	if err := db.Where("station_id = ? AND timestamp >= ?", stationID, startDate).Order("timestamp ASC").Find(&uptimes).Error; err != nil {
-		log.Printf("Failed to get uptime data for station %s: %v", stationID, err)
+		Logger.Error().Err(err).Str("station_id", stationID).Msg("Failed to get uptime data for station")
 		return false
 	}
 
-	log.Printf("DEBUG: Found %d uptime records for station %s", len(uptimes), stationID)
+	Logger.Debug().Int("count", len(uptimes)).Str("station_id", stationID).Msg("Found uptime records for station")
 
 	if len(uptimes) == 0 {
 		return false
 	}
 
-	log.Printf("DEBUG: First record timestamp: %v, startDate: %v, After check: %v", uptimes[0].Timestamp, startDate, uptimes[0].Timestamp.After(startDate))
+	Logger.Debug().Time("first_record", uptimes[0].Timestamp).Time("start_date", startDate).Bool("after_check", uptimes[0].Timestamp.After(startDate)).Msg("First record details")
 
 	// Check if the station has been running for most of the required period
 	// Allow a small tolerance (e.g., 90% of the period) to account for timing variations
 	minRequiredPeriod := time.Duration(float64(criteria.PeriodDays) * 24 * float64(time.Hour) * 0.9) // 90% of period
 	actualRunningTime := time.Since(uptimes[0].Timestamp)
 	if actualRunningTime < minRequiredPeriod {
-		log.Printf("DEBUG: Station %s hasn't been running long enough (running for %v, need at least %v)", stationID, actualRunningTime, minRequiredPeriod)
+		Logger.Debug().Str("station_id", stationID).Dur("running_time", actualRunningTime).Dur("min_required", minRequiredPeriod).Msg("Station hasn't been running long enough")
 		return false
 	}
 
 	// Get the station to get online_threshold
 	var station models.Station
 	if err := db.Where("id = ?", stationID).First(&station).Error; err != nil {
-		log.Printf("Failed to get station %s: %v", stationID, err)
+		Logger.Error().Err(err).Str("station_id", stationID).Msg("Failed to get station")
 		return false
 	}
 
@@ -306,7 +305,7 @@ func checkSingleStationUptime(stationID string, criteria AchievementCriteria) bo
 		uptimePercentage = (float64(onlineTimeMs) / float64(totalPeriodMs)) * 100
 	}
 
-	log.Printf("DEBUG: Station %s uptime percentage: %.2f%% (required: %.2f%%)", stationID, uptimePercentage, criteria.UptimePercent)
+	Logger.Debug().Str("station_id", stationID).Float64("uptime_percent", uptimePercentage).Float64("required_percent", criteria.UptimePercent).Msg("Station uptime percentage")
 
 	return uptimePercentage >= criteria.UptimePercent
 }

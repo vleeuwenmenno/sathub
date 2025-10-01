@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/models"
+	"sathub-ui-backend/utils"
 )
 
 // seedAchievements creates the predefined achievements
@@ -186,14 +187,14 @@ func seedAchievements() error {
 			if err := db.Save(&existing).Error; err != nil {
 				return fmt.Errorf("failed to update achievement %s: %w", achievement.Name, err)
 			}
-			fmt.Printf("Updated achievement: %s\n", achievement.Name)
+			utils.Logger.Info().Str("achievement", achievement.Name).Msg("Updated achievement")
 			continue
 		}
 
 		if err := db.Create(&achievement).Error; err != nil {
 			return fmt.Errorf("failed to create achievement %s: %w", achievement.Name, err)
 		}
-		fmt.Printf("Created achievement: %s\n", achievement.Name)
+		utils.Logger.Info().Str("achievement", achievement.Name).Msg("Created achievement")
 	}
 
 	return nil

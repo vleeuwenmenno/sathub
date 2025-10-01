@@ -6,6 +6,7 @@ import (
 
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/models"
+	"sathub-ui-backend/utils"
 )
 
 // AutoSeed checks for missing essential data and seeds it automatically
@@ -20,17 +21,14 @@ func AutoSeed() error {
 	}
 
 	if count == 0 {
-		fmt.Println("No achievements found, seeding achievements...")
+		utils.Logger.Info().Msg("No achievements found, seeding achievements")
 		if err := seedAchievements(); err != nil {
 			return fmt.Errorf("failed to auto-seed achievements: %w", err)
 		}
-		fmt.Println("Achievements auto-seeded successfully!")
+		utils.Logger.Info().Msg("Achievements auto-seeded successfully")
 	} else {
-		fmt.Printf("Achievements already exist (%d found), skipping auto-seed\n", count)
+		utils.Logger.Info().Int64("count", count).Msg("Achievements already exist, skipping auto-seed")
 	}
-
-	// Future: Add checks for other essential data here
-	// e.g., check for admin user, default settings, etc.
 
 	return nil
 }
@@ -40,7 +38,7 @@ func AutoSeed() error {
 func TestScenario85PercentUptime() error {
 	db := config.GetDB()
 
-	fmt.Println("Creating test user and station with 85% uptime...")
+	utils.Logger.Info().Msg("Creating test user and station with 85% uptime")
 
 	// Create a test user
 	testUser := models.User{
@@ -60,7 +58,7 @@ func TestScenario85PercentUptime() error {
 		return fmt.Errorf("failed to create test user: %w", err)
 	}
 
-	fmt.Printf("Created test user: %s (ID: %s)\n", testUser.Username, testUser.ID.String())
+	utils.Logger.Info().Str("username", testUser.Username).Str("id", testUser.ID.String()).Msg("Created test user")
 
 	// Create a test station
 	testStation := models.Station{
@@ -76,7 +74,7 @@ func TestScenario85PercentUptime() error {
 		return fmt.Errorf("failed to create test station: %w", err)
 	}
 
-	fmt.Printf("Created test station: %s (ID: %s)\n", testStation.Name, testStation.ID)
+	utils.Logger.Info().Str("name", testStation.Name).Str("id", testStation.ID).Msg("Created test station")
 
 	// Generate uptime data for exactly 7 days with 85% uptime
 	// 85% uptime means 15% downtime over 7 days
@@ -90,7 +88,7 @@ func TestScenario85PercentUptime() error {
 	now := time.Now()
 	startTime := now.AddDate(0, 0, -7) // 7 days ago
 
-	fmt.Println("Generating 85% uptime health check data...")
+	utils.Logger.Info().Msg("Generating 85% uptime health check data")
 
 	// Generate health checks with controlled downtime to achieve exactly 85% uptime
 	currentTime := startTime
@@ -98,8 +96,7 @@ func TestScenario85PercentUptime() error {
 	onlineMinutes := int(float64(totalMinutes) * 0.85) // 8568 minutes
 	offlineMinutes := totalMinutes - onlineMinutes     // 1512 minutes
 
-	fmt.Printf("Target: %d minutes online, %d minutes offline over %d total minutes\n",
-		onlineMinutes, offlineMinutes, totalMinutes)
+	utils.Logger.Info().Int("online_minutes", onlineMinutes).Int("offline_minutes", offlineMinutes).Int("total_minutes", totalMinutes).Msg("Target uptime parameters")
 
 	// Create periods of uptime followed by downtime
 	uptimeRecords := []models.StationUptime{}
@@ -126,7 +123,7 @@ func TestScenario85PercentUptime() error {
 			numChecks = 1
 		}
 
-		fmt.Printf("Creating uptime period: %d checks over %d minutes\n", numChecks, uptimePeriodMinutes)
+		utils.Logger.Info().Int("num_checks", numChecks).Int("minutes", uptimePeriodMinutes).Msg("Creating uptime period")
 
 		for i := 0; i < numChecks && minutesProcessed < totalMinutes; i++ {
 			uptimeRecord := models.StationUptime{
@@ -150,7 +147,7 @@ func TestScenario85PercentUptime() error {
 				downtimeMinutes = totalMinutes - minutesProcessed
 			}
 
-			fmt.Printf("Creating downtime period: %d minutes\n", downtimeMinutes)
+			utils.Logger.Info().Int("minutes", downtimeMinutes).Msg("Creating downtime period")
 			currentTime = currentTime.Add(time.Duration(downtimeMinutes) * time.Minute)
 			minutesProcessed += downtimeMinutes
 		}
@@ -163,18 +160,18 @@ func TestScenario85PercentUptime() error {
 		}
 	}
 
-	fmt.Printf("Created %d uptime records for 85%% target uptime\n", len(uptimeRecords))
+	utils.Logger.Info().Int("count", len(uptimeRecords)).Msg("Created uptime records for 85% target uptime")
 
 	// Seed achievements
-	fmt.Println("Seeding achievements...")
+	utils.Logger.Info().Msg("Seeding achievements")
 	if err := seedAchievements(); err != nil {
 		return fmt.Errorf("failed to seed achievements: %w", err)
 	}
 
-	fmt.Println("Test scenario completed!")
-	fmt.Printf("Test user: %s\n", testUser.Username)
-	fmt.Printf("Test station: %s (ID: %s)\n", testStation.Name, testStation.ID)
-	fmt.Printf("Uptime records: %d\n", len(uptimeRecords))
+	utils.Logger.Info().Msg("Test scenario completed")
+	utils.Logger.Info().Str("username", testUser.Username).Msg("Test user")
+	utils.Logger.Info().Str("name", testStation.Name).Str("id", testStation.ID).Msg("Test station")
+	utils.Logger.Info().Int("count", len(uptimeRecords)).Msg("Uptime records")
 
 	return nil
 }
@@ -184,7 +181,7 @@ func TestScenario85PercentUptime() error {
 func TestScenario90PercentUptime() error {
 	db := config.GetDB()
 
-	fmt.Println("Finding existing test station from 85% scenario...")
+	utils.Logger.Info().Msg("Finding existing test station from 85% scenario")
 
 	// Find the existing test station (should be the one from 85% scenario)
 	// Look for a station with "Test Station 85%" name
@@ -193,7 +190,7 @@ func TestScenario90PercentUptime() error {
 		return fmt.Errorf("failed to find test station with name 'Test Station 85%%': %w", err)
 	}
 
-	fmt.Printf("Found test station: %s (ID: %s)\n", testStation.Name, testStation.ID)
+	utils.Logger.Info().Str("name", testStation.Name).Str("id", testStation.ID).Msg("Found test station")
 
 	// Get all existing uptime records
 	var existingRecords []models.StationUptime
@@ -201,7 +198,7 @@ func TestScenario90PercentUptime() error {
 		return fmt.Errorf("failed to get existing uptime records: %w", err)
 	}
 
-	fmt.Printf("Found %d existing uptime records\n", len(existingRecords))
+	utils.Logger.Info().Int("count", len(existingRecords)).Msg("Found existing uptime records")
 
 	if len(existingRecords) == 0 {
 		return fmt.Errorf("no existing uptime records found for test station")
@@ -244,23 +241,23 @@ func TestScenario90PercentUptime() error {
 		currentUptimePercent = (float64(currentOnlineTimeMs) / float64(totalPeriodMs)) * 100
 	}
 
-	fmt.Printf("Current uptime: %.2f%%\n", currentUptimePercent)
-	fmt.Printf("Target uptime: 90.5%%\n")
+	utils.Logger.Info().Float64("uptime_percent", currentUptimePercent).Msg("Current uptime")
+	utils.Logger.Info().Msg("Target uptime: 90.5%")
 
 	// If already at or above 90.5%, we're done
 	if currentUptimePercent >= 90.5 {
-		fmt.Println("Station already meets 90.5% uptime requirement!")
+		utils.Logger.Info().Msg("Station already meets 90.5% uptime requirement")
 		return nil
 	}
 
 	// Find gaps longer than the threshold where we can add health checks
-	fmt.Println("Finding downtime gaps to fill...")
+	utils.Logger.Info().Msg("Finding downtime gaps to fill")
 
 	newRecords := []models.StationUptime{}
 	targetOnlineTimeMs := int64(float64(totalPeriodMs) * 0.905) // 90.5% of total period
 	additionalOnlineTimeNeeded := targetOnlineTimeMs - currentOnlineTimeMs
 
-	fmt.Printf("Current uptime: %.2f%%, need to add %d milliseconds of online time\n", currentUptimePercent, additionalOnlineTimeNeeded)
+	utils.Logger.Info().Float64("current_uptime", currentUptimePercent).Int64("additional_time_ms", additionalOnlineTimeNeeded).Msg("Uptime analysis")
 
 	// Look for gaps between existing records and fill them
 	for i := 0; i < len(existingRecords)-1 && additionalOnlineTimeNeeded > 0; i++ {
@@ -282,8 +279,7 @@ func TestScenario90PercentUptime() error {
 				// Calculate how many 5-minute health checks we can add in this gap
 				numChecksToAdd := int(fillMs / (5 * 60 * 1000)) // 5 minutes in milliseconds
 				if numChecksToAdd > 0 {
-					fmt.Printf("Found gap of %.1f minutes, adding %d health checks\n",
-						gapDuration.Minutes(), numChecksToAdd)
+					utils.Logger.Info().Float32("gap_minutes", float32(gapDuration.Minutes())).Int("num_checks", numChecksToAdd).Msg("Found gap, adding health checks")
 
 					// Add health checks starting just after the threshold
 					checkTime := currentTime.Add(time.Duration(testStation.OnlineThreshold) * time.Minute)
@@ -304,7 +300,7 @@ func TestScenario90PercentUptime() error {
 
 	// If we still need more online time and couldn't fill all gaps, add records at the end
 	if additionalOnlineTimeNeeded > 0 {
-		fmt.Printf("Still need %d milliseconds of online time, adding at the end\n", additionalOnlineTimeNeeded)
+		utils.Logger.Info().Int64("additional_time_ms", additionalOnlineTimeNeeded).Msg("Still need online time, adding at the end")
 		checksToAdd := int(float64(additionalOnlineTimeNeeded)/(5*60*1000)) + 1
 		currentTime := existingRecords[len(existingRecords)-1].Timestamp.Add(5 * time.Minute)
 
@@ -319,11 +315,11 @@ func TestScenario90PercentUptime() error {
 	}
 
 	if len(newRecords) == 0 {
-		fmt.Println("No gaps found to fill and no additional time needed")
+		utils.Logger.Info().Msg("No gaps found to fill and no additional time needed")
 		return nil
 	}
 
-	fmt.Printf("Adding %d new health check records to fill gaps\n", len(newRecords))
+	utils.Logger.Info().Int("count", len(newRecords)).Msg("Adding new health check records to fill gaps")
 
 	// Create the new uptime records in the database
 	for _, record := range newRecords {
@@ -332,17 +328,17 @@ func TestScenario90PercentUptime() error {
 		}
 	}
 
-	fmt.Printf("Created %d additional uptime records\n", len(newRecords))
+	utils.Logger.Info().Int("count", len(newRecords)).Msg("Created additional uptime records")
 
 	// Update achievements (in case the new records trigger achievements)
-	fmt.Println("Updating achievements...")
+	utils.Logger.Info().Msg("Updating achievements")
 	if err := seedAchievements(); err != nil {
 		return fmt.Errorf("failed to update achievements: %w", err)
 	}
 
-	fmt.Println("90.5% uptime test scenario completed!")
-	fmt.Printf("Test station: %s (ID: %s)\n", testStation.Name, testStation.ID)
-	fmt.Printf("Added %d new records to reach 90.5%% uptime\n", len(newRecords))
+	utils.Logger.Info().Msg("90.5% uptime test scenario completed")
+	utils.Logger.Info().Str("name", testStation.Name).Str("id", testStation.ID).Msg("Test station")
+	utils.Logger.Info().Int("count", len(newRecords)).Msg("Added new records to reach 90.5% uptime")
 
 	return nil
 }
@@ -355,16 +351,16 @@ func TestScenario90PercentUptime() error {
 func DevelopmentSeed() error {
 	db := config.GetDB()
 
-	fmt.Println("Checking if development seed already exists...")
+	utils.Logger.Info().Msg("Checking if development seed already exists")
 
 	// Check if test_user already exists
 	var existingUser models.User
 	if err := db.Where("username = ?", "test_user").First(&existingUser).Error; err == nil {
-		fmt.Println("Development seed already exists, skipping")
+		utils.Logger.Info().Msg("Development seed already exists, skipping")
 		return nil
 	}
 
-	fmt.Println("Creating development seed users...")
+	utils.Logger.Info().Msg("Creating development seed users")
 
 	// Create test_user
 	testUser := models.User{
@@ -384,7 +380,7 @@ func DevelopmentSeed() error {
 		return fmt.Errorf("failed to create test_user: %w", err)
 	}
 
-	fmt.Printf("Created test_user: %s (ID: %s)\n", testUser.Username, testUser.ID.String())
+	utils.Logger.Info().Str("username", testUser.Username).Str("id", testUser.ID.String()).Msg("Created test_user")
 
 	// Create test_admin
 	testAdmin := models.User{
@@ -404,7 +400,7 @@ func DevelopmentSeed() error {
 		return fmt.Errorf("failed to create test_admin: %w", err)
 	}
 
-	fmt.Printf("Created test_admin: %s (ID: %s)\n", testAdmin.Username, testAdmin.ID.String())
+	utils.Logger.Info().Str("username", testAdmin.Username).Str("id", testAdmin.ID.String()).Msg("Created test_admin")
 
 	// Create pending_user
 	pendingUser := models.User{
@@ -424,10 +420,10 @@ func DevelopmentSeed() error {
 		return fmt.Errorf("failed to create pending_user: %w", err)
 	}
 
-	fmt.Printf("Created pending_user: %s (ID: %s)\n", pendingUser.Username, pendingUser.ID.String())
+	utils.Logger.Info().Str("username", pendingUser.Username).Str("id", pendingUser.ID.String()).Msg("Created pending_user")
 
 	// Create station and uptime data for test_user (same as TestScenario85PercentUptime)
-	fmt.Println("Creating test station with 85% uptime for test_user...")
+	utils.Logger.Info().Msg("Creating test station with 85% uptime for test_user")
 
 	testStation := models.Station{
 		UserID:          testUser.ID,
@@ -442,21 +438,20 @@ func DevelopmentSeed() error {
 		return fmt.Errorf("failed to create test station: %w", err)
 	}
 
-	fmt.Printf("Created test station: %s (ID: %s)\n", testStation.Name, testStation.ID)
+	utils.Logger.Info().Str("name", testStation.Name).Str("id", testStation.ID).Msg("Created test station")
 
 	// Generate uptime data for exactly 7 days with 85% uptime
 	now := time.Now()
 	startTime := now.AddDate(0, 0, -7) // 7 days ago
 
-	fmt.Println("Generating 85% uptime health check data...")
+	utils.Logger.Info().Msg("Generating 85% uptime health check data")
 
 	currentTime := startTime
 	totalMinutes := 7 * 24 * 60                        // 10080 minutes
 	onlineMinutes := int(float64(totalMinutes) * 0.85) // 8568 minutes
 	offlineMinutes := totalMinutes - onlineMinutes     // 1512 minutes
 
-	fmt.Printf("Target: %d minutes online, %d minutes offline over %d total minutes\n",
-		onlineMinutes, offlineMinutes, totalMinutes)
+	utils.Logger.Info().Int("online_minutes", onlineMinutes).Int("offline_minutes", offlineMinutes).Int("total_minutes", totalMinutes).Msg("Target uptime parameters")
 
 	uptimeRecords := []models.StationUptime{}
 	minutesProcessed := 0
@@ -480,7 +475,7 @@ func DevelopmentSeed() error {
 			numChecks = 1
 		}
 
-		fmt.Printf("Creating uptime period: %d checks over %d minutes\n", numChecks, uptimePeriodMinutes)
+		utils.Logger.Info().Int("num_checks", numChecks).Int("minutes", uptimePeriodMinutes).Msg("Creating uptime period")
 
 		for i := 0; i < numChecks && minutesProcessed < totalMinutes; i++ {
 			uptimeRecord := models.StationUptime{
@@ -502,7 +497,7 @@ func DevelopmentSeed() error {
 				downtimeMinutes = totalMinutes - minutesProcessed
 			}
 
-			fmt.Printf("Creating downtime period: %d minutes\n", downtimeMinutes)
+			utils.Logger.Info().Int("minutes", downtimeMinutes).Msg("Creating downtime period")
 			currentTime = currentTime.Add(time.Duration(downtimeMinutes) * time.Minute)
 			minutesProcessed += downtimeMinutes
 		}
@@ -515,17 +510,17 @@ func DevelopmentSeed() error {
 		}
 	}
 
-	fmt.Printf("Created %d uptime records for 85%% target uptime\n", len(uptimeRecords))
+	utils.Logger.Info().Int("count", len(uptimeRecords)).Msg("Created uptime records for 85% target uptime")
 
 	// Seed achievements
-	fmt.Println("Seeding achievements...")
+	utils.Logger.Info().Msg("Seeding achievements")
 	if err := seedAchievements(); err != nil {
 		return fmt.Errorf("failed to seed achievements: %w", err)
 	}
 
-	fmt.Println("Development seed completed!")
-	fmt.Printf("Users created: test_user, test_admin, pending_user\n")
-	fmt.Printf("Station created for test_user: %s with %d uptime records\n", testStation.Name, len(uptimeRecords))
+	utils.Logger.Info().Msg("Development seed completed")
+	utils.Logger.Info().Msg("Users created: test_user, test_admin, pending_user")
+	utils.Logger.Info().Str("station_name", testStation.Name).Int("uptime_records", len(uptimeRecords)).Msg("Station created for test_user")
 
 	return nil
 }

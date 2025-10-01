@@ -479,22 +479,22 @@ func UploadPostCBOR(c *gin.Context) {
 
 // GetPostCBOR serves post CBOR files
 func GetPostCBOR(c *gin.Context) {
-	fmt.Printf("GetPostCBOR called for post ID: %s\n", c.Param("id"))
+	utils.Logger.Info().Str("post_id", c.Param("id")).Msg("GetPostCBOR called")
 
 	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		fmt.Printf("Invalid post ID: %s\n", c.Param("id"))
+		utils.Logger.Info().Str("post_id", c.Param("id")).Msg("Invalid post ID")
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
 	}
 
-	fmt.Printf("Parsed post ID: %d\n", postID)
+	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Parsed post ID")
 
 	db := config.GetDB()
 
 	// Check if user is authenticated (for private posts)
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
-	fmt.Printf("User authenticated: %v, userID: %s\n", isAuthenticated, userID)
+	utils.Logger.Info().Bool("authenticated", isAuthenticated).Str("user_id", userID).Msg("User authentication status")
 
 	// First check if the post exists and is accessible
 	var post models.Post
@@ -505,58 +505,56 @@ func GetPostCBOR(c *gin.Context) {
 		postQuery = postQuery.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID)
 	}
 
-	fmt.Printf("Checking post accessibility...\n")
+	utils.Logger.Info().Msg("Checking post accessibility")
 	if err := postQuery.First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			fmt.Printf("Post not found or not accessible for post ID: %d\n", postID)
+			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Post not found or not accessible")
 			utils.NotFoundResponse(c, "Post not found or not accessible")
 			return
 		}
-		fmt.Printf("Error fetching post: %v\n", err)
+		utils.Logger.Error().Err(err).Msg("Error fetching post")
 		utils.InternalErrorResponse(c, "Failed to fetch post")
 		return
 	}
 
-	fmt.Printf("Post found, station ID: %s\n", post.StationID)
+	utils.Logger.Info().Str("station_id", post.StationID).Msg("Post found")
 
 	// Now get the CBOR data for this post
 	var cbor models.PostCBOR
-	fmt.Printf("Fetching CBOR data for post ID: %d\n", postID)
+	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Fetching CBOR data")
 	if err := db.Where("post_id = ?", uint(postID)).First(&cbor).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			fmt.Printf("CBOR not found for post %d\n", postID)
+			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CBOR not found for post")
 			utils.NotFoundResponse(c, "CBOR not found for this post")
 			return
 		}
-		fmt.Printf("Error fetching CBOR for post %d: %v\n", postID, err)
+		utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Msg("Error fetching CBOR")
 		utils.InternalErrorResponse(c, "Failed to fetch CBOR")
 		return
 	}
 
-	fmt.Printf("Found CBOR for post %d, data length: %d, filename: %s\n", postID, len(cbor.CBORData), cbor.Filename)
+	utils.Logger.Info().Uint("post_id", uint(postID)).Int("data_length", len(cbor.CBORData)).Str("filename", cbor.Filename).Msg("Found CBOR for post")
 
 	// Check if client wants JSON format
 	format := c.Query("format")
-	fmt.Printf("Requested format: %s\n", format)
+	utils.Logger.Info().Str("format", format).Msg("Requested format")
 	if format == "json" {
-		fmt.Printf("Decoding CBOR to JSON for post %d\n", postID)
+		utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Decoding CBOR to JSON")
 		// Decode CBOR to JSON
 		var jsonData interface{}
 		if err := utils.DecodeCBORToJSON(cbor.CBORData, &jsonData); err != nil {
-			fmt.Printf("CBOR decode error for post %d: %v\n", postID, err)
-			fmt.Printf("CBOR data length: %d\n", len(cbor.CBORData))
+			utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Int("data_length", len(cbor.CBORData)).Msg("CBOR decode error")
 			utils.InternalErrorResponse(c, "Failed to decode CBOR to JSON")
 			return
 		}
 
-		fmt.Printf("CBOR decoded successfully, jsonData: %+v\n", jsonData)
-		fmt.Printf("CBOR decoded successfully, returning JSON\n")
+		utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CBOR decoded successfully, returning JSON")
 		c.Header("Content-Type", "application/json")
 		c.JSON(http.StatusOK, jsonData)
 		return
 	}
 
-	fmt.Printf("Returning CBOR binary data\n")
+	utils.Logger.Info().Msg("Returning CBOR binary data")
 	// Set content type and headers
 	c.Header("Content-Type", "application/cbor")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", cbor.Filename))
@@ -621,7 +619,7 @@ func DeletePost(c *gin.Context) {
 	for _, img := range images {
 		if err := utils.DeleteImage(img.ImageURL); err != nil {
 			// Log error but continue with deletion
-			fmt.Printf("Failed to delete image from storage: %v\n", err)
+			utils.Logger.Error().Err(err).Msg("Failed to delete image from storage")
 		}
 	}
 

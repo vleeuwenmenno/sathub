@@ -11,8 +11,12 @@ help:
 	@echo "  make restart     - Restart all services"
 	@echo "  make logs        - View logs from all services"
 	@echo "  make logs-f      - Follow logs from all services"
+	@echo "  make logs-backend-f - Follow backend logs only"
+	@echo "  make logs-frontend-f - Follow frontend logs only"
+	@echo "  make logs-worker-f - Follow worker logs only"
 	@echo "  make logs-backend - View backend logs only"
 	@echo "  make logs-frontend - View frontend logs only"
+	@echo "  make logs-worker - View worker logs only"
 	@echo "  make ps          - List all running containers"
 	@echo ""
 	@echo "Database:"
@@ -59,6 +63,18 @@ logs-backend:
 logs-frontend:
 	docker compose logs frontend
 
+logs-worker:
+	docker compose logs worker
+
+logs-backend-f:
+	docker compose logs -f backend
+
+logs-frontend-f:
+	docker compose logs -f frontend
+
+logs-worker-f:
+	docker compose logs -f worker
+
 ps:
 	docker compose ps
 
@@ -69,7 +85,7 @@ build:
 # Database commands
 seed:
 	@echo "Seeding database..."
-	docker compose exec backend go run main.go --seed
+	docker compose exec backend go run ./cmd/seed
 
 db-console:
 	@echo "Connecting to PostgreSQL database..."

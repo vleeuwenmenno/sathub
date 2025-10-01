@@ -82,7 +82,7 @@ func LikePost(c *gin.Context) {
 				// Get the liker's info
 				var liker models.User
 				if err := db.Where("id = ?", userID).First(&liker).Error; err != nil {
-					fmt.Printf("Failed to get liker info: %v\n", err)
+					utils.Logger.Error().Err(err).Msg("Failed to get liker info")
 					return
 				}
 
@@ -101,7 +101,7 @@ func LikePost(c *gin.Context) {
 				}
 
 				if err := db.Create(&notification).Error; err != nil {
-					fmt.Printf("Failed to create like notification: %v\n", err)
+					utils.Logger.Error().Err(err).Msg("Failed to create like notification")
 				}
 
 				// Send email notification if user has email notifications enabled
@@ -109,7 +109,7 @@ func LikePost(c *gin.Context) {
 				if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
 					go func() {
 						if err := utils.SendLikeNotificationEmail(postOwner.Email.String, postOwner.Username, liker.Username); err != nil {
-							fmt.Printf("Failed to send like email notification: %v\n", err)
+							utils.Logger.Error().Err(err).Msg("Failed to send like email notification")
 						}
 					}()
 				}

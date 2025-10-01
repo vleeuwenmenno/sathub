@@ -391,7 +391,7 @@ func DeleteUser(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to delete comment likes on user-related comments")
 			return
 		}
-		fmt.Printf("Deleted comment likes on %d comments\n", len(allCommentIDsToDeleteLikes))
+		utils.Logger.Info().Int("comment_count", len(allCommentIDsToDeleteLikes)).Msg("Deleted comment likes on comments")
 	}
 
 	// Delete comment likes by the user
@@ -400,7 +400,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user comment likes")
 		return
 	}
-	fmt.Printf("Deleted comment likes by user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted comment likes by user")
 
 	// Delete likes on user's posts
 	if len(postIDs) > 0 {
@@ -409,7 +409,7 @@ func DeleteUser(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to delete likes on user posts")
 			return
 		}
-		fmt.Printf("Deleted likes on %d user posts\n", len(postIDs))
+		utils.Logger.Info().Int("post_count", len(postIDs)).Msg("Deleted likes on user posts")
 	}
 
 	// Delete likes by the user
@@ -418,7 +418,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user likes")
 		return
 	}
-	fmt.Printf("Deleted likes by user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted likes by user")
 
 	// Delete comments on user's posts
 	if len(postIDs) > 0 {
@@ -427,7 +427,7 @@ func DeleteUser(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to delete comments on user posts")
 			return
 		}
-		fmt.Printf("Deleted comments on %d user posts\n", len(postIDs))
+		utils.Logger.Info().Int("post_count", len(postIDs)).Msg("Deleted comments on user posts")
 	}
 
 	// Delete comments by the user
@@ -436,7 +436,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user comments")
 		return
 	}
-	fmt.Printf("Deleted %d comments by user %s\n", len(userCommentIDs), targetUserID)
+	utils.Logger.Info().Int("comment_count", len(userCommentIDs)).Str("user_id", targetUserID.String()).Msg("Deleted comments by user")
 
 	// Delete post images
 	if len(postIDs) > 0 {
@@ -445,7 +445,7 @@ func DeleteUser(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to delete user post images")
 			return
 		}
-		fmt.Printf("Deleted post images for %d posts\n", len(postIDs))
+		utils.Logger.Info().Int("post_count", len(postIDs)).Msg("Deleted post images for posts")
 	}
 
 	// Delete posts
@@ -455,7 +455,7 @@ func DeleteUser(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to delete user posts")
 			return
 		}
-		fmt.Printf("Deleted %d posts for %d stations\n", len(postIDs), len(stationIDs))
+		utils.Logger.Info().Int("post_count", len(postIDs)).Int("station_count", len(stationIDs)).Msg("Deleted posts for stations")
 	}
 
 	// Delete stations
@@ -464,7 +464,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user stations")
 		return
 	}
-	fmt.Printf("Deleted %d stations for user %s\n", len(stationIDs), targetUserID)
+	utils.Logger.Info().Int("station_count", len(stationIDs)).Str("user_id", targetUserID.String()).Msg("Deleted stations for user")
 
 	// Delete tokens
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.RefreshToken{}).Error; err != nil {
@@ -472,28 +472,28 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user refresh tokens")
 		return
 	}
-	fmt.Printf("Deleted refresh tokens for user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted refresh tokens for user")
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.PasswordResetToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user password reset tokens")
 		return
 	}
-	fmt.Printf("Deleted password reset tokens for user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted password reset tokens for user")
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailConfirmationToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user email confirmation tokens")
 		return
 	}
-	fmt.Printf("Deleted email confirmation tokens for user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted email confirmation tokens for user")
 
 	if err := tx.Where("user_id = ?", targetUserID).Delete(&models.EmailChangeToken{}).Error; err != nil {
 		tx.Rollback()
 		utils.InternalErrorResponse(c, "Failed to delete user email change tokens")
 		return
 	}
-	fmt.Printf("Deleted email change tokens for user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted email change tokens for user")
 
 	// Finally delete the user
 	if err := tx.Delete(&user).Error; err != nil {
@@ -501,7 +501,7 @@ func DeleteUser(c *gin.Context) {
 		utils.InternalErrorResponse(c, "Failed to delete user")
 		return
 	}
-	fmt.Printf("Deleted user %s\n", targetUserID)
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted user")
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
@@ -597,22 +597,22 @@ func BanUser(c *gin.Context) {
 	if req.Banned {
 		if err := db.Where("user_id = ?", targetUserID).Delete(&models.RefreshToken{}).Error; err != nil {
 			// Log error but don't fail the ban operation
-			fmt.Printf("Failed to delete refresh tokens for banned user %d: %v\n", targetUserID, err)
+			utils.Logger.Error().Err(err).Str("user_id", targetUserID.String()).Msg("Failed to delete refresh tokens for banned user")
 		}
 
 		// Regenerate tokens for all stations to deactivate their APIs
 		var stations []models.Station
 		if err := db.Where("user_id = ?", targetUserID).Find(&stations).Error; err != nil {
 			// Log error but don't fail the ban operation
-			fmt.Printf("Failed to find stations for banned user %d: %v\n", targetUserID, err)
+			utils.Logger.Error().Err(err).Str("user_id", targetUserID.String()).Msg("Failed to find stations for banned user")
 		} else {
 			for _, station := range stations {
 				if err := station.RegenerateToken(); err != nil {
-					fmt.Printf("Failed to regenerate token for station %s: %v\n", station.ID, err)
+					utils.Logger.Error().Err(err).Str("station_id", station.ID).Msg("Failed to regenerate token for station")
 					continue
 				}
 				if err := db.Save(&station).Error; err != nil {
-					fmt.Printf("Failed to save regenerated token for station %s: %v\n", station.ID, err)
+					utils.Logger.Error().Err(err).Str("station_id", station.ID).Msg("Failed to save regenerated token for station")
 				}
 			}
 		}
@@ -1096,7 +1096,7 @@ func ApproveUser(c *gin.Context) {
 	if req.Approved && user.Email.Valid {
 		if err := utils.SendApprovalNotificationEmail(user.Email.String, user.Username); err != nil {
 			// Log error but don't fail the approval operation
-			fmt.Printf("Failed to send approval notification email to user %s: %v\n", user.Username, err)
+			utils.Logger.Error().Err(err).Str("username", user.Username).Msg("Failed to send approval notification email to user")
 		}
 	}
 
