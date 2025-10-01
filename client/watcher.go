@@ -17,7 +17,6 @@ type SatelliteData struct {
 	Timestamp     time.Time
 	SatelliteName string
 	Metadata      map[string]interface{}
-	CBORData      []byte
 	ImagePaths    []string
 }
 
