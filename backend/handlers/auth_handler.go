@@ -135,14 +135,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Check for achievements after user creation
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			// Log error but don't fail registration
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
-		}
-	}()
-
 	// Generate email confirmation token
 	confirmToken := utils.GenerateRandomString(32)
 
@@ -170,13 +162,6 @@ func Register(c *gin.Context) {
 		"email":    user.Email.String,
 		"role":     user.Role,
 	})
-
-	// Check for achievements after comment creation
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.ID, err)
-		}
-	}()
 
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully. Please check your email to confirm your account.", nil)
 }
@@ -294,14 +279,6 @@ func Login(c *gin.Context) {
 			StationEmailNotifications: user.StationEmailNotifications,
 		},
 	}
-
-	// Check for achievements after successful login
-	go func() {
-		if _, err := utils.CheckAchievements(user.ID); err != nil {
-			// Log error but don't fail login
-			fmt.Printf("Failed to check achievements for user %s: %v\n", user.Username, err)
-		}
-	}()
 
 	// Log successful login
 	utils.LogUserAction(c, models.ActionUserLogin, user.ID, models.AuditMetadata{

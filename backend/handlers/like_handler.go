@@ -76,13 +76,6 @@ func LikePost(c *gin.Context) {
 			return
 		}
 
-		// Check for achievements after liking
-		go func() {
-			if _, err := utils.CheckAchievements(userID); err != nil {
-				fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
-			}
-		}()
-
 		// Create notification for post owner if liker is not the owner
 		if post.Station.UserID.String() != userIDStr {
 			go func() {

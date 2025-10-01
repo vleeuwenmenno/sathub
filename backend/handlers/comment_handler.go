@@ -188,13 +188,6 @@ func CreateComment(c *gin.Context) {
 
 	fmt.Printf("Comment created successfully with ID: %d\n", comment.ID)
 
-	// Check for achievements after comment creation
-	go func() {
-		if _, err := utils.CheckAchievements(userID); err != nil {
-			fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
-		}
-	}()
-
 	// Create notification for post owner if commenter is not the owner
 	if post.Station.UserID.String() != userIDStr {
 		go func() {

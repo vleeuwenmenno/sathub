@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"sathub-ui-backend/config"
@@ -80,13 +79,6 @@ func LikeComment(c *gin.Context) {
 			utils.InternalErrorResponse(c, "Failed to like comment")
 			return
 		}
-
-		// Check for achievements after liking comment
-		go func() {
-			if _, err := utils.CheckAchievements(userID); err != nil {
-				fmt.Printf("Failed to check achievements for user %s: %v\n", userID, err)
-			}
-		}()
 
 		// Log comment like
 		utils.LogCommentAction(c, models.ActionCommentLike, commentID, models.AuditMetadata{})

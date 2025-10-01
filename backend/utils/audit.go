@@ -125,6 +125,8 @@ func LogAchievementUnlock(userID uuid.UUID, achievementID uuid.UUID, achievement
 	// Create audit log entry asynchronously to avoid blocking the main operation
 	go func() {
 		if err := db.Create(&auditLog).Error; err != nil {
+			// Log error but don't fail the main operation
+			// In production, you might want to use a proper logging framework
 			println("Failed to create achievement unlock audit log:", err.Error())
 		}
 	}()

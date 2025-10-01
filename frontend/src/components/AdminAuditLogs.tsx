@@ -165,6 +165,7 @@ const AdminAuditLogs: React.FC = () => {
                 <Option value="comment_create">Comment Create</Option>
                 <Option value="station_create">Station Create</Option>
                 <Option value="post_create">Post Create</Option>
+                <Option value="achievement_unlock">Achievement Unlock</Option>
                 <Option value="admin_user_ban">Admin User Ban</Option>
                 <Option value="admin_user_role_update">Admin Role Update</Option>
               </Select>
