@@ -246,6 +246,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			publicPosts.GET("/:id", middleware.OptionalAuth(), handlers.GetDatabasePostDetail)
 			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImage)
 			publicPosts.GET("/:id/cbor", middleware.OptionalAuth(), handlers.GetPostCBOR)
+			publicPosts.GET("/:id/cadu", middleware.OptionalAuth(), handlers.GetPostCADU)
 		}
 
 		// Protected post routes (user authentication required)
@@ -262,6 +263,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			stationPosts.POST("", handlers.CreatePost)
 			stationPosts.POST("/:postId/images", handlers.UploadPostImage)
 			stationPosts.POST("/:postId/cbor", handlers.UploadPostCBOR)
+			stationPosts.POST("/:postId/cadu", handlers.UploadPostCADU)
 		}
 
 		// Like routes (user authentication required)

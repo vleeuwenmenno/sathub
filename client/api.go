@@ -238,6 +238,72 @@ func (c *APIClient) UploadCBOR(postID uint, cborPath string) error {
 	return nil
 }
 
+// UploadCADU uploads a CADU file for a post
+func (c *APIClient) UploadCADU(postID uint, caduPath string) error {
+	url := fmt.Sprintf("%s/api/posts/%d/cadu", c.baseURL, postID)
+
+	file, err := os.Open(caduPath)
+	if err != nil {
+		return fmt.Errorf("failed to open CADU file: %w", err)
+	}
+	defer file.Close()
+
+	// Read first 512 bytes to detect content type (though CADU is application/octet-stream)
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("failed to read file header: %w", err)
+	}
+	contentType := http.DetectContentType(buffer[:n])
+	// Override with octet-stream for CADU files
+	contentType = "application/octet-stream"
+
+	// Reset file pointer to beginning
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to reset file pointer: %w", err)
+	}
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	// Create form file part with proper headers
+	filename := filepath.Base(caduPath)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="cadu"; filename="%s"`, filename))
+	h.Set("Content-Type", contentType)
+	part, err := writer.CreatePart(h)
+	if err != nil {
+		return fmt.Errorf("failed to create form part: %w", err)
+	}
+
+	if _, err := io.Copy(part, file); err != nil {
+		return fmt.Errorf("failed to copy file data: %w", err)
+	}
+
+	writer.Close()
+
+	httpReq, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Station %s", c.stationToken))
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("CADU upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
 // StationHealth sends a health check to update station last seen
 func (c *APIClient) StationHealth() error {
 	url := fmt.Sprintf("%s/api/stations/health", c.baseURL)

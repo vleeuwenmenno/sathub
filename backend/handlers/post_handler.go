@@ -384,6 +384,12 @@ type PostCBORResponse struct {
 	Filename string `json:"filename"`
 }
 
+// PostCADUResponse represents a CADU file in responses
+type PostCADUResponse struct {
+	ID       uint   `json:"id"`
+	Filename string `json:"filename"`
+}
+
 // UploadPostCBOR handles uploading CBOR files for a post using station token
 func UploadPostCBOR(c *gin.Context) {
 	stationID, exists := middleware.GetCurrentStationID(c)
@@ -477,6 +483,93 @@ func UploadPostCBOR(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "CBOR uploaded successfully", response)
 }
 
+// UploadPostCADU handles uploading CADU files for a post using station token
+func UploadPostCADU(c *gin.Context) {
+	stationID, exists := middleware.GetCurrentStationID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "Station not authenticated")
+		return
+	}
+
+	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Verify post belongs to the station
+	var post models.Post
+	if err := db.Where("id = ? AND station_id = ?", uint(postID), stationID).First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Post not found or not owned by station")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	// Check if post already has a CADU file
+	var existingCADU models.PostCADU
+	if err := db.Where("post_id = ?", uint(postID)).First(&existingCADU).Error; err == nil {
+		utils.ValidationErrorResponse(c, "Post already has a CADU file")
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		utils.InternalErrorResponse(c, "Failed to check existing CADU")
+		return
+	}
+
+	// Get uploaded file
+	file, err := c.FormFile("cadu")
+	if err != nil {
+		utils.ValidationErrorResponse(c, "No CADU file provided")
+		return
+	}
+
+	// Open the uploaded file
+	src, err := file.Open()
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to open uploaded file")
+		return
+	}
+	defer src.Close()
+
+	// Read file data into byte slice
+	fileData := make([]byte, file.Size)
+	if _, err := src.Read(fileData); err != nil {
+		utils.InternalErrorResponse(c, "Failed to read file data")
+		return
+	}
+
+	// Create post CADU record
+	postCADU := models.PostCADU{
+		PostID:   uint(postID),
+		CADUData: fileData,
+		Filename: file.Filename,
+	}
+
+	if err := db.Create(&postCADU).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to save CADU record")
+		return
+	}
+
+	// Log CADU upload (system action since it's done by station token)
+	utils.LogSystemAction(c, models.ActionPostCADUUpload, models.AuditMetadata{
+		"post_id":   postID,
+		"cadu_id":   postCADU.ID,
+		"filename":  postCADU.Filename,
+		"file_size": len(fileData),
+	})
+
+	response := PostCADUResponse{
+		ID:       postCADU.ID,
+		Filename: postCADU.Filename,
+	}
+
+	utils.SuccessResponse(c, http.StatusCreated, "CADU uploaded successfully", response)
+}
+
 // GetPostCBOR serves post CBOR files
 func GetPostCBOR(c *gin.Context) {
 	utils.Logger.Info().Str("post_id", c.Param("id")).Msg("GetPostCBOR called")
@@ -563,6 +656,73 @@ func GetPostCBOR(c *gin.Context) {
 	c.Data(http.StatusOK, "application/cbor", cbor.CBORData)
 }
 
+// GetPostCADU serves post CADU files
+func GetPostCADU(c *gin.Context) {
+	utils.Logger.Info().Str("post_id", c.Param("id")).Msg("GetPostCADU called")
+
+	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.Logger.Info().Str("post_id", c.Param("id")).Msg("Invalid post ID")
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Parsed post ID")
+
+	db := config.GetDB()
+
+	// Check if user is authenticated (for private posts)
+	userID, isAuthenticated := middleware.GetCurrentUserID(c)
+	utils.Logger.Info().Bool("authenticated", isAuthenticated).Str("user_id", userID).Msg("User authentication status")
+
+	// First check if the post exists and is accessible
+	var post models.Post
+	postQuery := db.Where("posts.id = ?", uint(postID))
+	if !isAuthenticated {
+		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
+	} else {
+		postQuery = postQuery.Joins("Station").Where("is_public = ? OR user_id = ?", true, userID)
+	}
+
+	utils.Logger.Info().Msg("Checking post accessibility")
+	if err := postQuery.First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Post not found or not accessible")
+			utils.NotFoundResponse(c, "Post not found or not accessible")
+			return
+		}
+		utils.Logger.Error().Err(err).Msg("Error fetching post")
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	utils.Logger.Info().Str("station_id", post.StationID).Msg("Post found")
+
+	// Now get the CADU data for this post
+	var cadu models.PostCADU
+	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Fetching CADU data")
+	if err := db.Where("post_id = ?", uint(postID)).First(&cadu).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CADU not found for post")
+			utils.NotFoundResponse(c, "CADU not found for this post")
+			return
+		}
+		utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Msg("Error fetching CADU")
+		utils.InternalErrorResponse(c, "Failed to fetch CADU")
+		return
+	}
+
+	utils.Logger.Info().Uint("post_id", uint(postID)).Int("data_length", len(cadu.CADUData)).Str("filename", cadu.Filename).Msg("Found CADU for post")
+
+	utils.Logger.Info().Msg("Returning CADU binary data")
+	// Set content type and headers
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", cadu.Filename))
+
+	// Return CADU data
+	c.Data(http.StatusOK, "application/octet-stream", cadu.CADUData)
+}
+
 // DeletePost handles deleting a post (only if owned by the authenticated user)
 func DeletePost(c *gin.Context) {
 	userID, exists := middleware.GetCurrentUserID(c)
@@ -632,6 +792,12 @@ func DeletePost(c *gin.Context) {
 	// Delete associated CBOR records from database
 	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCBOR{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post CBOR")
+		return
+	}
+
+	// Delete associated CADU records from database
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCADU{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post CADU")
 		return
 	}
 
