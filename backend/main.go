@@ -30,11 +30,11 @@ var apiCmd = &cobra.Command{
 	Run:   runAPIServer,
 }
 
-var healthMonitorCmd = &cobra.Command{
-	Use:   "health-monitor-worker",
-	Short: "Start the health monitor worker",
-	Long:  `Start the background worker that monitors station health and sends notifications.`,
-	Run:   runHealthMonitorWorker,
+var workerCmd = &cobra.Command{
+	Use:   "worker",
+	Short: "Start the background workers",
+	Long:  `Start the background workers that handle various tasks like station health monitoring and achievement checking.`,
+	Run:   runWorkers,
 }
 
 var migrateCmd = &cobra.Command{
@@ -50,7 +50,7 @@ func init() {
 
 	// Add commands
 	rootCmd.AddCommand(apiCmd)
-	rootCmd.AddCommand(healthMonitorCmd)
+	rootCmd.AddCommand(workerCmd)
 	rootCmd.AddCommand(migrateCmd)
 }
 
@@ -355,8 +355,8 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 	}
 }
 
-func runHealthMonitorWorker(cmd *cobra.Command, args []string) {
-	utils.Logger.Info().Msg("Starting health monitor worker")
+func runWorkers(cmd *cobra.Command, args []string) {
+	utils.Logger.Info().Msg("Starting background workers")
 
 	initializeCommon()
 	defer config.CloseDatabase()
@@ -365,9 +365,13 @@ func runHealthMonitorWorker(cmd *cobra.Command, args []string) {
 	healthMonitor := worker.NewStationHealthMonitor(config.GetDB())
 	healthMonitor.Start()
 
-	utils.Logger.Info().Msg("Health monitor worker started successfully")
+	// Start achievement checker
+	achievementChecker := worker.NewAchievementChecker(config.GetDB())
+	achievementChecker.Start()
 
-	// Keep the worker running
+	utils.Logger.Info().Msg("All background workers started successfully")
+
+	// Keep the workers running
 	select {}
 }
 

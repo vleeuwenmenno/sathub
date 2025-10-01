@@ -43,7 +43,7 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  health-monitor-worker:
+  worker:
     build: ./backend
     volumes:
       - ./backend:/app
@@ -61,7 +61,7 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_EXTERNAL_URL=https://obj.sathub.local:9999
-    command: ["air", "-c", ".air.toml", "--", "health-monitor-worker"]
+    command: ["air", "-c", ".air.toml", "--", "worker"]
     depends_on:
       migrate:
         condition: service_completed_successfully
