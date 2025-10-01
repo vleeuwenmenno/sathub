@@ -28,6 +28,7 @@ import AdminInvite from "./components/AdminInvite";
 import Achievements from "./components/Achievements";
 import Notifications from "./components/Notifications";
 import AdminAuditLogs from "./components/AdminAuditLogs";
+import AdminStationsMap from "./components/AdminStationsMap";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -88,6 +89,7 @@ function App() {
                 <Route path="/admin" element={<AdminOverview />} />
                 <Route path="/admin/users" element={<AdminUserManagement />} />
                 <Route path="/admin/pending-users" element={<AdminPendingUsers />} />
+                <Route path="/admin/stations" element={<AdminStationsMap />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
                 <Route path="/admin/invite" element={<AdminInvite />} />
               </Routes>
