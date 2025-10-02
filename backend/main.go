@@ -109,9 +109,6 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		allowedOrigins = append(allowedOrigins, "http://localhost:5173", "https://localhost:5173", "http://127.0.0.1:5173", "https://127.0.0.1:5173")
 	}
 
-	// Add production domain explicitly
-	allowedOrigins = append(allowedOrigins, "https://sathub.de")
-
 	// Add additional origins from environment variable (comma-separated)
 	if additionalOrigins != "" {
 		for _, origin := range strings.Split(additionalOrigins, ",") {
