@@ -12,7 +12,7 @@ import {
   Box,
 } from "@mui/joy";
 import type { Post } from "../types";
-import { getStationPosts, getPostImageBlob, getStationDetails, getProfilePictureUrl } from "../api";
+import { getStationPosts, getPostImageUrl, getStationDetails, getProfilePictureUrl } from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
@@ -35,7 +35,6 @@ const StationPosts: React.FC = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [station, setStation] = useState<Station | null>(null);
-  const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,34 +67,6 @@ const StationPosts: React.FC = () => {
     setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
   };
 
-  useEffect(() => {
-    const loadImages = async () => {
-      if (!posts.length) return;
-
-      const newImageBlobs: Record<string, string> = {};
-
-      // Load images
-      for (const post of posts) {
-        if (post.images.length > 0) {
-          try {
-            const blobUrl = await getPostImageBlob(post.id, post.images[0].id);
-            newImageBlobs[`${post.id}-image`] = blobUrl;
-            // Keep loading state until image actually loads in the DOM
-          } catch (error) {
-            console.error(
-              "Failed to load image for post",
-              post.id,
-              error,
-            );
-          }
-        }
-      }
-
-      setImageBlobs(newImageBlobs);
-    };
-
-    loadImages();
-  }, [posts]);
 
   if (loading) {
     return (
@@ -199,7 +170,7 @@ const StationPosts: React.FC = () => {
                           >
                             <Skeleton loading={!loadedImages[`${post.id}-image`]}>
                               <img
-                                src={imageBlobs[`${post.id}-image`] || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}
+                                src={getPostImageUrl(post.id, post.images[0].id)}
                                 alt={post.satellite_name}
                                 style={{
                                   width: "100%",
