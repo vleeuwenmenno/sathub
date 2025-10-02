@@ -1,6 +1,6 @@
 // New post types for database-driven posts
 export interface Post {
-  id: number;
+  id: string;
   station_id: string;
   station_name: string;
   station_user?: {
@@ -27,7 +27,7 @@ export interface PostImage {
 }
 
 export interface DatabasePostDetail {
-  id: number;
+  id: string;
   station_id: string;
   station_name: string;
   station_user?: {
@@ -88,14 +88,14 @@ export interface User {
 }
 
 export interface PostComment {
-  id: number;
+  id: string;
   user_id: string;
   username: string;
   display_name?: string;
   profile_picture_url?: string;
   has_profile_picture: boolean;
   content: string;
-  parent_id?: number;
+  parent_id?: string;
   replies?: PostComment[];
   likes_count: number;
   is_liked: boolean;

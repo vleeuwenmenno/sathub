@@ -30,7 +30,8 @@ func LikePost(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -40,7 +41,7 @@ func LikePost(c *gin.Context) {
 
 	// Check if post exists and is accessible
 	var post models.Post
-	query := db.Preload("Station").Where("posts.id = ?", uint(postID))
+	query := db.Preload("Station").Where("posts.id = ?", postID)
 	if err := query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userIDStr).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not accessible")
@@ -52,7 +53,7 @@ func LikePost(c *gin.Context) {
 
 	// Check if user already liked this post
 	var existingLike models.Like
-	err = db.Where("user_id = ? AND post_id = ?", userID, uint(postID)).First(&existingLike).Error
+	err = db.Where("user_id = ? AND post_id = ?", userID, postID).First(&existingLike).Error
 
 	if err == nil {
 		// User already liked, so unlike (delete the like)
@@ -62,14 +63,14 @@ func LikePost(c *gin.Context) {
 		}
 
 		// Log post unlike
-		utils.LogPostAction(c, models.ActionPostUnlike, uint(postID), models.AuditMetadata{})
+		utils.LogPostAction(c, models.ActionPostUnlike, postID.String(), models.AuditMetadata{})
 
 		utils.SuccessResponse(c, http.StatusOK, "Post unliked successfully", gin.H{"liked": false})
 	} else if err == gorm.ErrRecordNotFound {
 		// User hasn't liked, so like (create the like)
 		like := models.Like{
 			UserID: userID,
-			PostID: uint(postID),
+			PostID: postID,
 		}
 		if err := db.Create(&like).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to like post")
@@ -96,7 +97,7 @@ func LikePost(c *gin.Context) {
 					UserID:    post.Station.UserID,
 					Type:      "like",
 					Message:   fmt.Sprintf("%s liked your post (%s)", likerName, post.SatelliteName),
-					RelatedID: strconv.Itoa(int(post.ID)), // Post ID for navigation
+					RelatedID: post.ID.String(), // Post ID for navigation
 					IsRead:    false,
 				}
 
@@ -117,7 +118,7 @@ func LikePost(c *gin.Context) {
 		}
 
 		// Log post like
-		utils.LogPostAction(c, models.ActionPostLike, uint(postID), models.AuditMetadata{})
+		utils.LogPostAction(c, models.ActionPostLike, postID.String(), models.AuditMetadata{})
 		utils.SuccessResponse(c, http.StatusCreated, "Post liked successfully", gin.H{"liked": true})
 	} else {
 		utils.InternalErrorResponse(c, "Failed to check like status")

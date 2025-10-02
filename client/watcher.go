@@ -376,7 +376,7 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 		return fmt.Errorf("failed to create post: %w", err)
 	}
 
-	fw.logger.Info().Uint("post_id", post.ID).Str("satellite", post.SatelliteName).Msg("Created post")
+	fw.logger.Info().Str("post_id", post.ID).Str("satellite", post.SatelliteName).Msg("Created post")
 
 	// Upload CADU files if present
 	for _, caduPath := range caduPaths {
@@ -384,7 +384,7 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 			fw.logger.Warn().Err(err).Str("cadu", caduPath).Msg("Failed to upload CADU")
 			// Continue with other uploads
 		} else {
-			fw.logger.Info().Str("cadu", filepath.Base(caduPath)).Uint("post_id", post.ID).Msg("Uploaded CADU")
+			fw.logger.Info().Str("cadu", filepath.Base(caduPath)).Str("post_id", post.ID).Msg("Uploaded CADU")
 		}
 	}
 
@@ -394,7 +394,7 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 			fw.logger.Warn().Err(err).Str("cbor", cborPath).Msg("Failed to upload CBOR")
 			// Continue with image uploads even if CBOR fails
 		} else {
-			fw.logger.Info().Str("cbor", filepath.Base(cborPath)).Uint("post_id", post.ID).Msg("Uploaded CBOR")
+			fw.logger.Info().Str("cbor", filepath.Base(cborPath)).Str("post_id", post.ID).Msg("Uploaded CBOR")
 		}
 	}
 
@@ -404,7 +404,7 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 			fw.logger.Warn().Err(err).Str("image", imagePath).Msg("Failed to upload image")
 			// Continue with other images
 		} else {
-			fw.logger.Info().Str("image", filepath.Base(imagePath)).Uint("post_id", post.ID).Msg("Uploaded image")
+			fw.logger.Info().Str("image", filepath.Base(imagePath)).Str("post_id", post.ID).Msg("Uploaded image")
 		}
 	}
 

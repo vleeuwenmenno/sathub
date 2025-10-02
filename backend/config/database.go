@@ -86,6 +86,28 @@ func InitDatabase() {
 func RunMigrations() error {
 	log.Println("Running database migrations...")
 
+	// // Drop tables that need UUID migration
+	// log.Println("Dropping tables for UUID migration...")
+	// if err := DB.Migrator().DropTable(&models.Post{}); err != nil {
+	// 	log.Printf("Warning: Could not drop posts table: %v", err)
+	// }
+	// if err := DB.Migrator().DropTable(&models.Comment{}); err != nil {
+	// 	log.Printf("Warning: Could not drop comments table: %v", err)
+	// }
+	// if err := DB.Migrator().DropTable(&models.Like{}); err != nil {
+	// 	log.Printf("Warning: Could not drop likes table: %v", err)
+	// }
+	// if err := DB.Migrator().DropTable(&models.PostImage{}); err != nil {
+	// 	log.Printf("Warning: Could not drop post_images table: %v", err)
+	// }
+	// if err := DB.Migrator().DropTable(&models.PostCBOR{}); err != nil {
+	// 	log.Printf("Warning: Could not drop post_cbors table: %v", err)
+	// }
+	// if err := DB.Migrator().DropTable(&models.PostCADU{}); err != nil {
+	// 	log.Printf("Warning: Could not drop post_cadus table: %v", err)
+	// }
+
+	// Run all migrations
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},
