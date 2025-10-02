@@ -122,6 +122,7 @@ data/
 backend/sathub-backend
 backend/sathub-ui-backend
 client/bin/
+client/sathub-client
 client/sathub-ui-client
 
 # Go Debug files
