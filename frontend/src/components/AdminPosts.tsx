@@ -82,7 +82,7 @@ const AdminPosts: React.FC = () => {
   const handleDeletePost = async (postId: number) => {
     try {
       setDeletingPostId(postId);
-      await adminDeletePost(postId);
+      await adminDeletePost(postId.toString());
       setDeleteDialog({ open: false, post: null });
 
       // Check if we need to adjust pagination after deletion
@@ -105,7 +105,7 @@ const AdminPosts: React.FC = () => {
   const handleHidePost = async (postId: number, hidden: boolean) => {
     try {
       setHidingPostId(postId);
-      await adminHidePost(postId, hidden);
+      await adminHidePost(postId.toString(), hidden);
       // Refresh the current page to get updated data from server
       await fetchPosts(pagination.page, searchQuery);
     } catch (err) {

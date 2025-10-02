@@ -12,7 +12,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { deletePost, adminDeletePost } from "../api";
 
 interface DeletePostButtonProps {
-  postId: number;
+  postId: string;
   postName: string;
   isOwner: boolean;
   isAdmin?: boolean;

@@ -233,7 +233,7 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
                   Recent Activity:
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                  {uptimeData.data.slice(-20).map((event: { timestamp: string; event: string }, index: number) => (
+                  {uptimeData && uptimeData.data.slice(-20).map((event: { timestamp: string; event: string }, index: number) => (
                     <Box
                       key={index}
                       sx={{
@@ -247,7 +247,7 @@ const StationHealthGraph: React.FC<StationHealthGraphProps> = ({ stationId, stat
                     />
                   ))}
                 </Box>
-                {uptimeData.data.length > 20 && (
+                {uptimeData && uptimeData.data.length > 20 && (
                   <Typography level="body-xs" color="neutral" sx={{ mt: 0.5 }}>
                     Showing last 20 events
                   </Typography>

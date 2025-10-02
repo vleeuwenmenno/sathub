@@ -31,7 +31,7 @@ const Overview: React.FC = () => {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -95,7 +95,7 @@ const Overview: React.FC = () => {
                     }}
                   >
                     <img
-                      src={getPostImageUrl(post.id, post.images[0].id)}
+                      src={getPostImageUrl(parseInt(post.id), post.images[0].id)}
                       alt={post.satellite_name}
                       style={{
                         width: "100%",

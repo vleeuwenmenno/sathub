@@ -188,7 +188,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
     // Create timeline data showing online/offline status over time
     const timelineData: { time: Date; status: number; label: string }[] = [];
     
-    uptimeData.data.forEach((event, index) => {
+    uptimeData.data.forEach((event) => {
       timelineData.push({
         time: new Date(event.timestamp),
         status: event.event === "online" ? 1 : 0,
@@ -363,7 +363,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
                         {
                           data: chartData.timelineData.map((d) => d.time),
                           scaleType: "time",
-                          valueFormatter: (value) => {
+                          valueFormatter: (value: Date) => {
                             const date = new Date(value);
                             return date.toLocaleString("en-US", {
                               month: "short",
@@ -379,7 +379,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
                           label: "Status",
                           min: -0.1,
                           max: 1.1,
-                          valueFormatter: (value) => (value === 1 ? "Online" : "Offline"),
+                          valueFormatter: (value: number) => (value === 1 ? "Online" : "Offline"),
                         },
                       ]}
                       grid={{ horizontal: true }}
@@ -424,7 +424,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
                         {
                           data: chartData.intervalData.map((d) => d.time),
                           scaleType: "time",
-                          valueFormatter: (value) => {
+                          valueFormatter: (value: Date) => {
                             const date = new Date(value);
                             return date.toLocaleString("en-US", {
                               month: "short",
@@ -467,7 +467,7 @@ const StationHealthDialog: React.FC<StationHealthDialogProps> = ({
                       {uptimeData.data
                         .slice(-10)
                         .reverse()
-                        .map((event, i, arr) => {
+                        .map((event, i) => {
                           const reversedIndex = uptimeData.data.length - 1 - i;
                           const prevEvent =
                             reversedIndex > 0
