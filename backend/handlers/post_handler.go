@@ -845,11 +845,15 @@ func GetPostImage(c *gin.Context) {
 
 	// Find image and check post's station visibility (exclude hidden posts)
 	var image models.PostImage
-	query := db.Joins("Post").Joins("Post.Station").Where("post_images.id = ? AND post_images.post_id = ? AND posts.hidden = ?", uint(imageID), postID, false)
+	query := db.Table("post_images").
+		Select("post_images.*").
+		Joins("INNER JOIN posts ON post_images.post_id = posts.id").
+		Joins("INNER JOIN stations ON posts.station_id = stations.id").
+		Where("post_images.id = ? AND post_images.post_id = ? AND posts.hidden = ?", uint(imageID), postID, false)
 	if !isAuthenticated {
-		query = query.Where("is_public = ?", true)
+		query = query.Where("stations.is_public = ?", true)
 	} else {
-		query = query.Where("is_public = ? OR user_id = ?", true, userID)
+		query = query.Where("stations.is_public = ? OR stations.user_id = ?", true, userID)
 	}
 
 	if err := query.First(&image).Error; err != nil {

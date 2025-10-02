@@ -119,6 +119,7 @@ const Detail: React.FC = () => {
   const [selectedImageInCategory, setSelectedImageInCategory] = useState<number>(0);
   const [imageBlobs, setImageBlobs] = useState<Record<number, string>>({});
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [stationImageBlob, setStationImageBlob] = useState<string | null>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
   const [cborData, setCborData] = useState<any>(null);
@@ -158,6 +159,12 @@ const Detail: React.FC = () => {
       const categories = categorizeImages(detail.images);
       if (categories.length > 0) {
         setSelectedCategory(categories[0]);
+        
+        // Load the first image of the first category
+        const firstCategoryImages = groupImagesByCategory(detail.images)[categories[0]];
+        if (firstCategoryImages && firstCategoryImages.length > 0) {
+          loadImage(firstCategoryImages[0].id);
+        }
       }
     }
   }, [detail, selectedCategory]);
@@ -175,12 +182,16 @@ const Detail: React.FC = () => {
         event.preventDefault();
         setSelectedImageInCategory(prev => {
           const newIndex = prev > 0 ? prev - 1 : images.length - 1;
+          // Load the new image
+          loadImage(images[newIndex].id);
           return Math.min(newIndex, images.length - 1); // Safety check
         });
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
         setSelectedImageInCategory(prev => {
           const newIndex = prev < images.length - 1 ? prev + 1 : 0;
+          // Load the new image
+          loadImage(images[newIndex].id);
           return Math.min(newIndex, images.length - 1); // Safety check
         });
       }
@@ -190,27 +201,59 @@ const Detail: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedCategory, detail?.images]);
 
+  // Function to load a single image on-demand
+  const loadImage = async (imageId: number) => {
+    if (!detail?.id || imageBlobs[imageId] || loadingImages[imageId]) {
+      return; // Already loaded or currently loading
+    }
+
+    setLoadingImages(prev => ({ ...prev, [imageId]: true }));
+    // Clear any previous error for this image
+    setImageErrors(prev => ({ ...prev, [imageId]: false }));
+    try {
+      const blobUrl = await getPostImageBlob(detail.id, imageId);
+      setImageBlobs(prev => ({ ...prev, [imageId]: blobUrl }));
+    } catch (error) {
+      console.error('Failed to load image:', imageId, error);
+      setImageErrors(prev => ({ ...prev, [imageId]: true }));
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [imageId]: false }));
+    }
+  };
+
+  // Function to preload adjacent images for smoother navigation
+  const preloadAdjacentImages = (currentImageId: number) => {
+    if (!detail?.images || !selectedCategory) return;
+
+    const images = groupImagesByCategory(detail.images)[selectedCategory];
+    if (!images || images.length <= 1) return;
+
+    const currentIndex = images.findIndex(img => img.id === currentImageId);
+    if (currentIndex === -1) return;
+
+    // Preload next image
+    const nextIndex = (currentIndex + 1) % images.length;
+    loadImage(images[nextIndex].id);
+
+    // Preload previous image
+    const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+    loadImage(images[prevIndex].id);
+  };
+
+  // Load the currently selected image and preload adjacent ones
   useEffect(() => {
-    if (!detail?.images) return;
+    if (!selectedCategory || !detail?.images) return;
 
-    const loadImages = async () => {
-      for (const image of detail.images) {
-        if (!imageBlobs[image.id]) {
-          setLoadingImages(prev => ({ ...prev, [image.id]: true }));
-          try {
-            const blobUrl = await getPostImageBlob(detail.id, image.id);
-            setImageBlobs(prev => ({ ...prev, [image.id]: blobUrl }));
-          } catch (error) {
-            console.error('Failed to load image:', image.id, error);
-          } finally {
-            setLoadingImages(prev => ({ ...prev, [image.id]: false }));
-          }
-        }
-      }
-    };
+    const images = groupImagesByCategory(detail.images)[selectedCategory];
+    if (!images || images.length === 0) return;
 
-    loadImages();
-  }, [detail]);
+    const currentImage = images[selectedImageInCategory];
+    if (currentImage) {
+      loadImage(currentImage.id);
+      // Preload adjacent images after a short delay to prioritize the current image
+      setTimeout(() => preloadAdjacentImages(currentImage.id), 500);
+    }
+  }, [selectedCategory, selectedImageInCategory, detail?.images]);
 
   useEffect(() => {
     if (!station?.has_picture || !station?.picture_url) return;
@@ -346,6 +389,14 @@ const Detail: React.FC = () => {
                       onClick={() => {
                         setSelectedCategory(category);
                         setSelectedImageInCategory(0); // Reset to first image when switching categories
+                        
+                        // Load the first image of the new category
+                        if (detail?.images) {
+                          const categoryImages = groupImagesByCategory(detail.images)[category];
+                          if (categoryImages && categoryImages.length > 0) {
+                            loadImage(categoryImages[0].id);
+                          }
+                        }
                       }}
                     >
                       {category}
@@ -396,6 +447,25 @@ const Detail: React.FC = () => {
                               }}>
                                 <CircularProgress />
                               </Box>
+                            ) : imageErrors[images[selectedImageInCategory].id] ? (
+                              <Box sx={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: 'neutral.softBg',
+                                p: 2,
+                                textAlign: 'center'
+                              }}>
+                                <Typography level="body-sm" color="danger">
+                                  Failed to load image
+                                </Typography>
+                                <Typography level="body-xs" color="neutral" sx={{ mt: 1 }}>
+                                  {images[selectedImageInCategory].filename}
+                                </Typography>
+                              </Box>
                             ) : (
                               <img
                                 src={imageBlobs[images[selectedImageInCategory].id] || ''}
@@ -405,6 +475,12 @@ const Detail: React.FC = () => {
                                   maxHeight: '100%',
                                   objectFit: 'contain'
                                 }}
+                                onError={() => {
+                                  setImageErrors(prev => ({
+                                    ...prev,
+                                    [images[selectedImageInCategory].id]: true
+                                  }));
+                                }}
                               />
                             )
                           )}
@@ -413,7 +489,12 @@ const Detail: React.FC = () => {
                           {images.length > 1 && (
                             <>
                               <IconButton
-                                onClick={() => setSelectedImageInCategory(prev => prev > 0 ? prev - 1 : images.length - 1)}
+                                onClick={() => {
+                                  const newIndex = selectedImageInCategory > 0 ? selectedImageInCategory - 1 : images.length - 1;
+                                  setSelectedImageInCategory(newIndex);
+                                  // Load the new image
+                                  loadImage(images[newIndex].id);
+                                }}
                                 sx={{
                                   position: 'absolute',
                                   left: 8,
@@ -429,7 +510,12 @@ const Detail: React.FC = () => {
                                 <KeyboardArrowLeftIcon />
                               </IconButton>
                               <IconButton
-                                onClick={() => setSelectedImageInCategory(prev => prev < images.length - 1 ? prev + 1 : 0)}
+                                onClick={() => {
+                                  const newIndex = selectedImageInCategory < images.length - 1 ? selectedImageInCategory + 1 : 0;
+                                  setSelectedImageInCategory(newIndex);
+                                  // Load the new image
+                                  loadImage(images[newIndex].id);
+                                }}
                                 sx={{
                                   position: 'absolute',
                                   right: 8,
@@ -463,7 +549,11 @@ const Detail: React.FC = () => {
                           {images.map((image, index) => (
                             <Box
                               key={image.id}
-                              onClick={() => setSelectedImageInCategory(index)}
+                              onClick={() => {
+                                setSelectedImageInCategory(index);
+                                // Load the image if not already loaded
+                                loadImage(image.id);
+                              }}
                               sx={{
                                 width: '40px',
                                 height: '40px',
@@ -484,6 +574,19 @@ const Detail: React.FC = () => {
                             >
                               {loadingImages[image.id] || !imageBlobs[image.id] ? (
                                 <CircularProgress size="sm" />
+                              ) : imageErrors[image.id] ? (
+                                <Box sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: 'danger.softBg'
+                                }}>
+                                  <Typography level="body-xs" color="danger" sx={{ p: 1, textAlign: 'center' }}>
+                                    Error
+                                  </Typography>
+                                </Box>
                               ) : (
                                 <img
                                   src={imageBlobs[image.id]}
@@ -492,6 +595,12 @@ const Detail: React.FC = () => {
                                     width: '100%',
                                     height: '100%',
                                     objectFit: 'cover'
+                                  }}
+                                  onError={() => {
+                                    setImageErrors(prev => ({
+                                      ...prev,
+                                      [image.id]: true
+                                    }));
                                   }}
                                 />
                               )}
