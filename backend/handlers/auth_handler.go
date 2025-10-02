@@ -767,7 +767,8 @@ func GetProfilePicture(c *gin.Context) {
 	}
 
 	c.Header("Content-Type", contentType)
-	c.Header("Cache-Control", "public, max-age=86400") // Cache for 24 hours for profile pictures
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.Header("ETag", fmt.Sprintf(`"%x"`, user.UpdatedAt.Unix()))
 	c.Data(http.StatusOK, contentType, user.ProfilePicture)
 }
 
@@ -1122,7 +1123,7 @@ func ConfirmEmailChange(c *gin.Context) {
 
 // generateProfilePictureURL creates a URL for accessing user profile pictures
 func generateProfilePictureURL(userID string, updatedAt string) string {
-	return fmt.Sprintf("/api/users/%s/profile-picture?t=%s", userID, updatedAt)
+	return fmt.Sprintf("/api/users/%s/profile-picture", userID)
 }
 
 // isValidImageFile validates file content using magic numbers (file signatures)
