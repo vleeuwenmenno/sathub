@@ -57,6 +57,39 @@ increment_version() {
     echo "$major.$minor.$patch"
 }
 
+# Function to get current version from files
+get_current_version() {
+    # Try to get version from frontend/src/version.ts first
+    if [ -f "frontend/src/version.ts" ]; then
+        version=$(grep "export const VERSION" frontend/src/version.ts | sed "s/.*VERSION = '\([^']*\)'.*/\1/")
+        if [ -n "$version" ]; then
+            echo "$version"
+            return
+        fi
+    fi
+    
+    # Fallback to backend/version.go
+    if [ -f "backend/version.go" ]; then
+        version=$(grep "const VERSION" backend/version.go | sed "s/.*VERSION = \"\([^\"]*\)\".*/\1/")
+        if [ -n "$version" ]; then
+            echo "$version"
+            return
+        fi
+    fi
+    
+    # Fallback to client/version.go
+    if [ -f "client/version.go" ]; then
+        version=$(grep "const VERSION" client/version.go | sed "s/.*VERSION = \"\([^\"]*\)\".*/\1/")
+        if [ -n "$version" ]; then
+            echo "$version"
+            return
+        fi
+    fi
+    
+    # If all else fails, use the latest tag
+    get_latest_tag | sed 's/^v//'
+}
+
 # Function to update version files
 update_version_files() {
     local version=$1
@@ -137,18 +170,27 @@ print_color $YELLOW "What type of release would you like to make?"
 echo "1) Patch (bug fixes) - $major.$minor.$((patch + 1))"
 echo "2) Minor (new features) - $major.$((minor + 1)).0"
 echo "3) Major (breaking changes) - $((major + 1)).0.0"
+echo "4) Tag only (use existing version from files, no version update)"
 echo
-read -p "Enter your choice (1-3): " choice
+read -p "Enter your choice (1-4): " choice
 
 case $choice in
     1)
         new_version=$(increment_version "$major" "$minor" "$patch" "patch")
+        update_versions=true
         ;;
     2)
         new_version=$(increment_version "$major" "$minor" "$patch" "minor")
+        update_versions=true
         ;;
     3)
         new_version=$(increment_version "$major" "$minor" "$patch" "major")
+        update_versions=true
+        ;;
+    4)
+        new_version=$(get_current_version)
+        update_versions=false
+        print_color $BLUE "Using existing version from files: $new_version"
         ;;
     *)
         print_color $RED "Invalid choice. Exiting."
@@ -159,27 +201,32 @@ esac
 new_tag="v$new_version"
 print_color $GREEN "New tag will be: $new_tag"
 
-# Ask about updating version files
-echo
-read -p "Would you like to update version files and commit them before creating the tag? (Y/n): " update_versions
-if [[ ! $update_versions =~ ^[Nn]$ ]]; then
-    update_version_files "$new_version"
-    
-    # Check if there are changes to commit
-    if ! git diff-index --quiet HEAD --; then
-        print_color $BLUE "Committing version updates..."
-        git add frontend/src/version.ts backend/version.go frontend/package.json client/version.go client/go.mod
-        git commit -m "chore: bump version to $new_version"
+# Handle version file updates based on the choice
+if [ "$update_versions" = true ]; then
+    # Ask about updating version files
+    echo
+    read -p "Would you like to update version files and commit them before creating the tag? (Y/n): " update_files_confirm
+    if [[ ! $update_files_confirm =~ ^[Nn]$ ]]; then
+        update_version_files "$new_version"
         
-        # Ask if we should push the commit
-        read -p "Push the version commit to origin? (Y/n): " push_commit
-        if [[ ! $push_commit =~ ^[Nn]$ ]]; then
-            git push origin $(git rev-parse --abbrev-ref HEAD)
-            print_color $GREEN "✅ Version commit pushed"
+        # Check if there are changes to commit
+        if ! git diff-index --quiet HEAD --; then
+            print_color $BLUE "Committing version updates..."
+            git add frontend/src/version.ts backend/version.go frontend/package.json client/version.go client/go.mod
+            git commit -m "chore: bump version to $new_version"
+            
+            # Ask if we should push the commit
+            read -p "Push the version commit to origin? (Y/n): " push_commit
+            if [[ ! $push_commit =~ ^[Nn]$ ]]; then
+                git push origin $(git rev-parse --abbrev-ref HEAD)
+                print_color $GREEN "✅ Version commit pushed"
+            fi
+        else
+            print_color $YELLOW "No changes to commit (version files already up to date)"
         fi
-    else
-        print_color $YELLOW "No changes to commit (version files already up to date)"
     fi
+else
+    print_color $BLUE "Skipping version file updates as requested"
 fi
 
 # Confirm
