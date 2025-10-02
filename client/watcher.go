@@ -314,54 +314,53 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 		fw.logger.Debug().Int("count", len(caduPaths)).Msg("Found CADU files")
 	}
 
-	// Find the first non-filled product from dataset (for CBOR processing)
+	// Always check for CBOR and images, regardless of CADU presence
 	var selectedProduct string
-	var productDir string
 	var cborPath string
 	var imagePaths []string
 
-	if len(caduPaths) == 0 {
-		// Traditional CBOR processing
-		if products, ok := dataset.Metadata["products"].([]interface{}); ok {
-			for _, prod := range products {
-				if name, ok := prod.(string); ok && !strings.Contains(name, "(Filled)") {
-					selectedProduct = name
-					break
+	// Find product directories and collect files
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		potentialProductDir := filepath.Join(dirPath, entry.Name())
+		cborFile := filepath.Join(potentialProductDir, "product.cbor")
+
+		// Check if this directory contains a CBOR file
+		if _, err := os.Stat(cborFile); err == nil {
+			// Found a product directory with CBOR
+			if selectedProduct == "" {
+				selectedProduct = entry.Name()
+				cborPath = cborFile
+			}
+
+			// Collect all PNG images from this product directory
+			productEntries, err := os.ReadDir(potentialProductDir)
+			if err != nil {
+				fw.logger.Warn().Err(err).Str("dir", potentialProductDir).Msg("Failed to read product directory")
+				continue
+			}
+
+			for _, productEntry := range productEntries {
+				if strings.HasSuffix(productEntry.Name(), ".png") {
+					imagePaths = append(imagePaths, filepath.Join(potentialProductDir, productEntry.Name()))
 				}
 			}
 		}
-		if selectedProduct == "" {
-			return fmt.Errorf("no suitable product found in dataset.json")
-		}
+	}
 
-		productDir = filepath.Join(dirPath, selectedProduct)
-		// Check if dir exists
-		if _, err := os.Stat(productDir); os.IsNotExist(err) {
-			return fmt.Errorf("product directory %s does not exist", selectedProduct)
-		}
+	if selectedProduct != "" {
+		fw.logger.Info().Str("product", selectedProduct).Int("images", len(imagePaths)).Msg("Found product with CBOR and images")
+	}
 
-		// Read CBOR data
-		cborPath = filepath.Join(productDir, "product.cbor")
-		if _, err := os.Stat(cborPath); os.IsNotExist(err) {
-			return fmt.Errorf("CBOR file does not exist at %s", cborPath)
-		}
-
-		// Collect all PNG images
-		productEntries, err := os.ReadDir(productDir)
-		if err != nil {
-			return fmt.Errorf("failed to read product directory: %w", err)
-		}
-
-		imageCount := 0
-		for _, productEntry := range productEntries {
-			if strings.HasSuffix(productEntry.Name(), ".png") {
-				imagePaths = append(imagePaths, filepath.Join(productDir, productEntry.Name()))
-				imageCount++
-			}
-		}
-		fw.logger.Debug().Str("product", selectedProduct).Int("count", imageCount).Msg("Found images")
-		fw.logger.Info().Str("product", selectedProduct).Int("images", len(imagePaths)).Msg("Selected product for upload")
-	} else {
+	if len(caduPaths) > 0 {
 		fw.logger.Info().Int("cadu_files", len(caduPaths)).Msg("Processing CADU files")
 	}
 
