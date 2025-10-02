@@ -92,6 +92,7 @@ func RunMigrations() error {
 		&models.Station{},
 		&models.Post{},
 		&models.PostCBOR{},
+		&models.PostCADU{},
 		&models.PostImage{},
 		&models.Like{},
 		&models.Comment{},
