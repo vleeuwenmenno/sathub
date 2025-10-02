@@ -64,8 +64,8 @@ func GetUserPosts(c *gin.Context) {
 	db := config.GetDB()
 	var posts []models.Post
 
-	// Get posts where station belongs to user and station is public
-	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ?", userID, true).Find(&posts).Error; err != nil {
+	// Get posts where station belongs to user and station is public (exclude hidden posts)
+	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ? AND posts.hidden = ?", userID, true, false).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}

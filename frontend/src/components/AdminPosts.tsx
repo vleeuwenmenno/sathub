@@ -150,7 +150,7 @@ const AdminPosts: React.FC = () => {
           <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
             <Input
               key="search-input" // Stable key to prevent recreation
-              placeholder="Search by satellite name, station name, or owner username..."
+              placeholder="Search by satellite name, station name, owner username, post UUID, or owner UUID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => {
@@ -213,7 +213,14 @@ const AdminPosts: React.FC = () => {
                       {/* Owner info */}
                       <Box>
                         <Typography level="body-sm">
-                          <strong>Owner:</strong> {post.owner_username}
+                          <strong>Owner:</strong>{' '}
+                          <Typography
+                            component="span"
+                            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            onClick={() => navigate(`/admin/users/${post.owner_uuid}`, { state: { from: 'posts' } })}
+                          >
+                            {post.owner_username}
+                          </Typography>
                         </Typography>
                         <Typography level="body-xs" sx={{ fontFamily: 'monospace', color: 'neutral.600' }}>
                           {post.owner_uuid}
@@ -304,7 +311,11 @@ const AdminPosts: React.FC = () => {
                       </Typography>
                     </td>
                     <td>
-                      <Typography level="body-sm">
+                      <Typography
+                        level="body-sm"
+                        sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                        onClick={() => navigate(`/admin/users/${post.owner_uuid}`, { state: { from: 'posts' } })}
+                      >
                         {post.owner_username}
                       </Typography>
                       <Typography level="body-xs" sx={{ fontFamily: 'monospace', color: 'neutral.600' }}>

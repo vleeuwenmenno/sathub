@@ -1153,8 +1153,8 @@ func GetAllPosts(c *gin.Context) {
 	// Add search filter if provided
 	if search != "" {
 		searchTerm := "%" + search + "%"
-		query = query.Where("posts.satellite_name ILIKE ? OR stations.name ILIKE ? OR users.username ILIKE ?",
-			searchTerm, searchTerm, searchTerm)
+		query = query.Where("posts.satellite_name ILIKE ? OR stations.name ILIKE ? OR users.username ILIKE ? OR CAST(posts.id AS TEXT) ILIKE ? OR CAST(users.id AS TEXT) ILIKE ?",
+			searchTerm, searchTerm, searchTerm, searchTerm, searchTerm)
 	}
 
 	// Add owner UUID filter if provided
