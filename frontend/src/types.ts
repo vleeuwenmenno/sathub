@@ -43,6 +43,7 @@ export interface DatabasePostDetail {
   images: PostImage[];
   likes_count: number;
   is_liked: boolean;
+  hidden: boolean;
   created_at: string;
   updated_at: string;
 }

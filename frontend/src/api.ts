@@ -381,7 +381,11 @@ export const adminDeletePost = async (postId: string): Promise<void> => {
   await api.delete(`/admin/posts/${postId}`);
 };
 
-export const getPostImageUrl = (postId: string, imageId: number): string => {
+export const adminHidePost = async (postId: string, hidden: boolean): Promise<void> => {
+  await api.put(`/admin/posts/${postId}/hide`, { hidden });
+};
+
+export const getPostImageUrl = (postId: number, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };
 
@@ -644,6 +648,24 @@ export interface AdminUsersResponse {
   pagination: PaginationMeta;
 }
 
+export interface AdminPost {
+  id: number;
+  uuid: string;
+  owner_uuid: string;
+  owner_username: string;
+  station_id: string;
+  station_name: string;
+  satellite_name: string;
+  hidden: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminPostsResponse {
+  posts: AdminPost[];
+  pagination: PaginationMeta;
+}
+
 export interface AdminUserDetails extends AdminUser {
   post_count: number;
   station_count: number;
@@ -696,6 +718,30 @@ export const approveUser = async (userId: string, approved: boolean): Promise<vo
 
 export const getUserDetails = async (userId: string): Promise<AdminUserDetails> => {
   const res = await api.get(`/admin/users/${userId}`);
+  return res.data.data;
+};
+
+export const getAdminPosts = async (
+  page: number = 1,
+  limit: number = 20,
+  search: string = "",
+  owner_uuid?: string,
+  station_id?: string
+): Promise<AdminPostsResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  if (owner_uuid) {
+    params.set("owner_uuid", owner_uuid);
+  }
+  if (station_id) {
+    params.set("station_id", station_id);
+  }
+  const res = await api.get(`/admin/posts?${params}`);
   return res.data.data;
 };
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -15,19 +16,18 @@ import {
   Modal,
   ModalDialog,
   ModalClose,
-  Avatar,
-  Divider,
   Input,
   IconButton,
 } from "@mui/joy";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
-import { getAllUsers, updateUserRole, deleteUser, banUser, approveUser, getUserDetails, getProfilePictureUrl } from "../api";
-import type { AdminUser, AdminUserDetails } from "../api";
+import { getAllUsers, updateUserRole, deleteUser, banUser, approveUser } from "../api";
+import type { AdminUser } from "../api";
 
 const AdminUserManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number }>({
@@ -46,11 +46,6 @@ const AdminUserManagement: React.FC = () => {
     open: false,
     user: null,
   });
-  const [userDetailsModal, setUserDetailsModal] = useState<{ open: boolean; user: AdminUserDetails | null }>({
-    open: false,
-    user: null,
-  });
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
   const fetchUsers = async (page: number = 1, search: string = '', approved?: boolean, banned?: boolean) => {
     try {
@@ -133,47 +128,38 @@ const AdminUserManagement: React.FC = () => {
 
   const handleBanUser = async (userId: string, banned: boolean) => {
     try {
-      console.log(`Attempting to ${banned ? 'ban' : 'unban'} user ${userId}`);
+      setUpdatingUserId(userId);
       await banUser(userId, banned);
-      console.log(`Successfully ${banned ? 'banned' : 'unbanned'} user ${userId}`);
       // Refresh the current page to get updated data from server
       const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
       const bannedFilterValue = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
       await fetchUsers(pagination.page, searchQuery, approved, bannedFilterValue);
-      console.log(`Refreshed user list after ${banned ? 'ban' : 'unban'} operation`);
     } catch (err) {
-      console.error(`Error ${banned ? 'banning' : 'unbanning'} user:`, err);
       setError(`Failed to ${banned ? 'ban' : 'unban'} user`);
+      console.error(`Error ${banned ? 'banning' : 'unbanning'} user:`, err);
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
   const handleApproveUser = async (userId: string, approved: boolean) => {
     try {
-      console.log(`Attempting to ${approved ? 'approve' : 'reject'} user ${userId}`);
+      setUpdatingUserId(userId);
       await approveUser(userId, approved);
-      console.log(`Successfully ${approved ? 'approved' : 'rejected'} user ${userId}`);
       // Refresh the current page to get updated data from server
       const approvedFilterValue = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
       const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
       await fetchUsers(pagination.page, searchQuery, approvedFilterValue, banned);
-      console.log(`Refreshed user list after ${approved ? 'approve' : 'reject'} operation`);
     } catch (err) {
-      console.error(`Error ${approved ? 'approving' : 'rejecting'} user:`, err);
       setError(`Failed to ${approved ? 'approve' : 'reject'} user`);
+      console.error(`Error ${approved ? 'approving' : 'rejecting'} user:`, err);
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
-  const handleViewUserDetails = async (userId: string) => {
-    try {
-      setLoadingDetails(true);
-      const userDetails = await getUserDetails(userId);
-      setUserDetailsModal({ open: true, user: userDetails });
-    } catch (err) {
-      setError("Failed to load user details");
-      console.error("Error loading user details:", err);
-    } finally {
-      setLoadingDetails(false);
-    }
+  const handleViewUserDetails = (userId: string) => {
+    navigate(`/admin/users/${userId}`, { state: { from: 'users' } });
   };
 
   const getRoleColor = (role: string) => {
@@ -565,170 +551,6 @@ const AdminUserManagement: React.FC = () => {
               Delete User
             </Button>
           </Box>
-        </ModalDialog>
-      </Modal>
-
-      {/* User Details Modal */}
-      <Modal
-        open={userDetailsModal.open}
-        onClose={() => setUserDetailsModal({ open: false, user: null })}
-      >
-        <ModalDialog sx={{ maxWidth: 600, width: '90%', maxHeight: '90vh', overflow: 'auto' }}>
-          <ModalClose />
-          {loadingDetails ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : userDetailsModal.user ? (
-            <>
-              <Typography level="h4" sx={{ mb: 3 }}>
-                User Details: {userDetailsModal.user.username}
-              </Typography>
-
-              <Stack spacing={3}>
-                {/* Profile Section */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar
-                    size="lg"
-                    src={userDetailsModal.user.profile_picture_url ? getProfilePictureUrl(userDetailsModal.user.profile_picture_url) : undefined}
-                    sx={{ width: 80, height: 80 }}
-                  >
-                    {userDetailsModal.user.display_name?.charAt(0) || userDetailsModal.user.username.charAt(0)}
-                  </Avatar>
-                  <Box>
-                    <Typography level="h4">
-                      {userDetailsModal.user.display_name || userDetailsModal.user.username}
-                    </Typography>
-                    <Typography level="body-sm" color="neutral">
-                      @{userDetailsModal.user.username}
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                      <Chip size="sm" color={getRoleColor(userDetailsModal.user.role)} variant="soft">
-                        {userDetailsModal.user.role}
-                      </Chip>
-                      <Chip
-                        size="sm"
-                        color={userDetailsModal.user.approved ? "success" : "warning"}
-                        variant="soft"
-                      >
-                        {userDetailsModal.user.approved ? "Approved" : "Pending"}
-                      </Chip>
-                      <Chip
-                        size="sm"
-                        color={userDetailsModal.user.banned ? "danger" : "success"}
-                        variant="soft"
-                      >
-                        {userDetailsModal.user.banned ? "Banned" : "Active"}
-                      </Chip>
-                    </Stack>
-                  </Box>
-                </Box>
-
-                <Divider />
-
-                {/* Account Information */}
-                <Box>
-                  <Typography level="body-lg" sx={{ mb: 2, fontWeight: 'bold' }}>Account Information</Typography>
-                  <Stack spacing={1}>
-                    <Typography level="body-sm">
-                      <strong>User ID:</strong> {userDetailsModal.user.id}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography level="body-sm">
-                        <strong>Email:</strong> {userDetailsModal.user.email || 'Not provided'}
-                      </Typography>
-                      {userDetailsModal.user.email && (
-                        <Chip
-                          size="sm"
-                          color={userDetailsModal.user.email_confirmed ? "success" : "warning"}
-                          variant="soft"
-                        >
-                          {userDetailsModal.user.email_confirmed ? "Confirmed" : "Unconfirmed"}
-                        </Chip>
-                      )}
-                    </Box>
-                    <Typography level="body-sm">
-                      <strong>Two-Factor Auth:</strong>{' '}
-                      {userDetailsModal.user.two_factor_enabled ? 'Enabled' : 'Disabled'}
-                    </Typography>
-                    <Typography level="body-sm">
-                      <strong>Created:</strong> {new Date(userDetailsModal.user.created_at).toLocaleDateString('de-DE')}
-                    </Typography>
-                    {userDetailsModal.user.banned && userDetailsModal.user.banned_at && (
-                      <Typography level="body-sm">
-                        <strong>Banned At:</strong> {new Date(userDetailsModal.user.banned_at).toLocaleDateString('de-DE')}
-                      </Typography>
-                    )}
-                  </Stack>
-                </Box>
-
-                <Divider />
-
-                {/* Activity Statistics */}
-                <Box>
-                  <Typography level="body-lg" sx={{ mb: 2, fontWeight: 'bold' }}>Activity Statistics</Typography>
-                  <Stack spacing={1}>
-                    <Typography level="body-sm">
-                      <strong>Stations:</strong> {userDetailsModal.user.station_count}
-                    </Typography>
-                    <Typography level="body-sm">
-                      <strong>Posts:</strong> {userDetailsModal.user.post_count}
-                    </Typography>
-                  </Stack>
-                </Box>
-
-                <Divider />
-
-                {/* Actions */}
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  {!userDetailsModal.user.approved && (
-                    <Button
-                      variant="outlined"
-                      color="success"
-                      onClick={() => {
-                        handleApproveUser(userDetailsModal.user!.id, true);
-                        setUserDetailsModal({ open: false, user: null });
-                      }}
-                    >
-                      Approve User
-                    </Button>
-                  )}
-                  {userDetailsModal.user.approved && (
-                    <Button
-                      variant="outlined"
-                      color="warning"
-                      onClick={() => {
-                        handleApproveUser(userDetailsModal.user!.id, false);
-                        setUserDetailsModal({ open: false, user: null });
-                      }}
-                    >
-                      Reject User
-                    </Button>
-                  )}
-                  <Button
-                    variant="outlined"
-                    color={userDetailsModal.user.banned ? "success" : "warning"}
-                    onClick={() => {
-                      handleBanUser(userDetailsModal.user!.id, !userDetailsModal.user!.banned);
-                      setUserDetailsModal({ open: false, user: null });
-                    }}
-                  >
-                    {userDetailsModal.user.banned ? "Unban User" : "Ban User"}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="danger"
-                    onClick={() => {
-                      setDeleteDialog({ open: true, user: userDetailsModal.user });
-                      setUserDetailsModal({ open: false, user: null });
-                    }}
-                  >
-                    Delete User
-                  </Button>
-                </Box>
-              </Stack>
-            </>
-          ) : null}
         </ModalDialog>
       </Modal>
     </Box>

@@ -64,8 +64,8 @@ func GetUserPosts(c *gin.Context) {
 	db := config.GetDB()
 	var posts []models.Post
 
-	// Get posts where station belongs to user and station is public
-	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ?", userID, true).Find(&posts).Error; err != nil {
+	// Get posts where station belongs to user and station is public (exclude hidden posts)
+	if err := db.Preload("Station").Joins("Station").Where("user_id = ? AND is_public = ? AND posts.hidden = ?", userID, true, false).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -109,8 +109,8 @@ func GetStationPosts(c *gin.Context) {
 
 	var posts []models.Post
 
-	// Get all posts for the station
-	if err := db.Preload("Station").Preload("Station.User").Where("station_id = ?", stationID).Order("created_at DESC").Find(&posts).Error; err != nil {
+	// Get all non-hidden posts for the station
+	if err := db.Preload("Station").Preload("Station.User").Where("station_id = ? AND hidden = ?", stationID, false).Order("created_at DESC").Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -137,9 +137,9 @@ func GetDatabasePostDetail(c *gin.Context) {
 	// Check if user is authenticated
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 
-	// Find post with station and user info
+	// Find post with station and user info (exclude hidden posts)
 	var post models.Post
-	query := db.Preload("Station").Preload("Station.User").Where("posts.id = ?", postID)
+	query := db.Preload("Station").Preload("Station.User").Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		query = query.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -214,8 +214,8 @@ func GetLatestPosts(c *gin.Context) {
 
 	offset := (page - 1) * limit
 
-	// Get posts from public stations, ordered by created_at desc
-	if err := db.Preload("Station").Preload("Station.User").Joins("Station").Where("is_public = ?", true).Order("posts.created_at DESC").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
+	// Get posts from public stations, ordered by created_at desc (exclude hidden posts)
+	if err := db.Preload("Station").Preload("Station.User").Joins("Station").Where("is_public = ? AND posts.hidden = ?", true, false).Order("posts.created_at DESC").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch posts")
 		return
 	}
@@ -594,9 +594,9 @@ func GetPostCBOR(c *gin.Context) {
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 	utils.Logger.Info().Bool("authenticated", isAuthenticated).Str("user_id", userID).Msg("User authentication status")
 
-	// First check if the post exists and is accessible
+	// First check if the post exists and is accessible (exclude hidden posts)
 	var post models.Post
-	postQuery := db.Where("posts.id = ?", postID)
+	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -681,9 +681,9 @@ func GetPostCADU(c *gin.Context) {
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 	utils.Logger.Info().Bool("authenticated", isAuthenticated).Str("user_id", userID).Msg("User authentication status")
 
-	// First check if the post exists and is accessible
+	// First check if the post exists and is accessible (exclude hidden posts)
 	var post models.Post
-	postQuery := db.Where("posts.id = ?", postID)
+	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -843,9 +843,9 @@ func GetPostImage(c *gin.Context) {
 	// Check if user is authenticated (for private posts)
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 
-	// Find image and check post's station visibility
+	// Find image and check post's station visibility (exclude hidden posts)
 	var image models.PostImage
-	query := db.Joins("Post").Joins("Post.Station").Where("post_images.id = ? AND post_images.post_id = ?", uint(imageID), postID)
+	query := db.Joins("Post").Joins("Post.Station").Where("post_images.id = ? AND post_images.post_id = ? AND posts.hidden = ?", uint(imageID), postID, false)
 	if !isAuthenticated {
 		query = query.Where("is_public = ?", true)
 	} else {
@@ -888,11 +888,6 @@ func GetPostImage(c *gin.Context) {
 
 	// Stream the image data
 	c.DataFromReader(http.StatusOK, resp.ContentLength, contentType, resp.Body, nil)
-}
-
-// buildPostDetailResponse builds a PostDetailResponse from a Post model
-func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
-	return buildPostDetailResponseWithUser(post, db, "")
 }
 
 // buildPostDetailResponseWithUser builds a PostDetailResponse from a Post model with user context
