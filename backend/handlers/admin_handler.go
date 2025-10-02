@@ -671,6 +671,18 @@ func AdminDeletePost(c *gin.Context) {
 		return
 	}
 
+	// Delete associated CBOR records from database
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCBOR{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post CBOR")
+		return
+	}
+
+	// Delete associated CADU records from database
+	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCADU{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete post CADU")
+		return
+	}
+
 	// Delete the post
 	if err := db.Delete(&post).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post")
