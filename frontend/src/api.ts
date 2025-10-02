@@ -385,7 +385,7 @@ export const adminHidePost = async (postId: string, hidden: boolean): Promise<vo
   await api.put(`/admin/posts/${postId}/hide`, { hidden });
 };
 
-export const getPostImageUrl = (postId: number, imageId: number): string => {
+export const getPostImageUrl = (postId: string, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };
 

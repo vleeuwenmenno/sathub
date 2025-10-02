@@ -95,7 +95,7 @@ const Overview: React.FC = () => {
                     }}
                   >
                     <img
-                      src={getPostImageUrl(parseInt(post.id), post.images[0].id)}
+                      src={getPostImageUrl(post.id, post.images[0].id)}
                       alt={post.satellite_name}
                       style={{
                         width: "100%",
