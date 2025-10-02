@@ -114,10 +114,23 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		for _, origin := range strings.Split(additionalOrigins, ",") {
 			origin = strings.TrimSpace(origin)
 			if origin != "" {
-				allowedOrigins = append(allowedOrigins, origin)
+				// Check if origin is already in the list to avoid duplicates
+				found := false
+				for _, existing := range allowedOrigins {
+					if existing == origin {
+						found = true
+						break
+					}
+				}
+				if !found {
+					allowedOrigins = append(allowedOrigins, origin)
+				}
 			}
 		}
 	}
+
+	// Log the allowed origins for debugging
+	utils.Logger.Info().Strs("allowed_origins", allowedOrigins).Msg("CORS configuration")
 
 	corsConfig.AllowOrigins = allowedOrigins
 	corsConfig.AllowCredentials = true
