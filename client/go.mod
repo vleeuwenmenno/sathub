@@ -1,4 +1,4 @@
-// version: 0.12.0
+// version: 0.12.1
 module sathub-client
 
 go 1.21
