@@ -12,6 +12,8 @@ import {
   Avatar,
   Divider,
   Chip,
+  Select,
+  Option,
 } from "@mui/joy";
 import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
 import { getUserDetails, updateUserRole, deleteUser, banUser, approveUser, getProfilePictureUrl } from "../api";
@@ -288,26 +290,15 @@ const AdminUserDetail: React.FC = () => {
                 {/* Role Change */}
                 <Box>
                   <Typography level="body-sm" sx={{ mb: 1 }}>Change Role:</Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      variant={user.role === 'user' ? 'solid' : 'outlined'}
-                      color="primary"
-                      onClick={() => handleRoleChange('user')}
-                      disabled={updating || user.role === 'user'}
-                      size="sm"
-                    >
-                      User
-                    </Button>
-                    <Button
-                      variant={user.role === 'admin' ? 'solid' : 'outlined'}
-                      color="danger"
-                      onClick={() => handleRoleChange('admin')}
-                      disabled={updating || user.role === 'admin'}
-                      size="sm"
-                    >
-                      Admin
-                    </Button>
-                  </Stack>
+                  <Select
+                    value={user.role}
+                    onChange={(_, newValue) => handleRoleChange(newValue as string)}
+                    disabled={updating}
+                    size="sm"
+                  >
+                    <Option value="user">User</Option>
+                    <Option value="admin">Admin</Option>
+                  </Select>
                 </Box>
 
                 {/* Approval Actions */}
