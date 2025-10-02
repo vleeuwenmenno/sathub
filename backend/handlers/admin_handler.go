@@ -686,6 +686,58 @@ func AdminDeletePost(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Post deleted successfully", nil)
 }
 
+// AdminHidePost handles hiding or unhiding a post (admin only)
+func AdminHidePost(c *gin.Context) {
+	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid post ID")
+		return
+	}
+
+	var req struct {
+		Hidden bool `json:"hidden"`
+	}
+	if err := c.Bind(&req); err != nil {
+		utils.ValidationErrorResponse(c, "Invalid request body")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find post to verify it exists
+	var post models.Post
+	if err := db.First(&post, uint(postID)).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Post not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch post")
+		return
+	}
+
+	// Update hidden status
+	oldHidden := post.Hidden
+	post.Hidden = req.Hidden
+	if err := db.Save(&post).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update post visibility")
+		return
+	}
+
+	// Log hide/unhide action
+	action := "hidden"
+	if !req.Hidden {
+		action = "unhidden"
+	}
+	utils.LogAuditEvent(c, models.ActionAdminPostHide, models.TargetTypePost, fmt.Sprintf("%d", post.ID), models.AuditMetadata{
+		"satellite_name": post.SatelliteName,
+		"station_id":     post.StationID,
+		"old_hidden":     oldHidden,
+		"new_hidden":     req.Hidden,
+	})
+
+	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("Post %s successfully", action), nil)
+}
+
 // GetUserDetails returns detailed information about a specific user
 func GetUserDetails(c *gin.Context) {
 	userIDStr := c.Param("id")
@@ -1040,6 +1092,137 @@ func GetAuditLogs(c *gin.Context) {
 // ApproveUserRequest represents the request to approve or reject a user
 type ApproveUserRequest struct {
 	Approved bool `json:"approved"`
+}
+
+// AdminPostResponse represents post data for admin management
+type AdminPostResponse struct {
+	ID            uint   `json:"id"`
+	UUID          string `json:"uuid"` // Post ID as string for future UUID compatibility
+	OwnerUUID     string `json:"owner_uuid"`
+	OwnerUsername string `json:"owner_username"`
+	StationID     string `json:"station_id"`
+	StationName   string `json:"station_name"`
+	SatelliteName string `json:"satellite_name"`
+	Hidden        bool   `json:"hidden"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+}
+
+// AdminPostsResponse represents paginated post data for admin management
+type AdminPostsResponse struct {
+	Posts      []AdminPostResponse `json:"posts"`
+	Pagination PaginationMeta      `json:"pagination"`
+}
+
+// GetAllPosts returns a paginated list of posts for admin management with optional search and filters
+func GetAllPosts(c *gin.Context) {
+	db := config.GetDB()
+
+	// Parse query parameters
+	page := 1
+	limit := 20
+	search := c.Query("search")
+	ownerUUID := c.Query("owner_uuid")
+	stationID := c.Query("station_id")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
+			page = 1
+		}
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || l != 1 {
+			limit = 20
+		}
+		// Cap limit at 100
+		if limit > 100 {
+			limit = 100
+		}
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Build query with joins to get station and user info
+	query := db.Model(&models.Post{}).
+		Select("posts.id, posts.station_id, posts.satellite_name, posts.hidden, posts.created_at, posts.updated_at, stations.name as station_name, users.id as owner_uuid, users.username as owner_username").
+		Joins("JOIN stations ON posts.station_id = stations.id").
+		Joins("JOIN users ON stations.user_id = users.id")
+
+	// Add search filter if provided
+	if search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Where("posts.satellite_name ILIKE ? OR stations.name ILIKE ? OR users.username ILIKE ?",
+			searchTerm, searchTerm, searchTerm)
+	}
+
+	// Add owner UUID filter if provided
+	if ownerUUID != "" {
+		query = query.Where("users.id = ?", ownerUUID)
+	}
+
+	// Add station ID filter if provided
+	if stationID != "" {
+		query = query.Where("posts.station_id = ?", stationID)
+	}
+
+	// Get total count for pagination
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count posts")
+		return
+	}
+
+	// Get paginated posts
+	var posts []struct {
+		ID            uint   `json:"id"`
+		StationID     string `json:"station_id"`
+		SatelliteName string `json:"satellite_name"`
+		Hidden        bool   `json:"hidden"`
+		CreatedAt     time.Time
+		UpdatedAt     time.Time
+		StationName   string `json:"station_name"`
+		OwnerUUID     string `json:"owner_uuid"`
+		OwnerUsername string `json:"owner_username"`
+	}
+
+	if err := query.Order("posts.created_at DESC").Limit(limit).Offset(offset).Scan(&posts).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to retrieve posts")
+		return
+	}
+
+	// Calculate total pages
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	var postResponses []AdminPostResponse
+	for _, post := range posts {
+		postResponse := AdminPostResponse{
+			ID:            post.ID,
+			UUID:          fmt.Sprintf("%d", post.ID), // Use ID as string for now, will be UUID later
+			OwnerUUID:     post.OwnerUUID,
+			OwnerUsername: post.OwnerUsername,
+			StationID:     post.StationID,
+			StationName:   post.StationName,
+			SatelliteName: post.SatelliteName,
+			Hidden:        post.Hidden,
+			CreatedAt:     post.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:     post.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+		postResponses = append(postResponses, postResponse)
+	}
+
+	response := AdminPostsResponse{
+		Posts: postResponses,
+		Pagination: PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+			Pages: totalPages,
+		},
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Posts retrieved successfully", response)
 }
 
 // ApproveUser approves or rejects a user (admin only)

@@ -12,6 +12,7 @@ type Post struct {
 	SatelliteName string    `gorm:"not null" json:"satellite_name"`
 	CBOR          []byte    `json:"-"`                         // Optional CBOR blob
 	Metadata      string    `gorm:"type:text" json:"metadata"` // JSON metadata as string
+	Hidden        bool      `gorm:"default:false" json:"hidden"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
