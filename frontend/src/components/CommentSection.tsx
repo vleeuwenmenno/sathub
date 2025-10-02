@@ -46,10 +46,10 @@ interface CommentSectionProps {
 const CommentItem: React.FC<{
   comment: PostComment;
   onEdit: (comment: PostComment) => void;
-  onDelete: (commentId: number) => void;
-  onSaveEdit: (commentId: number, content: string) => Promise<void>;
+  onDelete: (commentId: string) => void;
+  onSaveEdit: (commentId: string, content: string) => Promise<void>;
   onCancelEdit: () => void;
-  onLikeChange?: (commentId: number, liked: boolean, likesCount: number) => void;
+  onLikeChange?: (commentId: string, liked: boolean, likesCount: number) => void;
   currentUserId?: string;
   isEditing?: boolean;
   editContent?: string;
@@ -316,12 +316,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingSubmitting, setEditingSubmitting] = useState(false);
   const [isCommentFormExpanded, setIsCommentFormExpanded] = useState(false);
-  const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<number | null>(null);
+  const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'most_liked'>('newest');
 
   useEffect(() => {
@@ -384,7 +384,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
     setIsCommentFormExpanded(false);
   };
 
-  const handleSaveEdit = async (commentId: number, content: string) => {
+  const handleSaveEdit = async (commentId: string, content: string) => {
     try {
       setEditingSubmitting(true);
       await updateComment(commentId, { content });
@@ -408,7 +408,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
     setEditContent(comment.content);
   };
 
-  const handleDeleteComment = async (commentId: number) => {
+  const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {

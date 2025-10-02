@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"strings"
 
 	"sathub-ui-backend/config"
@@ -91,8 +90,8 @@ func LogStationAction(c *gin.Context, action models.AuditAction, stationID strin
 }
 
 // LogPostAction logs actions performed on posts
-func LogPostAction(c *gin.Context, action models.AuditAction, postID uint, metadata models.AuditMetadata) error {
-	return LogAuditEvent(c, action, models.TargetTypePost, fmt.Sprintf("%d", postID), metadata)
+func LogPostAction(c *gin.Context, action models.AuditAction, postID string, metadata models.AuditMetadata) error {
+	return LogAuditEvent(c, action, models.TargetTypePost, postID, metadata)
 }
 
 // LogCommentAction logs actions performed on comments

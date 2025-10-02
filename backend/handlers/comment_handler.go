@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/middleware"
@@ -37,7 +36,8 @@ type CommentResponse struct {
 
 // GetCommentsForPost handles fetching all comments for a specific post
 func GetCommentsForPost(c *gin.Context) {
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -48,7 +48,7 @@ func GetCommentsForPost(c *gin.Context) {
 	// Check if post exists and is accessible
 	userID, isAuthenticated := middleware.GetCurrentUserID(c)
 	var post models.Post
-	query := db.Preload("Station").Where("posts.id = ?", uint(postID))
+	query := db.Preload("Station").Where("posts.id = ?", postID)
 	if !isAuthenticated {
 		query = query.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -72,7 +72,7 @@ func GetCommentsForPost(c *gin.Context) {
 
 	// Fetch all comments for the post with appropriate sorting
 	var comments []models.Comment
-	commentQuery := db.Preload("User").Where("post_id = ?", uint(postID))
+	commentQuery := db.Preload("User").Where("post_id = ?", postID)
 
 	if sortBy == "newest" {
 		commentQuery = commentQuery.Order("created_at DESC")
@@ -141,7 +141,8 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -157,7 +158,7 @@ func CreateComment(c *gin.Context) {
 
 	// Check if post exists and is accessible
 	var post models.Post
-	query := db.Preload("Station").Where("posts.id = ?", uint(postID))
+	query := db.Preload("Station").Where("posts.id = ?", postID)
 	query = query.Joins("Station").Where("is_public = ? OR user_id = ?", true, userIDStr)
 
 	if err := query.First(&post).Error; err != nil {
@@ -172,12 +173,12 @@ func CreateComment(c *gin.Context) {
 	// Create the comment
 	comment := models.Comment{
 		UserID:  userID,
-		PostID:  uint(postID),
+		PostID:  postID,
 		Content: req.Content,
 	}
 
 	// Debug logging
-	utils.Logger.Info().Str("user_id", userID.String()).Uint("post_id", uint(postID)).Str("content", req.Content).Msg("Creating comment")
+	utils.Logger.Info().Str("user_id", userID.String()).Str("post_id", postID.String()).Str("content", req.Content).Msg("Creating comment")
 
 	if err := db.Create(&comment).Error; err != nil {
 		utils.Logger.Error().Err(err).Msg("Failed to create comment")
@@ -207,7 +208,7 @@ func CreateComment(c *gin.Context) {
 				UserID:    post.Station.UserID,
 				Type:      "comment",
 				Message:   fmt.Sprintf("%s commented on your post (%s)", commenterName, post.SatelliteName),
-				RelatedID: fmt.Sprintf("%d:%s", uint(postID), comment.ID.String()), // postId:commentId for navigation
+				RelatedID: fmt.Sprintf("%s:%s", postID.String(), comment.ID.String()), // postId:commentId for navigation
 				IsRead:    false,
 			}
 
@@ -229,7 +230,7 @@ func CreateComment(c *gin.Context) {
 
 	// Log comment creation
 	utils.LogCommentAction(c, models.ActionCommentCreate, comment.ID, models.AuditMetadata{
-		"post_id":        postID,
+		"post_id":        postID.String(),
 		"content_length": len(req.Content),
 	})
 

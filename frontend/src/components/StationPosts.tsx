@@ -64,7 +64,7 @@ const StationPosts: React.FC = () => {
     loadData();
   }, [stationId]);
 
-  const handleDeletePost = (postId: number) => {
+  const handleDeletePost = (postId: string) => {
     setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
   };
 
@@ -90,8 +90,6 @@ const StationPosts: React.FC = () => {
           }
         }
       }
-
-      setImageBlobs(newImageBlobs);
 
       setImageBlobs(newImageBlobs);
     };

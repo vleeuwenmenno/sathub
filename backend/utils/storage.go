@@ -93,7 +93,7 @@ func ensureBucketExists(bucketName string) {
 }
 
 // UploadImage uploads an image to storage and returns the URL
-func UploadImage(data []byte, filename string, contentType string, postID uint) (string, error) {
+func UploadImage(data []byte, filename string, contentType string, postID string) (string, error) {
 	cfg := config.GetStorageConfig()
 
 	// Generate unique filename
@@ -101,7 +101,7 @@ func UploadImage(data []byte, filename string, contentType string, postID uint) 
 	name := strings.TrimSuffix(filename, ext)
 	uniqueName := fmt.Sprintf("%s_%d%s", name, time.Now().UnixNano(), ext)
 
-	key := fmt.Sprintf("images/post-%d/%s", postID, uniqueName)
+	key := fmt.Sprintf("images/post-%s/%s", postID, uniqueName)
 
 	Logger.Info().Str("bucket", cfg.Bucket).Str("key", key).Str("endpoint", cfg.Endpoint).Msg("Uploading image to MinIO")
 

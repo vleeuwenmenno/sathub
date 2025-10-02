@@ -26,7 +26,7 @@ type PostRequest struct {
 
 // PostResponse represents a post in responses
 type PostResponse struct {
-	ID            uint                `json:"id"`
+	ID            string              `json:"id"`
 	StationID     string              `json:"station_id"`
 	StationName   string              `json:"station_name"`
 	StationUser   *UserDetailResponse `json:"station_user,omitempty"`
@@ -48,8 +48,8 @@ type PostImageResponse struct {
 }
 
 // generatePostImageURL creates a URL for accessing post images
-func generatePostImageURL(postID, imageID uint) string {
-	return fmt.Sprintf("/api/posts/%d/images/%d", postID, imageID)
+func generatePostImageURL(postID string, imageID uint) string {
+	return fmt.Sprintf("/api/posts/%s/images/%d", postID, imageID)
 }
 
 // GetUserPosts handles fetching all public posts for a specific user
@@ -125,7 +125,8 @@ func GetStationPosts(c *gin.Context) {
 
 // GetDatabasePostDetail handles fetching a single database post detail
 func GetDatabasePostDetail(c *gin.Context) {
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -138,7 +139,7 @@ func GetDatabasePostDetail(c *gin.Context) {
 
 	// Find post with station and user info (exclude hidden posts)
 	var post models.Post
-	query := db.Preload("Station").Preload("Station.User").Where("posts.id = ? AND posts.hidden = ?", uint(postID), false)
+	query := db.Preload("Station").Preload("Station.User").Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		query = query.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -160,7 +161,7 @@ func GetDatabasePostDetail(c *gin.Context) {
 
 // PostDetailResponse represents detailed post information
 type PostDetailResponse struct {
-	ID            uint                `json:"id"`
+	ID            string              `json:"id"`
 	StationID     string              `json:"station_id"`
 	StationName   string              `json:"station_name"`
 	StationUser   *UserDetailResponse `json:"station_user,omitempty"`
@@ -292,7 +293,8 @@ func UploadPostImage(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -302,7 +304,7 @@ func UploadPostImage(c *gin.Context) {
 
 	// Verify post belongs to the station
 	var post models.Post
-	if err := db.Where("id = ? AND station_id = ?", uint(postID), stationID).First(&post).Error; err != nil {
+	if err := db.Where("id = ? AND station_id = ?", postID, stationID).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not owned by station")
 			return
@@ -341,7 +343,7 @@ func UploadPostImage(c *gin.Context) {
 	}
 
 	// Upload image to storage
-	imageURL, err := utils.UploadImage(fileData, file.Filename, contentType, uint(postID))
+	imageURL, err := utils.UploadImage(fileData, file.Filename, contentType, postID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to upload image to storage")
 		return
@@ -349,7 +351,7 @@ func UploadPostImage(c *gin.Context) {
 
 	// Create post image record
 	postImage := models.PostImage{
-		PostID:    uint(postID),
+		PostID:    postID,
 		ImageURL:  imageURL,
 		ImageType: contentType,
 		Filename:  file.Filename,
@@ -362,7 +364,7 @@ func UploadPostImage(c *gin.Context) {
 
 	// Log image upload (system action since it's done by station token)
 	utils.LogSystemAction(c, models.ActionPostImageUpload, models.AuditMetadata{
-		"post_id":      postID,
+		"post_id":      postID.String(),
 		"image_id":     postImage.ID,
 		"filename":     postImage.Filename,
 		"file_size":    len(fileData),
@@ -372,7 +374,7 @@ func UploadPostImage(c *gin.Context) {
 	response := PostImageResponse{
 		ID:       postImage.ID,
 		Filename: postImage.Filename,
-		ImageURL: generatePostImageURL(uint(postID), postImage.ID),
+		ImageURL: generatePostImageURL(postID.String(), postImage.ID),
 	}
 
 	utils.SuccessResponse(c, http.StatusCreated, "Image uploaded successfully", response)
@@ -398,7 +400,8 @@ func UploadPostCBOR(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -408,7 +411,7 @@ func UploadPostCBOR(c *gin.Context) {
 
 	// Verify post belongs to the station
 	var post models.Post
-	if err := db.Where("id = ? AND station_id = ?", uint(postID), stationID).First(&post).Error; err != nil {
+	if err := db.Where("id = ? AND station_id = ?", postID, stationID).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not owned by station")
 			return
@@ -419,7 +422,7 @@ func UploadPostCBOR(c *gin.Context) {
 
 	// Check if post already has a CBOR file
 	var existingCBOR models.PostCBOR
-	if err := db.Where("post_id = ?", uint(postID)).First(&existingCBOR).Error; err == nil {
+	if err := db.Where("post_id = ?", postID).First(&existingCBOR).Error; err == nil {
 		utils.ValidationErrorResponse(c, "Post already has a CBOR file")
 		return
 	} else if err != gorm.ErrRecordNotFound {
@@ -457,7 +460,7 @@ func UploadPostCBOR(c *gin.Context) {
 
 	// Create post CBOR record
 	postCBOR := models.PostCBOR{
-		PostID:   uint(postID),
+		PostID:   postID,
 		CBORData: fileData,
 		Filename: file.Filename,
 	}
@@ -469,7 +472,7 @@ func UploadPostCBOR(c *gin.Context) {
 
 	// Log CBOR upload (system action since it's done by station token)
 	utils.LogSystemAction(c, models.ActionPostCBORUpload, models.AuditMetadata{
-		"post_id":   postID,
+		"post_id":   postID.String(),
 		"cbor_id":   postCBOR.ID,
 		"filename":  postCBOR.Filename,
 		"file_size": len(fileData),
@@ -491,7 +494,8 @@ func UploadPostCADU(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("postId"), 10, 32)
+	postIDStr := c.Param("postId")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -501,7 +505,7 @@ func UploadPostCADU(c *gin.Context) {
 
 	// Verify post belongs to the station
 	var post models.Post
-	if err := db.Where("id = ? AND station_id = ?", uint(postID), stationID).First(&post).Error; err != nil {
+	if err := db.Where("id = ? AND station_id = ?", postID, stationID).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not owned by station")
 			return
@@ -512,7 +516,7 @@ func UploadPostCADU(c *gin.Context) {
 
 	// Check if post already has a CADU file
 	var existingCADU models.PostCADU
-	if err := db.Where("post_id = ?", uint(postID)).First(&existingCADU).Error; err == nil {
+	if err := db.Where("post_id = ?", postID).First(&existingCADU).Error; err == nil {
 		utils.ValidationErrorResponse(c, "Post already has a CADU file")
 		return
 	} else if err != gorm.ErrRecordNotFound {
@@ -544,7 +548,7 @@ func UploadPostCADU(c *gin.Context) {
 
 	// Create post CADU record
 	postCADU := models.PostCADU{
-		PostID:   uint(postID),
+		PostID:   postID,
 		CADUData: fileData,
 		Filename: file.Filename,
 	}
@@ -556,7 +560,7 @@ func UploadPostCADU(c *gin.Context) {
 
 	// Log CADU upload (system action since it's done by station token)
 	utils.LogSystemAction(c, models.ActionPostCADUUpload, models.AuditMetadata{
-		"post_id":   postID,
+		"post_id":   postID.String(),
 		"cadu_id":   postCADU.ID,
 		"filename":  postCADU.Filename,
 		"file_size": len(fileData),
@@ -574,14 +578,15 @@ func UploadPostCADU(c *gin.Context) {
 func GetPostCBOR(c *gin.Context) {
 	utils.Logger.Info().Str("post_id", c.Param("id")).Msg("GetPostCBOR called")
 
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.Logger.Info().Str("post_id", c.Param("id")).Msg("Invalid post ID")
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
 	}
 
-	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Parsed post ID")
+	utils.Logger.Info().Str("post_id", postID.String()).Msg("Parsed post ID")
 
 	db := config.GetDB()
 
@@ -591,7 +596,7 @@ func GetPostCBOR(c *gin.Context) {
 
 	// First check if the post exists and is accessible (exclude hidden posts)
 	var post models.Post
-	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", uint(postID), false)
+	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -601,7 +606,7 @@ func GetPostCBOR(c *gin.Context) {
 	utils.Logger.Info().Msg("Checking post accessibility")
 	if err := postQuery.First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Post not found or not accessible")
+			utils.Logger.Info().Str("post_id", postID.String()).Msg("Post not found or not accessible")
 			utils.NotFoundResponse(c, "Post not found or not accessible")
 			return
 		}
@@ -614,34 +619,34 @@ func GetPostCBOR(c *gin.Context) {
 
 	// Now get the CBOR data for this post
 	var cbor models.PostCBOR
-	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Fetching CBOR data")
-	if err := db.Where("post_id = ?", uint(postID)).First(&cbor).Error; err != nil {
+	utils.Logger.Info().Str("post_id", postID.String()).Msg("Fetching CBOR data")
+	if err := db.Where("post_id = ?", postID).First(&cbor).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CBOR not found for post")
+			utils.Logger.Info().Str("post_id", postID.String()).Msg("CBOR not found for post")
 			utils.NotFoundResponse(c, "CBOR not found for this post")
 			return
 		}
-		utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Msg("Error fetching CBOR")
+		utils.Logger.Error().Err(err).Str("post_id", postID.String()).Msg("Error fetching CBOR")
 		utils.InternalErrorResponse(c, "Failed to fetch CBOR")
 		return
 	}
 
-	utils.Logger.Info().Uint("post_id", uint(postID)).Int("data_length", len(cbor.CBORData)).Str("filename", cbor.Filename).Msg("Found CBOR for post")
+	utils.Logger.Info().Str("post_id", postID.String()).Int("data_length", len(cbor.CBORData)).Str("filename", cbor.Filename).Msg("Found CBOR for post")
 
 	// Check if client wants JSON format
 	format := c.Query("format")
 	utils.Logger.Info().Str("format", format).Msg("Requested format")
 	if format == "json" {
-		utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Decoding CBOR to JSON")
+		utils.Logger.Info().Str("post_id", postID.String()).Msg("Decoding CBOR to JSON")
 		// Decode CBOR to JSON
 		var jsonData interface{}
 		if err := utils.DecodeCBORToJSON(cbor.CBORData, &jsonData); err != nil {
-			utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Int("data_length", len(cbor.CBORData)).Msg("CBOR decode error")
+			utils.Logger.Error().Err(err).Str("post_id", postID.String()).Int("data_length", len(cbor.CBORData)).Msg("CBOR decode error")
 			utils.InternalErrorResponse(c, "Failed to decode CBOR to JSON")
 			return
 		}
 
-		utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CBOR decoded successfully, returning JSON")
+		utils.Logger.Info().Str("post_id", postID.String()).Msg("CBOR decoded successfully, returning JSON")
 		c.Header("Content-Type", "application/json")
 		c.JSON(http.StatusOK, jsonData)
 		return
@@ -660,14 +665,15 @@ func GetPostCBOR(c *gin.Context) {
 func GetPostCADU(c *gin.Context) {
 	utils.Logger.Info().Str("post_id", c.Param("id")).Msg("GetPostCADU called")
 
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.Logger.Info().Str("post_id", c.Param("id")).Msg("Invalid post ID")
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
 	}
 
-	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Parsed post ID")
+	utils.Logger.Info().Str("post_id", postID.String()).Msg("Parsed post ID")
 
 	db := config.GetDB()
 
@@ -677,7 +683,7 @@ func GetPostCADU(c *gin.Context) {
 
 	// First check if the post exists and is accessible (exclude hidden posts)
 	var post models.Post
-	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", uint(postID), false)
+	postQuery := db.Where("posts.id = ? AND posts.hidden = ?", postID, false)
 	if !isAuthenticated {
 		postQuery = postQuery.Joins("Station").Where("is_public = ?", true)
 	} else {
@@ -687,7 +693,7 @@ func GetPostCADU(c *gin.Context) {
 	utils.Logger.Info().Msg("Checking post accessibility")
 	if err := postQuery.First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Post not found or not accessible")
+			utils.Logger.Info().Str("post_id", postID.String()).Msg("Post not found or not accessible")
 			utils.NotFoundResponse(c, "Post not found or not accessible")
 			return
 		}
@@ -700,19 +706,19 @@ func GetPostCADU(c *gin.Context) {
 
 	// Now get the CADU data for this post
 	var cadu models.PostCADU
-	utils.Logger.Info().Uint("post_id", uint(postID)).Msg("Fetching CADU data")
-	if err := db.Where("post_id = ?", uint(postID)).First(&cadu).Error; err != nil {
+	utils.Logger.Info().Str("post_id", postID.String()).Msg("Fetching CADU data")
+	if err := db.Where("post_id = ?", postID).First(&cadu).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			utils.Logger.Info().Uint("post_id", uint(postID)).Msg("CADU not found for post")
+			utils.Logger.Info().Str("post_id", postID.String()).Msg("CADU not found for post")
 			utils.NotFoundResponse(c, "CADU not found for this post")
 			return
 		}
-		utils.Logger.Error().Err(err).Uint("post_id", uint(postID)).Msg("Error fetching CADU")
+		utils.Logger.Error().Err(err).Str("post_id", postID.String()).Msg("Error fetching CADU")
 		utils.InternalErrorResponse(c, "Failed to fetch CADU")
 		return
 	}
 
-	utils.Logger.Info().Uint("post_id", uint(postID)).Int("data_length", len(cadu.CADUData)).Str("filename", cadu.Filename).Msg("Found CADU for post")
+	utils.Logger.Info().Str("post_id", postID.String()).Int("data_length", len(cadu.CADUData)).Str("filename", cadu.Filename).Msg("Found CADU for post")
 
 	utils.Logger.Info().Msg("Returning CADU binary data")
 	// Set content type and headers
@@ -731,7 +737,8 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -741,7 +748,7 @@ func DeletePost(c *gin.Context) {
 
 	// Find post and verify ownership through station
 	var post models.Post
-	if err := db.Joins("Station").Where("posts.id = ? AND user_id = ?", uint(postID), userID).First(&post).Error; err != nil {
+	if err := db.Joins("Station").Where("posts.id = ? AND user_id = ?", postID, userID).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found or not owned by user")
 			return
@@ -751,26 +758,26 @@ func DeletePost(c *gin.Context) {
 	}
 
 	// Delete associated comment likes first (for comments on this post)
-	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", uint(postID)).Delete(&models.CommentLike{}).Error; err != nil {
+	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", postID).Delete(&models.CommentLike{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete comment likes")
 		return
 	}
 
 	// Delete associated comments
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Comment{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.Comment{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post comments")
 		return
 	}
 
 	// Delete associated likes
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Like{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.Like{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post likes")
 		return
 	}
 
 	// Delete associated images from storage and database
 	var images []models.PostImage
-	if err := db.Where("post_id = ?", uint(postID)).Find(&images).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Find(&images).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to fetch post images")
 		return
 	}
@@ -784,19 +791,19 @@ func DeletePost(c *gin.Context) {
 	}
 
 	// Delete image records from database
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostImage{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post images")
 		return
 	}
 
 	// Delete associated CBOR records from database
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCBOR{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostCBOR{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post CBOR")
 		return
 	}
 
 	// Delete associated CADU records from database
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCADU{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostCADU{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post CADU")
 		return
 	}
@@ -808,7 +815,7 @@ func DeletePost(c *gin.Context) {
 	}
 
 	// Log post deletion
-	utils.LogPostAction(c, models.ActionPostDelete, post.ID, models.AuditMetadata{
+	utils.LogPostAction(c, models.ActionPostDelete, post.ID.String(), models.AuditMetadata{
 		"satellite_name": post.SatelliteName,
 		"station_id":     post.StationID,
 	})
@@ -818,7 +825,8 @@ func DeletePost(c *gin.Context) {
 
 // GetPostImage serves post images by proxying from MinIO
 func GetPostImage(c *gin.Context) {
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -837,11 +845,15 @@ func GetPostImage(c *gin.Context) {
 
 	// Find image and check post's station visibility (exclude hidden posts)
 	var image models.PostImage
-	query := db.Joins("Post").Joins("Post.Station").Where("post_images.id = ? AND post_images.post_id = ? AND posts.hidden = ?", uint(imageID), uint(postID), false)
+	query := db.Table("post_images").
+		Select("post_images.*").
+		Joins("INNER JOIN posts ON post_images.post_id = posts.id").
+		Joins("INNER JOIN stations ON posts.station_id = stations.id").
+		Where("post_images.id = ? AND post_images.post_id = ? AND posts.hidden = ?", uint(imageID), postID, false)
 	if !isAuthenticated {
-		query = query.Where("is_public = ?", true)
+		query = query.Where("stations.is_public = ?", true)
 	} else {
-		query = query.Where("is_public = ? OR user_id = ?", true, userID)
+		query = query.Where("stations.is_public = ? OR stations.user_id = ?", true, userID)
 	}
 
 	if err := query.First(&image).Error; err != nil {
@@ -882,11 +894,6 @@ func GetPostImage(c *gin.Context) {
 	c.DataFromReader(http.StatusOK, resp.ContentLength, contentType, resp.Body, nil)
 }
 
-// buildPostDetailResponse builds a PostDetailResponse from a Post model
-func buildPostDetailResponse(post models.Post, db *gorm.DB) PostDetailResponse {
-	return buildPostDetailResponseWithUser(post, db, "")
-}
-
 // buildPostDetailResponseWithUser builds a PostDetailResponse from a Post model with user context
 func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID string) PostDetailResponse {
 	var images []models.PostImage
@@ -897,7 +904,7 @@ func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID strin
 		imageResponses[i] = PostImageResponse{
 			ID:       img.ID,
 			Filename: img.Filename,
-			ImageURL: generatePostImageURL(post.ID, img.ID),
+			ImageURL: generatePostImageURL(post.ID.String(), img.ID),
 		}
 	}
 
@@ -925,7 +932,7 @@ func buildPostDetailResponseWithUser(post models.Post, db *gorm.DB, userID strin
 	}
 
 	return PostDetailResponse{
-		ID:            post.ID,
+		ID:            post.ID.String(),
 		StationID:     post.StationID,
 		StationName:   post.Station.Name,
 		StationUser:   stationUser,
@@ -955,7 +962,7 @@ func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID string) Pos
 		imageResponses[i] = PostImageResponse{
 			ID:       img.ID,
 			Filename: img.Filename,
-			ImageURL: generatePostImageURL(post.ID, img.ID),
+			ImageURL: generatePostImageURL(post.ID.String(), img.ID),
 		}
 	}
 
@@ -983,7 +990,7 @@ func buildPostResponseWithUser(post models.Post, db *gorm.DB, userID string) Pos
 	}
 
 	return PostResponse{
-		ID:            post.ID,
+		ID:            post.ID.String(),
 		StationID:     post.StationID,
 		StationName:   post.Station.Name,
 		StationUser:   stationUser,

@@ -24,7 +24,7 @@ type PostRequest struct {
 
 // PostResponse represents the API response for a created post
 type PostResponse struct {
-	ID            uint            `json:"id"`
+	ID            string          `json:"id"`
 	StationID     string          `json:"station_id"`
 	StationName   string          `json:"station_name"`
 	Timestamp     string          `json:"timestamp"`
@@ -107,8 +107,8 @@ func (c *APIClient) CreatePost(req PostRequest) (*PostResponse, error) {
 }
 
 // UploadImage uploads an image for a post
-func (c *APIClient) UploadImage(postID uint, imagePath string) error {
-	url := fmt.Sprintf("%s/api/posts/%d/images", c.baseURL, postID)
+func (c *APIClient) UploadImage(postID string, imagePath string) error {
+	url := fmt.Sprintf("%s/api/posts/%s/images", c.baseURL, postID)
 
 	file, err := os.Open(imagePath)
 	if err != nil {
@@ -171,8 +171,8 @@ func (c *APIClient) UploadImage(postID uint, imagePath string) error {
 }
 
 // UploadCBOR uploads a CBOR file for a post
-func (c *APIClient) UploadCBOR(postID uint, cborPath string) error {
-	url := fmt.Sprintf("%s/api/posts/%d/cbor", c.baseURL, postID)
+func (c *APIClient) UploadCBOR(postID string, cborPath string) error {
+	url := fmt.Sprintf("%s/api/posts/%s/cbor", c.baseURL, postID)
 
 	file, err := os.Open(cborPath)
 	if err != nil {
@@ -239,8 +239,8 @@ func (c *APIClient) UploadCBOR(postID uint, cborPath string) error {
 }
 
 // UploadCADU uploads a CADU file for a post
-func (c *APIClient) UploadCADU(postID uint, caduPath string) error {
-	url := fmt.Sprintf("%s/api/posts/%d/cadu", c.baseURL, postID)
+func (c *APIClient) UploadCADU(postID string, caduPath string) error {
+	url := fmt.Sprintf("%s/api/posts/%s/cadu", c.baseURL, postID)
 
 	file, err := os.Open(caduPath)
 	if err != nil {

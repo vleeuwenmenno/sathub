@@ -10,7 +10,6 @@ import {
   Divider,
   CircularProgress,
   Chip,
-  IconButton,
   Stack,
 } from "@mui/joy";
 import {
@@ -20,7 +19,6 @@ import {
   Favorite,
   CheckCircle,
   OpenInNew,
-  DoneAll,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -129,9 +127,6 @@ const Notifications: React.FC = () => {
     handleNavigate(notification);
   };
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setCurrentPage(page);
-  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {

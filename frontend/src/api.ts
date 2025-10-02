@@ -343,7 +343,7 @@ export const createPost = async (
 
 export const uploadPostImage = async (
   stationToken: string,
-  postId: number,
+  postId: string,
   file: File,
 ): Promise<PostImage> => {
   const formData = new FormData();
@@ -359,7 +359,7 @@ export const uploadPostImage = async (
 
 export const uploadPostCBOR = async (
   stationToken: string,
-  postId: number,
+  postId: string,
   file: File,
 ): Promise<{ id: number; filename: string }> => {
   const formData = new FormData();
@@ -373,19 +373,19 @@ export const uploadPostCBOR = async (
   return res.data.data;
 };
 
-export const deletePost = async (postId: number): Promise<void> => {
+export const deletePost = async (postId: string): Promise<void> => {
   await api.delete(`/posts/${postId}`);
 };
 
-export const adminDeletePost = async (postId: number): Promise<void> => {
+export const adminDeletePost = async (postId: string): Promise<void> => {
   await api.delete(`/admin/posts/${postId}`);
 };
 
-export const adminHidePost = async (postId: number, hidden: boolean): Promise<void> => {
+export const adminHidePost = async (postId: string, hidden: boolean): Promise<void> => {
   await api.put(`/admin/posts/${postId}/hide`, { hidden });
 };
 
-export const getPostImageUrl = (postId: number, imageId: number): string => {
+export const getPostImageUrl = (postId: string, imageId: number): string => {
   return `${API_BASE}/posts/${postId}/images/${imageId}`;
 };
 
@@ -401,7 +401,7 @@ export const getProfilePictureUrl = (profilePictureUrl: string): string => {
 };
 
 export const getPostImageBlob = async (
-  postId: number,
+  postId: string,
   imageId: number,
 ): Promise<string> => {
   const res = await api.get(`/posts/${postId}/images/${imageId}`, {
@@ -410,7 +410,7 @@ export const getPostImageBlob = async (
   return URL.createObjectURL(res.data);
 };
 
-export const getPostCBOR = async (postId: number): Promise<any> => {
+export const getPostCBOR = async (postId: string): Promise<any> => {
   const res = await api.get(`/posts/${postId}/cbor?format=json`);
   return res.data;
 };
@@ -564,7 +564,7 @@ export const getCaptcha = async (): Promise<{ captcha_id: string }> => {
 };
 
 // Like API functions
-export const likePost = async (postId: number): Promise<{ liked: boolean }> => {
+export const likePost = async (postId: string): Promise<{ liked: boolean }> => {
   const res = await api.post(`/likes/${postId}`);
   return res.data.data;
 };
@@ -586,21 +586,21 @@ export const getCommentsForPost = async (postId: string, sortBy: 'newest' | 'mos
 
 export const createComment = async (
   postId: string,
-  data: { content: string; parent_id?: number }
+  data: { content: string; parent_id?: string }
 ): Promise<PostComment> => {
   const res = await api.post(`/comments/post/${postId}`, data);
   return res.data.data;
 };
 
 export const updateComment = async (
-  commentId: number,
+  commentId: string,
   data: { content: string }
 ): Promise<PostComment> => {
   const res = await api.put(`/comments/${commentId}`, data);
   return res.data.data;
 };
 
-export const deleteComment = async (commentId: number): Promise<void> => {
+export const deleteComment = async (commentId: string): Promise<void> => {
   await api.delete(`/comments/${commentId}`);
 };
 

@@ -5,7 +5,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { likePost } from "../api";
 
 interface LikeButtonProps {
-  postId: number;
+  postId: string;
   initialLikesCount: number;
   initialIsLiked: boolean;
   onLikeChange?: (liked: boolean, likesCount: number) => void;
