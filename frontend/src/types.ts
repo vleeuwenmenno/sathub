@@ -86,6 +86,7 @@ export interface User {
   has_profile_picture: boolean;
   email_notifications?: boolean;
   station_email_notifications?: boolean;
+  language?: string;
 }
 
 export interface PostComment {

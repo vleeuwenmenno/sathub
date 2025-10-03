@@ -59,33 +59,32 @@
   </head>
   <body>
     <div class="header">
-      <h1>❤️ Someone Liked Your Post!</h1>
+          <div class="header">
+      <h1>{{.t.emails.likeNotification.title}}</h1>
     </div>
     <div class="content">
-      <p>Hello {{.Username}},</p>
+      <p>{{.t.emails.likeNotification.greeting}} {{.Username}},</p>
 
-      <p>Great news! Someone appreciated your post:</p>
+      <p>{{.t.emails.likeNotification.likeAlert}}</p>
 
       <div class="like-info">
         <p>
-          <span class="liker">{{.LikerUsername}}</span>
-          <span class="heart">❤️</span> liked your post.
+          <span class="liker">{{.LikerUsername}}</span> {{.t.emails.likeNotification.likeInfo}}
         </p>
       </div>
 
-      <p>Keep sharing your satellite captures - the community loves them!</p>
+      <p>{{.t.emails.likeNotification.checkItOut}}</p>
 
-      <a href="#" class="action-button">View Your Post</a>
+      <a href="#" class="action-button">{{.t.emails.likeNotification.viewButton}}</a>
 
-      <p>Best regards,<br />The SatHub Team</p>
+      <p>{{.t.emails.likeNotification.regards}}<br />{{.t.emails.likeNotification.team}}</p>
     </div>
     <div class="footer">
       <p>
-        This email was sent because you have email notifications enabled for
-        likes.
+        {{.t.emails.likeNotification.footer}}
       </p>
       <p>
-        You can change your notification preferences in your account settings.
+        {{.t.emails.likeNotification.footerSettings}}
       </p>
     </div>
   </body>

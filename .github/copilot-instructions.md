@@ -2,10 +2,13 @@
 
 ## Project Architecture
 
-SatHub is a full-stack satellite ground station management platform with a **Go Gin backend** (`backend/`) and **React/TypeScript frontend** (`frontend/`). The architecture features:
+SatHub is a full-stack satellite ground station management platform with a **Go Gin backend** (`backend/`), **React/TypeScript frontend** (`frontend/`), and **standalone Go client** (`client/`). The architecture features:
 
-- **Backend**: RESTful JSON API with JWT auth, GORM ORM, **PostgreSQL database**
+- **Backend**: RESTful JSON API with JWT auth, GORM ORM, **PostgreSQL database** (SQLite supported for dev)
 - **Frontend**: React 19 + Vite + Material-UI Joy with TypeScript
+- **Client**: Standalone Go binary for automated satellite data uploads
+- **Worker**: Background job processor for health monitoring and achievements
+- **Storage**: MinIO object storage for images (S3-compatible)
 - **Data Model**: Users → Stations → Posts (with satellite data/images)
 - **Authentication**: JWT access tokens + refresh tokens, station-specific API tokens
 
@@ -15,8 +18,9 @@ SatHub is a full-stack satellite ground station management platform with a **Go 
 
 - **GORM Auto-migration**: Models in `backend/models/` define both Go structs and DB schema
 - **Station Tokens**: Each station gets a unique API token for external data uploads (`Station.GenerateToken()`)
-- **Blob Storage**: Images and CBOR data stored directly in SQLite as `[]byte` fields
-- **ID Strategy**: Users have `uint` IDs, Stations use UUID strings, Posts use `uint`
+- **Image Storage**: Images stored in MinIO object storage, URLs in PostgreSQL (`PostImage.ImageURL`)
+- **CBOR Storage**: Binary satellite data stored in separate `PostCBOR` table
+- **ID Strategy**: Users have `uint` IDs, Stations use UUID strings, Posts use UUID
 
 ### Authentication Patterns
 
@@ -27,65 +31,89 @@ SatHub is a full-stack satellite ground station management platform with a **Go 
 ### API Design
 
 - **Route Grouping**: Clear separation between public, user-protected, and station-protected endpoints
-- **CORS Configuration**: Explicit frontend origins in `main.go` (ports 3000, 5173, 4001)
-- **Response Format**: Consistent JSON structure via `utils.response.go` helpers
+- **Caddy Proxy**: All services routed through Caddy on port 9999 with HTTPS in development
+- **Response Format**: Consistent JSON structure via `utils/response.go` helpers
 
 ## Development Workflows
 
-### Docker-First Development (Recommended)
+### Docker-First Development (Required)
 
-**Always use Docker** - the stack requires gcc for SQLite (CGO) and includes Mailpit for email testing:
+**Always use Docker** - the stack requires PostgreSQL, MinIO, Mailpit, and Caddy reverse proxy:
 
 ```bash
-make up      # Start full stack with hot reload (docker compose up -d --build)
-make down    # Stop all services (docker compose down)
-make logs    # View all service logs
-make seed    # Reset and seed database (requires backend container running)
+make up           # Start all services with hot reload
+make down         # Stop all services
+make logs-f       # Follow logs from all services
+make logs-backend-f  # Follow backend logs only
+make seed         # Reset and seed database
 ```
+
+### Setup Requirements
+
+1. **Add hostnames to `/etc/hosts`:**
+
+   ```
+   127.0.0.1 sathub.local
+   127.0.0.1 api.sathub.local
+   127.0.0.1 obj.sathub.local
+   ```
+
+2. **Access the application:**
+
+   - Frontend: https://sathub.local:9999
+   - API: https://api.sathub.local:9999
+   - MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
+   - Mailpit: http://localhost:8025
+
+3. **Accept self-signed certificate** by visiting the API URL once
 
 ### Database Operations
 
 ```bash
-# Reset and seed database (removes existing data, backend auto-restarts)
+# Reset and seed database (removes existing data)
 make seed
-# Or manually (requires backend container running):
-docker compose exec backend go run main.go --seed
-```
 
-#### Direct Database Access & Debugging
-
-For direct database queries and debugging:
-
-```bash
 # Connect to PostgreSQL database
-docker compose exec postgres psql -U sathub -d sathub
+make db-console
 
-# Query station uptimes (example)
-docker compose exec postgres psql -U sathub -d sathub -c "SELECT * FROM station_uptimes LIMIT 5"
+# Direct queries (shorthand)
+docker compose exec postgres psql -U sathub -d sathub -c "SELECT * FROM posts LIMIT 5"
 
-# Other useful queries:
 # List all tables
 docker compose exec postgres psql -U sathub -d sathub -c "\dt"
-
-# Count records in a table
-docker compose exec postgres psql -U sathub -d sathub -c "SELECT COUNT(*) FROM posts"
-
-# View table schema
-docker compose exec postgres psql -U sathub -d sathub -c "\d station_uptimes"
 ```
 
-**Important**: Seeding requires the backend container to be running first (`make up`)
+**Important**: Database defaults to SQLite if `DB_TYPE` env var not set, but Docker uses PostgreSQL
 
 ### File Structure Conventions
 
-- **Backend**: `handlers/` for routes, `middleware/` for auth, `models/` for data
-- **Frontend**: `components/` for UI, `contexts/` for state, `api.ts` for HTTP client
+- **Backend**:
+  - `handlers/` - API route handlers
+  - `middleware/` - Auth and request processing
+  - `models/` - Database models
+  - `worker/` - Background jobs (health monitoring, achievements)
+  - `cmd/seed/` - Database seeding
+  - `config/` - Configuration (database, storage, email)
+  - `utils/` - Helper functions (response, storage, email)
+- **Frontend**:
+
+  - `components/` - All React components (no separate pages directory)
+  - `contexts/` - React contexts (auth, theme)
+  - `api.ts` - Centralized API client
+  - `types.ts` - TypeScript type definitions
+  - `translations/` - i18n translation files
+
+- **Client**:
+  - `main.go` - CLI and watcher orchestration
+  - `watcher.go` - Directory monitoring and processing
+  - `api.go` - API client for uploads
+  - `config.go` - Configuration management
 
 ## Critical Implementation Details
 
 ### Station Token Authentication
 
-Station tokens enable external devices to upload data without user accounts. Key pattern:
+Station tokens enable external devices (like the SatHub client) to upload data without user accounts:
 
 ```go
 // Station creation automatically generates secure token
@@ -94,40 +122,66 @@ station.GenerateToken()
 stationPosts.Use(middleware.StationTokenAuth())
 ```
 
-### Image Handling
+### Image & Storage Handling
 
-Images stored as blobs in database, served via dedicated endpoints:
+Images stored in MinIO, served via backend API:
 
-- Station pictures: `/api/stations/:id/picture`
-- Post images: `/api/posts/:id/images/:imageId`
-- Upload via multipart form to separate endpoints
+- **Upload**: Images uploaded to backend, stored in MinIO bucket `sathub-images/`
+- **Organization**: Folder structure `images/post-{uuid}/filename.ext`
+- **URLs**: Backend generates presigned URLs or proxies from MinIO
+- **Access**: `/api/posts/:id/images/:imageId` for post images
+- **Station Pictures**: `/api/stations/:id/picture`
 
 ### Frontend State Management
 
 - **AuthContext**: Global user auth state with automatic token refresh
 - **API Client**: Centralized axios instance in `api.ts` with interceptors
 - **Material-UI Joy**: Consistent design system, avoid mixing with core MUI
+- **No routing**: All components loaded directly in `App.tsx`, no react-router pages
+
+### Backend Worker Service
+
+Separate worker process handles background jobs:
+
+- **Station Health Monitor**: Checks station online/offline status, sends notifications
+- **Achievement Checker**: Awards achievements based on user activity
+- **Runs independently**: Same codebase, different command (`worker` vs `api`)
 
 ### Database Seeding Strategy
 
-`make seed` creates comprehensive test data:
+`make seed` (or `docker compose exec backend go run ./cmd/seed`) creates test data:
 
-- 3 users with known credentials (`password123`)
-- 6 stations (mix of public/private)
-- 15-40 posts with sample satellite data
-- Uses mock images from legacy `data/` folder (temporary)
+- 2 users with known credentials (`password123`)
+- 1 station owned by test_user
+- 85%~ of health checks marked online for that station
+
+### SatHub Client
+
+Standalone binary that monitors directories for satellite data from satdump:
+
+- **Installation**: Built-in `install` and `install-service` commands
+- **Auto-upload**: Watches directories, processes complete satellite passes
+- **Format**: Expects `dataset.json` + product directories with CBOR and PNG files
+- **Health Pings**: Sends periodic health checks to keep station online
+- **Platforms**: Linux (x86_64, ARM64), Windows, macOS (Intel, Apple Silicon)
 
 ## External Dependencies
 
-- **Docker**: Required for development (SQLite needs gcc/CGO, not guaranteed on Windows)
-- **Mailpit**: Email testing service (port 8025) for password resets, only available via Docker
-- **CBOR**: Binary satellite data format stored in Post model
+- **Docker & Docker Compose**: Required for all development
+- **PostgreSQL**: Primary database (defaults to SQLite without `DB_TYPE`)
+- **MinIO**: S3-compatible object storage for images
+- **Mailpit**: Email testing service (port 8025 web UI, 1025 SMTP)
+- **Caddy**: Reverse proxy with automatic HTTPS for local development
+- **CBOR**: Binary satellite data format (github.com/fxamacker/cbor/v2)
 
 ## Common Gotchas
 
-- **Docker Required**: Local development without Docker missing Mailpit + potential gcc issues
-- Backend restarts automatically when `sathub.db` file changes
-- Seeding (`make seed`) requires backend container running first
-- Frontend proxy to backend configured in `vite.config.ts`
-- Station tokens are sensitive - only show once after generation/regeneration
-- GORM migrations run automatically on startup, no manual schema management needed
+- **Docker Required**: No local development without Docker (needs PostgreSQL, MinIO, Mailpit, Caddy)
+- **Hosts File**: Must add `*.sathub.local` entries to `/etc/hosts` for Caddy routing
+- **Certificate**: Accept self-signed cert for `api.sathub.local` in browser first
+- **Seeding**: Run `make seed` to populate test data (requires backend container running)
+- **Station Tokens**: Sensitive - but can be regenerated in UI if compromised
+- **GORM Migrations**: Run automatically on startup via `migrate` container
+- **Hot Reload**: Backend uses Air, frontend uses Vite - both restart on file changes
+- **Worker Service**: Runs separately from API, handles background jobs
+- **MinIO Access**: Use MinIO console at localhost:9001 to browse uploaded images

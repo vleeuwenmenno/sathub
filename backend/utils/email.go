@@ -2,8 +2,10 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"os"
 	"sathub-ui-backend/config"
 
 	"gopkg.in/gomail.v2"
@@ -13,7 +15,46 @@ type EmailData struct {
 	Subject  string
 	To       string
 	Template string
+	Language string
 	Data     map[string]interface{}
+}
+
+// loadEmailTranslations loads email translations for the specified language
+func loadEmailTranslations(language string) (map[string]interface{}, error) {
+	// Default to English if language is empty or unsupported
+	if language == "" {
+		language = "en"
+	}
+
+	// Map of supported languages
+	supportedLanguages := map[string]bool{
+		"en": true,
+		"de": true,
+		"nl": true,
+	}
+
+	if !supportedLanguages[language] {
+		language = "en" // fallback to English
+	}
+
+	filePath := fmt.Sprintf("translations/emails.%s.json", language)
+	file, err := os.Open(filePath)
+	if err != nil {
+		// If translation file doesn't exist, try English as fallback
+		if language != "en" {
+			return loadEmailTranslations("en")
+		}
+		return nil, fmt.Errorf("failed to open translation file: %w", err)
+	}
+	defer file.Close()
+
+	var translations map[string]interface{}
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&translations); err != nil {
+		return nil, fmt.Errorf("failed to decode translation file: %w", err)
+	}
+
+	return translations, nil
 }
 
 // SendEmail sends an email using the configured SMTP settings
@@ -25,6 +66,23 @@ func SendEmail(data EmailData) error {
 	m.SetHeader("To", data.To)
 	m.SetHeader("Subject", data.Subject)
 
+	// Load translations for the specified language
+	translations, err := loadEmailTranslations(data.Language)
+	if err != nil {
+		// Log warning but continue with English translations
+		Logger.Warn().Err(err).Str("language", data.Language).Msg("Failed to load email translations, using English fallback")
+		translations, _ = loadEmailTranslations("en")
+	}
+
+	// Merge translations with data
+	templateData := make(map[string]interface{})
+	for k, v := range data.Data {
+		templateData[k] = v
+	}
+	if translations != nil {
+		templateData["t"] = translations
+	}
+
 	// Parse and execute template
 	tmpl, err := template.ParseFiles(fmt.Sprintf("templates/emails/%s.html", data.Template))
 	if err != nil {
@@ -32,7 +90,7 @@ func SendEmail(data EmailData) error {
 	}
 
 	var body bytes.Buffer
-	if err := tmpl.Execute(&body, data.Data); err != nil {
+	if err := tmpl.Execute(&body, templateData); err != nil {
 		return fmt.Errorf("failed to execute email template: %w", err)
 	}
 
@@ -49,7 +107,7 @@ func SendEmail(data EmailData) error {
 }
 
 // SendPasswordResetEmail sends a password reset email
-func SendPasswordResetEmail(toEmail, username, resetToken string) error {
+func SendPasswordResetEmail(toEmail, username, resetToken, language string) error {
 	appConfig := config.GetAppConfig()
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", appConfig.FrontendURL, resetToken)
 
@@ -57,6 +115,7 @@ func SendPasswordResetEmail(toEmail, username, resetToken string) error {
 		Subject:  "Password Reset Request",
 		To:       toEmail,
 		Template: "password_reset",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":   username,
 			"ResetURL":   resetURL,
@@ -68,11 +127,12 @@ func SendPasswordResetEmail(toEmail, username, resetToken string) error {
 }
 
 // SendCommentNotificationEmail sends a comment notification email
-func SendCommentNotificationEmail(toEmail, username, commenterUsername string) error {
+func SendCommentNotificationEmail(toEmail, username, commenterUsername, language string) error {
 	data := EmailData{
 		Subject:  "New Comment on Your Post",
 		To:       toEmail,
 		Template: "comment_notification",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":          username,
 			"CommenterUsername": commenterUsername,
@@ -83,11 +143,12 @@ func SendCommentNotificationEmail(toEmail, username, commenterUsername string) e
 }
 
 // SendLikeNotificationEmail sends a like notification email
-func SendLikeNotificationEmail(toEmail, username, likerUsername string) error {
+func SendLikeNotificationEmail(toEmail, username, likerUsername, language string) error {
 	data := EmailData{
 		Subject:  "Someone Liked Your Post!",
 		To:       toEmail,
 		Template: "like_notification",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":      username,
 			"LikerUsername": likerUsername,
@@ -98,11 +159,12 @@ func SendLikeNotificationEmail(toEmail, username, likerUsername string) error {
 }
 
 // SendAchievementNotificationEmail sends an achievement notification email
-func SendAchievementNotificationEmail(toEmail, username, achievementName, achievementDescription string) error {
+func SendAchievementNotificationEmail(toEmail, username, achievementName, achievementDescription, language string) error {
 	data := EmailData{
 		Subject:  "Achievement Unlocked!",
 		To:       toEmail,
 		Template: "achievement_notification",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":               username,
 			"AchievementName":        achievementName,
@@ -114,7 +176,7 @@ func SendAchievementNotificationEmail(toEmail, username, achievementName, achiev
 }
 
 // SendEmailConfirmationEmail sends an email confirmation email
-func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
+func SendEmailConfirmationEmail(toEmail, username, confirmToken, language string) error {
 	appConfig := config.GetAppConfig()
 	confirmURL := fmt.Sprintf("%s/confirm-email?token=%s", appConfig.FrontendURL, confirmToken)
 
@@ -122,6 +184,7 @@ func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
 		Subject:  "Confirm Your SatHub Account",
 		To:       toEmail,
 		Template: "email_confirmation",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":     username,
 			"ConfirmURL":   confirmURL,
@@ -133,7 +196,7 @@ func SendEmailConfirmationEmail(toEmail, username, confirmToken string) error {
 }
 
 // SendEmailChangeConfirmationEmail sends an email change confirmation email
-func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken string) error {
+func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken, language string) error {
 	appConfig := config.GetAppConfig()
 	confirmURL := fmt.Sprintf("%s/confirm-email-change?token=%s", appConfig.FrontendURL, confirmToken)
 
@@ -141,6 +204,7 @@ func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken 
 		Subject:  "Confirm Your Email Change",
 		To:       toEmail,
 		Template: "email_change_confirmation",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":     username,
 			"NewEmail":     newEmail,
@@ -153,7 +217,7 @@ func SendEmailChangeConfirmationEmail(toEmail, username, newEmail, confirmToken 
 }
 
 // SendTwoFactorDisableEmail sends a 2FA disable confirmation email
-func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
+func SendTwoFactorDisableEmail(toEmail, username, disableToken, language string) error {
 	appConfig := config.GetAppConfig()
 	disableURL := fmt.Sprintf("%s/confirm-disable-2fa?token=%s", appConfig.FrontendURL, disableToken)
 
@@ -161,6 +225,7 @@ func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
 		Subject:  "Confirm Two-Factor Authentication Disable",
 		To:       toEmail,
 		Template: "two_factor_disable_confirmation",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username":     username,
 			"ConfirmURL":   disableURL,
@@ -172,7 +237,7 @@ func SendTwoFactorDisableEmail(toEmail, username, disableToken string) error {
 }
 
 // SendApprovalNotificationEmail sends an account approval notification email
-func SendApprovalNotificationEmail(toEmail, username string) error {
+func SendApprovalNotificationEmail(toEmail, username, language string) error {
 	appConfig := config.GetAppConfig()
 	loginURL := fmt.Sprintf("%s/login", appConfig.FrontendURL)
 
@@ -180,6 +245,7 @@ func SendApprovalNotificationEmail(toEmail, username string) error {
 		Subject:  "Your SatHub Account Has Been Approved",
 		To:       toEmail,
 		Template: "approval_notification",
+		Language: language,
 		Data: map[string]interface{}{
 			"Username": username,
 			"LoginURL": loginURL,

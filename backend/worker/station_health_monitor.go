@@ -362,6 +362,7 @@ func (m *StationHealthMonitor) sendEmailNotification(userID uuid.UUID, subject, 
 		Subject:  subject,
 		To:       user.Email.String,
 		Template: "station_health_notification",
+		Language: user.Language,
 		Data: map[string]interface{}{
 			"Username": user.Username,
 			"Subject":  subject,

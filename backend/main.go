@@ -345,12 +345,18 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			admin.GET("/posts", handlers.GetAllPosts)
 			admin.PUT("/posts/:id/hide", handlers.AdminHidePost)
 			admin.DELETE("/posts/:id", handlers.AdminDeletePost)
-			admin.GET("/invite", handlers.GetAdminInvite)
 			admin.GET("/settings/registration", handlers.GetRegistrationSettings)
 			admin.PUT("/settings/registration", handlers.UpdateRegistrationSettings)
 			admin.GET("/settings/approval", handlers.GetApprovalSettings)
 			admin.PUT("/settings/approval", handlers.UpdateApprovalSettings)
 			admin.GET("/audit-logs", handlers.GetAuditLogs)
+
+			// Debug endpoints (only available in debug mode)
+			debug := admin.Group("")
+			debug.Use(middleware.DebugModeOnly())
+			{
+				debug.POST("/send-test-email", handlers.SendTestEmail)
+			}
 		}
 
 		// Public routes (no authentication required)

@@ -11,7 +11,7 @@ type UserAchievement struct {
 	UserID        uuid.UUID   `gorm:"type:uuid;not null" json:"user_id"`
 	AchievementID uuid.UUID   `gorm:"type:uuid;not null" json:"achievement_id"`
 	UnlockedAt    time.Time   `json:"unlocked_at"`
-	User          User        `gorm:"foreignKey:UserID" json:"-"`
+	User          User        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	Achievement   Achievement `gorm:"foreignKey:AchievementID" json:"achievement"`
 }
 

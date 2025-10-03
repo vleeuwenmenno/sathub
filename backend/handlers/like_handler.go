@@ -109,7 +109,7 @@ func LikePost(c *gin.Context) {
 				var postOwner models.User
 				if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
 					go func() {
-						if err := utils.SendLikeNotificationEmail(postOwner.Email.String, postOwner.Username, liker.Username); err != nil {
+						if err := utils.SendLikeNotificationEmail(postOwner.Email.String, postOwner.Username, liker.Username, postOwner.Language); err != nil {
 							utils.Logger.Error().Err(err).Msg("Failed to send like email notification")
 						}
 					}()

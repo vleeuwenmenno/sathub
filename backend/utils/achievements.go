@@ -108,7 +108,7 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				achievementName := achievement.Name
 				achievementDesc := achievement.Description
 				go func() {
-					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievementName, achievementDesc); err != nil {
+					if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievementName, achievementDesc, user.Language); err != nil {
 						Logger.Error().Err(err).Msg("Failed to send achievement email notification")
 					}
 				}()

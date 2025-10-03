@@ -28,6 +28,7 @@ type User struct {
 	ProfilePictureType        string         `gorm:"size:50" json:"-"`
 	EmailNotifications        bool           `gorm:"default:false" json:"email_notifications"`
 	StationEmailNotifications bool           `gorm:"default:true" json:"station_email_notifications"`
+	Language                  string         `gorm:"size:10;default:'en'" json:"language"`
 	CreatedAt                 time.Time      `json:"created_at"`
 	UpdatedAt                 time.Time      `json:"updated_at"`
 }

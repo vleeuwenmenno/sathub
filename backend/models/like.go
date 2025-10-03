@@ -10,7 +10,7 @@ import (
 type Like struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
-	User      User      `gorm:"foreignKey:UserID" json:"-"`
+	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	PostID    uuid.UUID `gorm:"type:uuid;not null;index;constraint:OnDelete:CASCADE" json:"post_id"`
 	Post      Post      `gorm:"foreignKey:PostID" json:"-"`
 	CreatedAt time.Time `json:"created_at"`
