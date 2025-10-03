@@ -37,7 +37,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
-import { getSupportedLanguages } from "../utils/translations";
+import { getSupportedLanguages, getLanguageFlag } from "../utils/translations";
 import { getProfilePictureBlob } from "../api";
 import NotificationDropdown from "./NotificationDropdown";
 import logo from "../assets/logo.svg";
@@ -229,7 +229,7 @@ const Navbar: React.FC = () => {
                 },
               }}
             >
-              {language === "de" ? "🇩🇪" : language === "nl" ? "🇳🇱" : "🇺🇸"}
+              {getLanguageFlag(language)}
             </MenuButton>
             <Menu
               placement="bottom-end"
@@ -249,7 +249,7 @@ const Navbar: React.FC = () => {
                   }}
                 >
                   <span style={{ fontSize: "1.2em" }}>
-                    {lang.code === "de" ? "🇩🇪" : lang.code === "nl" ? "🇳🇱" : "🇺🇸"}
+                    {lang.flag}
                   </span>
                   {lang.name}
                 </MenuItem>
@@ -474,7 +474,7 @@ const Navbar: React.FC = () => {
                   },
                 }}
               >
-                {language === "de" ? "🇩🇪" : "🇺🇸"}
+                {getLanguageFlag(language)}
               </MenuButton>
               <Menu
                 placement="bottom-end"
@@ -494,7 +494,7 @@ const Navbar: React.FC = () => {
                     }}
                   >
                     <span style={{ fontSize: "1.2em" }}>
-                      {lang.code === "de" ? "🇩🇪" : "🇺🇸"}
+                      {lang.flag}
                     </span>
                     {lang.name}
                   </MenuItem>
