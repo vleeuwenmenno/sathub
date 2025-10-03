@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Circle } from 'react-leaflet';
 import { LatLngBounds, LatLng } from 'leaflet';
 import {
   Box,
@@ -14,6 +14,7 @@ import { LocationOn } from '@mui/icons-material';
 import { getGlobalStations } from '../api';
 import type { Station } from '../api';
 import 'leaflet/dist/leaflet.css';
+import ThemeAwareTileLayer from './ThemeAwareTileLayer';
 
 // Fix for default markers in React Leaflet
 import L from 'leaflet';
@@ -133,10 +134,7 @@ const AdminStationsMap: React.FC = () => {
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <ThemeAwareTileLayer />
             {stationsWithCoords.map((station) => {
               const roughLocation = isRoughLocation(station.latitude!, station.longitude!);
               return (

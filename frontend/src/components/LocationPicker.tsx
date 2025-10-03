@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, useMapEvents } from 'react-leaflet';
 import { LatLng } from 'leaflet';
 import {
   Box,
@@ -20,6 +20,7 @@ import {
 } from '@mui/joy';
 import { LocationOn, Map as MapIcon } from '@mui/icons-material';
 import 'leaflet/dist/leaflet.css';
+import ThemeAwareTileLayer from './ThemeAwareTileLayer';
 
 // Fix for default markers in React Leaflet
 import L from 'leaflet';
@@ -347,10 +348,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               zoom={mapPosition ? 13 : 2}
               style={{ height: '100%', width: '100%' }}
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <ThemeAwareTileLayer />
               <LocationMarker
                 position={mapPosition}
                 onPositionChange={handleMapPositionChange}

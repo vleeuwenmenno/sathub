@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, Marker, Popup } from 'react-leaflet';
 import { LatLng } from 'leaflet';
 import {
   Box,
@@ -9,6 +9,7 @@ import {
 } from '@mui/joy';
 import { LocationOn } from '@mui/icons-material';
 import 'leaflet/dist/leaflet.css';
+import ThemeAwareTileLayer from './ThemeAwareTileLayer';
 
 // Fix for default markers in React Leaflet
 import L from 'leaflet';
@@ -74,10 +75,7 @@ const StationMap: React.FC<StationMapProps> = ({
           boxZoom={false}
           keyboard={false}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <ThemeAwareTileLayer />
           <Marker position={position}>
             <Popup>
               <Box sx={{ textAlign: 'center' }}>
