@@ -36,6 +36,8 @@ import {
   EmojiEvents,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../contexts/TranslationContext";
+import { getSupportedLanguages } from "../utils/translations";
 import { getProfilePictureBlob } from "../api";
 import NotificationDropdown from "./NotificationDropdown";
 import logo from "../assets/logo.svg";
@@ -45,6 +47,7 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const { mode, setMode } = useColorScheme();
   const { isAuthenticated, user, logout } = useAuth();
+  const { language, setLanguage, t } = useTranslation();
   const isDetailPage = location.pathname.includes("/post/");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -90,11 +93,11 @@ const Navbar: React.FC = () => {
   };
 
   const navigationItems = [
-    { path: "/", label: "Home", icon: <Home />, show: true },
-    { path: "/stations/global", label: "Stations", icon: <Router />, show: isAuthenticated },
-    { path: "/users/global", label: "Users", icon: <Group />, show: isAuthenticated },
-    { path: "/stations", label: "My Stations", icon: <Build />, show: isAuthenticated },
-    { path: "/admin", label: "Admin", icon: <AdminPanelSettings />, show: isAuthenticated && user?.role === "admin" },
+    { path: "/", label: t("navigation.dashboard"), icon: <Home />, show: true },
+    { path: "/stations/global", label: t("navigation.stations"), icon: <Router />, show: isAuthenticated },
+    { path: "/users/global", label: t("navigation.users"), icon: <Group />, show: isAuthenticated },
+    { path: "/stations", label: t("stations.myStations"), icon: <Build />, show: isAuthenticated },
+    { path: "/admin", label: t("navigation.admin"), icon: <AdminPanelSettings />, show: isAuthenticated && user?.role === "admin" },
   ];
 
   return (
@@ -208,8 +211,52 @@ const Navbar: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Right side - Theme and Account */}
+        {/* Right side - Theme, Language and Account */}
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+          <Dropdown>
+            <MenuButton
+              variant="soft"
+              size="sm"
+              sx={{
+                borderRadius: "50%",
+                minWidth: "40px",
+                width: "40px",
+                height: "40px",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "scale(1.1)",
+                  boxShadow: "md",
+                },
+              }}
+            >
+              {language === "de" ? "🇩🇪" : language === "nl" ? "🇳🇱" : "🇺🇸"}
+            </MenuButton>
+            <Menu
+              placement="bottom-end"
+              sx={{
+                minWidth: "160px",
+              }}
+            >
+              {getSupportedLanguages().map((lang) => (
+                <MenuItem
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  selected={language === lang.code}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                  }}
+                >
+                  <span style={{ fontSize: "1.2em" }}>
+                    {lang.code === "de" ? "🇩🇪" : lang.code === "nl" ? "🇳🇱" : "🇺🇸"}
+                  </span>
+                  {lang.name}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Dropdown>
+
           <IconButton
             variant="soft"
             size="sm"
@@ -397,12 +444,80 @@ const Navbar: React.FC = () => {
                     <ListItemDecorator>
                       <AdminPanelSettings />
                     </ListItemDecorator>
-                    Admin Panel
+                    {t("admin.title")}
                   </ListItemButton>
                 </ListItem>
               </List>
             </>
           )}
+
+          {/* Settings Section */}
+          <Divider sx={{ mb: 2 }} />
+          <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold" }}>
+            Settings
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1, px: 2, mb: 2 }}>
+            <Dropdown>
+              <MenuButton
+                variant="soft"
+                size="sm"
+                sx={{
+                  borderRadius: "50%",
+                  minWidth: "40px",
+                  width: "40px",
+                  height: "40px",
+                  flex: 1,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                    boxShadow: "md",
+                  },
+                }}
+              >
+                {language === "de" ? "🇩🇪" : "🇺🇸"}
+              </MenuButton>
+              <Menu
+                placement="bottom-end"
+                sx={{
+                  minWidth: "160px",
+                }}
+              >
+                {getSupportedLanguages().map((lang) => (
+                  <MenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    selected={language === lang.code}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                    }}
+                  >
+                    <span style={{ fontSize: "1.2em" }}>
+                      {lang.code === "de" ? "🇩🇪" : "🇺🇸"}
+                    </span>
+                    {lang.name}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Dropdown>
+            <IconButton
+              variant="soft"
+              size="sm"
+              onClick={toggleColorScheme}
+              sx={{
+                borderRadius: "50%",
+                flex: 1,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "rotate(180deg) scale(1.1)",
+                  boxShadow: "md",
+                },
+              }}
+            >
+              {mode === "dark" ? <LightMode /> : <DarkMode />}
+            </IconButton>
+          </Box>
 
           {/* User Section */}
           {isAuthenticated && (

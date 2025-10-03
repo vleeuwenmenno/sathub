@@ -20,6 +20,7 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 import { resendConfirmationEmail, getPublicRegistrationSettings } from '../api';
 import logo from '../assets/logo.svg';
 
@@ -33,6 +34,7 @@ const Login: React.FC = () => {
   const [resendMessage, setResendMessage] = useState('');
   const [registrationDisabled, setRegistrationDisabled] = useState(false);
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,7 +68,7 @@ const Login: React.FC = () => {
         return;
       }
 
-      const errorMessage = err.response?.data?.error || 'Login failed';
+      const errorMessage = err.response?.data?.error || t('auth.login.errors.invalidCredentials');
       setError(errorMessage);
       
       // Check if the error is about unconfirmed email
@@ -84,9 +86,9 @@ const Login: React.FC = () => {
 
     try {
       await resendConfirmationEmail(username);
-      setResendMessage('Confirmation email sent successfully! Please check your email.');
+      setResendMessage(t('auth.login.resendSuccess'));
     } catch (err: any) {
-      setResendMessage(err.response?.data?.error || 'Failed to send confirmation email');
+      setResendMessage(err.response?.data?.error || t('auth.login.resendError'));
     } finally {
       setResendLoading(false);
     }
@@ -129,14 +131,13 @@ const Login: React.FC = () => {
             sx={{
               height: 48,
               mb: 1,
-              filter: 'brightness(0) invert(1)', // Make logo white on dark background
             }}
           />
           <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
             SatHub
           </Typography>
           <Typography level="body-sm" sx={{ opacity: 0.9 }}>
-            Satellite Data Management
+            {t('auth.login.subtitle')}
           </Typography>
         </Box>
 
@@ -148,7 +149,7 @@ const Login: React.FC = () => {
                 <FormControl>
                   <FormLabel sx={{ fontWeight: 'bold' }}>
                     <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Username or Email
+                    {t('auth.login.email')}
                   </FormLabel>
                   <Input
                     value={username}
@@ -156,7 +157,7 @@ const Login: React.FC = () => {
                     required
                     fullWidth
                     size="lg"
-                    placeholder="Enter your username or email"
+                    placeholder={t('auth.login.emailPlaceholder')}
                     sx={{ borderRadius: 'lg' }}
                   />
                 </FormControl>
@@ -164,7 +165,7 @@ const Login: React.FC = () => {
                 <FormControl>
                   <FormLabel sx={{ fontWeight: 'bold' }}>
                     <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Password
+                    {t('auth.login.password')}
                   </FormLabel>
                   <Input
                     type="password"
@@ -173,7 +174,7 @@ const Login: React.FC = () => {
                     required
                     fullWidth
                     size="lg"
-                    placeholder="Enter your password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
                     sx={{ borderRadius: 'lg' }}
                   />
                 </FormControl>
@@ -195,7 +196,7 @@ const Login: React.FC = () => {
                     },
                   }}
                 >
-                  {loading ? 'Signing In...' : 'Sign In'}
+                  {loading ? t('common.loading') : t('auth.login.submit')}
                 </Button>
               </Stack>
             </form>
@@ -217,7 +218,7 @@ const Login: React.FC = () => {
                 size="sm"
                 sx={{ borderRadius: 'lg', mt: 1 }}
               >
-                {resendLoading ? 'Sending...' : 'Resend Confirmation Email'}
+                {resendLoading ? t('common.loading') : t('auth.login.resendConfirmation')}
               </Button>
             )}
 
@@ -243,7 +244,7 @@ const Login: React.FC = () => {
                   fontWeight: '500',
                 }}
               >
-                Forgot your password?
+                {t('auth.login.forgotPassword')}
               </Link>
             </Box>
 
@@ -251,14 +252,14 @@ const Login: React.FC = () => {
               <>
                 <Divider sx={{ my: 1 }}>
                   <Chip variant="soft" size="sm">
-                    or
+                    {t('common.or')}
                   </Chip>
                 </Divider>
 
                 {/* Register Link */}
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                    New to SatHub?{' '}
+                    {t('auth.login.noAccount')}{' '}
                     <Link
                       to="/register"
                       style={{
@@ -267,7 +268,7 @@ const Login: React.FC = () => {
                         fontWeight: 'bold',
                       }}
                     >
-                      Create an account
+                      {t('auth.login.createAccount')}
                     </Link>
                   </Typography>
                 </Box>

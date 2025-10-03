@@ -11,6 +11,8 @@ import {
   Alert,
   Avatar,
   Checkbox,
+  Select,
+  Option,
 } from "@mui/joy";
 import {
   updateProfile,
@@ -22,6 +24,7 @@ import {
   getProfilePictureBlob,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
+import { getSupportedLanguages } from "../utils/translations";
 import TwoFactorSetup from "./TwoFactorSetup";
 
 const UserSettings: React.FC = () => {
@@ -66,6 +69,9 @@ const UserSettings: React.FC = () => {
   const [emailNotifications, setEmailNotifications] = useState(user?.email_notifications || false);
   const [stationEmailNotifications, setStationEmailNotifications] = useState(user?.station_email_notifications ?? true);
 
+  // Language settings states
+  const [language, setLanguage] = useState(user?.language || "en");
+
   useEffect(() => {
     const fetchTwoFactorStatus = async () => {
       try {
@@ -106,6 +112,7 @@ const UserSettings: React.FC = () => {
       setTwoFactorEnabled(user.two_factor_enabled || false);
       setEmailNotifications(user.email_notifications || false);
       setStationEmailNotifications(user.station_email_notifications ?? true);
+      setLanguage(user.language || "en");
     }
   }, [user]);
 
@@ -217,7 +224,7 @@ const UserSettings: React.FC = () => {
   const handleUpdateProfile = async () => {
     const updates: { display_name?: string; email?: string } = {};
     let hasProfileUpdates = false;
-    let hasPictureUpdate = !!profilePictureFile;
+    const hasPictureUpdate = !!profilePictureFile;
 
     if (displayName.trim() !== (user?.display_name || "")) {
       updates.display_name = displayName.trim();
@@ -344,6 +351,27 @@ const UserSettings: React.FC = () => {
       setNotificationError(err.response?.data?.error || "Failed to update station notification settings");
       // Revert the checkbox state on error
       setStationEmailNotifications(!checked);
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    try {
+      setNotificationLoading(true);
+      // Clear notification-specific messages
+      setNotificationSuccess(null);
+      setNotificationError(null);
+
+      await updateProfile({ language: newLanguage });
+      setLanguage(newLanguage);
+      setNotificationSuccess("Language preference updated successfully");
+      // Refresh user data in context
+      await refreshUser();
+    } catch (err: any) {
+      setNotificationError(err.response?.data?.error || "Failed to update language preference");
+      // Revert the select state on error
+      setLanguage(user?.language || "en");
     } finally {
       setNotificationLoading(false);
     }
@@ -673,6 +701,34 @@ const UserSettings: React.FC = () => {
               onChange={(e) => handleStationNotificationToggle(e.target.checked)}
               disabled={notificationLoading}
             />
+          </FormControl>
+        </CardContent>
+      </Card>
+
+      {/* Language Settings */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography level="h3" sx={{ mb: 2 }}>
+            Language Settings
+          </Typography>
+          
+          <Typography sx={{ mb: 2 }}>
+            Choose your preferred language for the interface. This setting is saved to your account and will be used when you log in.
+          </Typography>
+          
+          <FormControl>
+            <FormLabel>Language</FormLabel>
+            <Select
+              value={language}
+              onChange={(_, value) => value && handleLanguageChange(value)}
+              disabled={notificationLoading}
+            >
+              {getSupportedLanguages().map((lang) => (
+                <Option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </Option>
+              ))}
+            </Select>
           </FormControl>
         </CardContent>
       </Card>

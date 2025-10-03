@@ -33,12 +33,14 @@ import Notifications from "./components/Notifications";
 import AdminAuditLogs from "./components/AdminAuditLogs";
 import AdminStationsMap from "./components/AdminStationsMap";
 import { AuthProvider } from "./contexts/AuthContext";
+import { TranslationProvider } from "./contexts/TranslationContext";
 
 function App() {
   return (
     <CssVarsProvider defaultMode="light">
       <AuthProvider>
-        <Router>
+        <TranslationProvider>
+          <Router>
           <Box
             sx={{
               minHeight: "100vh",
@@ -103,6 +105,7 @@ function App() {
             <Footer />
           </Box>
         </Router>
+        </TranslationProvider>
       </AuthProvider>
     </CssVarsProvider>
   );

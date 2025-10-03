@@ -151,6 +151,7 @@ export const updateProfile = async (data: {
   display_name?: string;
   email_notifications?: boolean;
   station_email_notifications?: boolean;
+  language?: string;
 }): Promise<User> => {
   const res = await api.put("/auth/profile", data);
   return res.data.data; // Extract from the nested data structure

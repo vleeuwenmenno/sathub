@@ -58,6 +58,7 @@ type UserInfo struct {
 	HasProfilePicture         bool   `json:"has_profile_picture"`
 	EmailNotifications        bool   `json:"email_notifications"`
 	StationEmailNotifications bool   `json:"station_email_notifications"`
+	Language                  string `json:"language"`
 }
 
 // Register handles user registration
@@ -426,6 +427,7 @@ type UpdateProfileRequest struct {
 	DisplayName               string `json:"display_name,omitempty"`
 	EmailNotifications        *bool  `json:"email_notifications,omitempty"`
 	StationEmailNotifications *bool  `json:"station_email_notifications,omitempty"`
+	Language                  string `json:"language,omitempty"`
 }
 
 // UpdateProfile handles updating current user profile
@@ -581,8 +583,18 @@ func UpdateProfile(c *gin.Context) {
 		user.StationEmailNotifications = *req.StationEmailNotifications
 	}
 
-	// Save changes if password, display name, or email notifications was updated
-	if req.Password != "" || req.DisplayName != "" || req.EmailNotifications != nil || req.StationEmailNotifications != nil {
+	// Update language preference if provided
+	if req.Language != "" {
+		// Basic validation for language code (should be 2-10 characters)
+		if len(req.Language) < 2 || len(req.Language) > 10 {
+			utils.ValidationErrorResponse(c, "Invalid language code")
+			return
+		}
+		user.Language = req.Language
+	}
+
+	// Save changes if password, display name, email notifications, or language was updated
+	if req.Password != "" || req.DisplayName != "" || req.EmailNotifications != nil || req.StationEmailNotifications != nil || req.Language != "" {
 		if err := db.Save(&user).Error; err != nil {
 			utils.InternalErrorResponse(c, "Failed to update profile")
 			return
@@ -623,6 +635,7 @@ func GetProfile(c *gin.Context) {
 		HasProfilePicture:         len(user.ProfilePicture) > 0,
 		EmailNotifications:        user.EmailNotifications,
 		StationEmailNotifications: user.StationEmailNotifications,
+		Language:                  user.Language,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile retrieved successfully", userInfo)
