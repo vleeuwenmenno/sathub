@@ -40,21 +40,21 @@
 </head>
 <body>
     <div class="header">
-        <h1>SatHub Station Alert</h1>
+        <h1>{{.t.emails.stationHealthNotification.title}}</h1>
     </div>
     <div class="content">
-        <p>Hello {{.Username}},</p>
+        <p>{{.t.emails.stationHealthNotification.greeting}} {{.Username}},</p>
 
         <div class="message">
             {{.Message}}
         </div>
 
-        <p>You can manage your notification settings in your <a href="{{.FrontendURL}}/user/settings">account settings</a>.</p>
+        <p>{{.t.emails.stationHealthNotification.manageSettings}}</p>
 
-        <p>Best regards,<br>The SatHub Team</p>
+        <p>{{.t.emails.stationHealthNotification.regards}}<br>{{.t.emails.stationHealthNotification.team}}</p>
     </div>
     <div class="footer">
-        <p>This is an automated message from SatHub. Please do not reply to this email.</p>
+        <p>{{.t.emails.stationHealthNotification.footer}}</p>
     </div>
 </body>
 </html>

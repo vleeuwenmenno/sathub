@@ -456,6 +456,28 @@ func DeleteUser(c *gin.Context) {
 			return
 		}
 		utils.Logger.Info().Int("post_count", len(postIDs)).Int("station_count", len(stationIDs)).Msg("Deleted posts for stations")
+
+		// Delete station uptimes
+		if len(stationIDs) > 0 {
+			if err := tx.Where("station_id IN ?", stationIDs).Delete(&models.StationUptime{}).Error; err != nil {
+				tx.Rollback()
+				utils.InternalErrorResponse(c, "Failed to delete station uptimes")
+				return
+			}
+			utils.Logger.Info().Int("station_count", len(stationIDs)).Msg("Deleted station uptimes")
+		}
+
+		// Delete station notification settings
+		if len(stationIDs) > 0 {
+			if err := tx.Where("station_id IN ?", stationIDs).Delete(&models.StationNotificationSettings{}).Error; err != nil {
+				tx.Rollback()
+				utils.InternalErrorResponse(c, "Failed to delete station notification settings")
+				return
+			}
+			utils.Logger.Info().Int("station_count", len(stationIDs)).Msg("Deleted station notification settings")
+		}
+
+		// Delete stations
 	}
 
 	// Delete stations
@@ -494,6 +516,14 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Deleted email change tokens for user")
+
+	// Unlink audit logs (set user_id to null instead of deleting)
+	if err := tx.Model(&models.AuditLog{}).Where("user_id = ?", targetUserID).Update("user_id", nil).Error; err != nil {
+		tx.Rollback()
+		utils.InternalErrorResponse(c, "Failed to unlink user audit logs")
+		return
+	}
+	utils.Logger.Info().Str("user_id", targetUserID.String()).Msg("Unlinked user audit logs")
 
 	// Finally delete the user
 	if err := tx.Delete(&user).Error; err != nil {
@@ -830,17 +860,6 @@ func GetUserDetails(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "User details retrieved successfully", userDetails)
-}
-
-// GetAdminInvite returns placeholder data for the invite functionality
-func GetAdminInvite(c *gin.Context) {
-	// Placeholder response - no logic implemented yet
-	response := map[string]interface{}{
-		"message":     "Invite functionality not yet implemented",
-		"placeholder": true,
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, "Invite page data retrieved", response)
 }
 
 // RegistrationSettingsResponse represents the response for registration settings
@@ -1289,7 +1308,7 @@ func ApproveUser(c *gin.Context) {
 
 	// Send approval notification email if user was approved
 	if req.Approved && user.Email.Valid {
-		if err := utils.SendApprovalNotificationEmail(user.Email.String, user.Username); err != nil {
+		if err := utils.SendApprovalNotificationEmail(user.Email.String, user.Username, user.Language); err != nil {
 			// Log error but don't fail the approval operation
 			utils.Logger.Error().Err(err).Str("username", user.Username).Msg("Failed to send approval notification email to user")
 		}
@@ -1301,4 +1320,102 @@ func ApproveUser(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("User %s successfully", action), nil)
+}
+
+// SendTestEmail sends a test email of the specified type to the current admin user
+func SendTestEmail(c *gin.Context) {
+	// Get current user
+	currentUserID, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	// Parse request
+	var req struct {
+		EmailType string `json:"email_type" binding:"required"`
+		Language  string `json:"language,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, "Invalid request format")
+		return
+	}
+
+	// Validate email type
+	validTypes := map[string]bool{
+		"emailConfirmation":            true,
+		"emailChangeConfirmation":      true,
+		"passwordReset":                true,
+		"achievementNotification":      true,
+		"commentNotification":          true,
+		"likeNotification":             true,
+		"stationHealthNotification":    true,
+		"twoFactorDisableConfirmation": true,
+		"approvalNotification":         true,
+	}
+
+	if !validTypes[req.EmailType] {
+		utils.ValidationErrorResponse(c, "Invalid email type")
+		return
+	}
+
+	// Validate language if provided
+	validLanguages := map[string]bool{
+		"en": true,
+		"de": true,
+		"nl": true,
+	}
+	if req.Language != "" && !validLanguages[req.Language] {
+		utils.ValidationErrorResponse(c, "Invalid language. Supported languages: en, de, nl")
+		return
+	}
+
+	// Get current user details
+	db := config.GetDB()
+	var user models.User
+	if err := db.Where("id = ?", currentUserID).First(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to get user details")
+		return
+	}
+
+	if !user.Email.Valid {
+		utils.ValidationErrorResponse(c, "Admin user must have a valid email address")
+		return
+	}
+
+	// Determine language to use (provided language or user's default)
+	emailLanguage := user.Language
+	if req.Language != "" {
+		emailLanguage = req.Language
+	}
+
+	// Send test email based on type
+	var err error
+	switch req.EmailType {
+	case "emailConfirmation":
+		err = utils.SendEmailConfirmationEmail(user.Email.String, user.Username, "test-token-123", emailLanguage)
+	case "emailChangeConfirmation":
+		err = utils.SendEmailChangeConfirmationEmail(user.Email.String, user.Username, "newemail@example.com", "test-token-123", emailLanguage)
+	case "passwordReset":
+		err = utils.SendPasswordResetEmail(user.Email.String, user.Username, "test-token-123", emailLanguage)
+	case "achievementNotification":
+		err = utils.SendAchievementNotificationEmail(user.Email.String, user.Username, "Test Achievement", "This is a test achievement notification", emailLanguage)
+	case "commentNotification":
+		err = utils.SendCommentNotificationEmail(user.Email.String, user.Username, "testuser", emailLanguage)
+	case "likeNotification":
+		err = utils.SendLikeNotificationEmail(user.Email.String, user.Username, "testuser", emailLanguage)
+	case "twoFactorDisableConfirmation":
+		err = utils.SendTwoFactorDisableEmail(user.Email.String, user.Username, "test-token-123", emailLanguage)
+	case "approvalNotification":
+		err = utils.SendApprovalNotificationEmail(user.Email.String, user.Username, emailLanguage)
+	}
+
+	if err != nil {
+		utils.Logger.Error().Err(err).Str("email_type", req.EmailType).Str("admin_email", user.Email.String).Msg("Failed to send test email")
+		utils.InternalErrorResponse(c, "Failed to send test email")
+		return
+	}
+
+	utils.Logger.Info().Str("email_type", req.EmailType).Str("admin_email", user.Email.String).Str("language", emailLanguage).Msg("Test email sent successfully")
+	utils.SuccessResponse(c, http.StatusOK, "Test email sent successfully", nil)
 }

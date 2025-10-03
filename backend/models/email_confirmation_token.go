@@ -17,7 +17,7 @@ type EmailConfirmationToken struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// Association
-	User User `gorm:"foreignKey:UserID" json:"-"`
+	User User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }
 
 // IsExpired checks if the token has expired

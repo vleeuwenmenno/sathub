@@ -26,6 +26,7 @@ type RegisterRequest struct {
 	Role          string `json:"role" binding:"omitempty"`
 	CaptchaID     string `json:"captcha_id" binding:"required"`
 	CaptchaAnswer string `json:"captcha_answer" binding:"required"`
+	Language      string `json:"language" binding:"omitempty"`
 }
 
 // LoginRequest represents the request body for user login
@@ -116,12 +117,24 @@ func Register(c *gin.Context) {
 		approvalRequired = false
 	}
 
+	// Validate language
+	language := req.Language
+	if language == "" {
+		language = "en" // Default to English
+	}
+	// Validate supported languages
+	supportedLanguages := map[string]bool{"en": true, "de": true, "nl": true}
+	if !supportedLanguages[language] {
+		language = "en" // Fallback to English for unsupported languages
+	}
+
 	// Create new user
 	user := models.User{
 		Username: req.Username,
 		Email:    sql.NullString{String: req.Email, Valid: true},
 		Role:     role,
 		Approved: !approvalRequired, // Auto-approve if approval is not required
+		Language: language,
 	}
 
 	// Hash password
@@ -152,7 +165,7 @@ func Register(c *gin.Context) {
 	}
 
 	// Send confirmation email
-	if err := utils.SendEmailConfirmationEmail(user.Email.String, user.Username, confirmToken); err != nil {
+	if err := utils.SendEmailConfirmationEmail(user.Email.String, user.Username, confirmToken, user.Language); err != nil {
 		// Log error but don't fail registration - user can request resend
 		utils.InternalErrorResponse(c, "Failed to send confirmation email")
 	}
@@ -532,7 +545,7 @@ func UpdateProfile(c *gin.Context) {
 		}
 
 		// Send confirmation email to the NEW email address
-		if err := utils.SendEmailChangeConfirmationEmail(req.Email, user.Username, req.Email, changeToken); err != nil {
+		if err := utils.SendEmailChangeConfirmationEmail(req.Email, user.Username, req.Email, changeToken, user.Language); err != nil {
 			utils.InternalErrorResponse(c, "Failed to send confirmation email")
 			return
 		}
@@ -887,7 +900,7 @@ func ForgotPassword(c *gin.Context) {
 	}
 
 	// Send password reset email
-	if err := utils.SendPasswordResetEmail(user.Email.String, user.Username, resetToken); err != nil {
+	if err := utils.SendPasswordResetEmail(user.Email.String, user.Username, resetToken, user.Language); err != nil {
 		// Log error but don't fail the request
 		// In production, you might want to retry or alert admins
 		utils.InternalErrorResponse(c, "Failed to send reset email")
@@ -1064,7 +1077,7 @@ func ResendConfirmationEmail(c *gin.Context) {
 	}
 
 	// Send confirmation email
-	if err := utils.SendEmailConfirmationEmail(user.Email.String, user.Username, confirmToken); err != nil {
+	if err := utils.SendEmailConfirmationEmail(user.Email.String, user.Username, confirmToken, user.Language); err != nil {
 		utils.InternalErrorResponse(c, "Failed to send confirmation email")
 		return
 	}

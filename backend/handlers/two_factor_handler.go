@@ -234,7 +234,7 @@ func DisableTwoFactor(c *gin.Context) {
 	}
 
 	// Send confirmation email
-	if err := utils.SendTwoFactorDisableEmail(user.Email.String, user.Username, disableToken); err != nil {
+	if err := utils.SendTwoFactorDisableEmail(user.Email.String, user.Username, disableToken, user.Language); err != nil {
 		utils.InternalErrorResponse(c, "Failed to send confirmation email")
 		return
 	}

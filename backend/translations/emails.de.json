@@ -1,0 +1,123 @@
+{
+  "emails": {
+    "emailConfirmation": {
+      "subject": "Bestätigen Sie Ihr SatHub-Konto",
+      "title": "Willkommen bei SatHub!",
+      "greeting": "Hallo",
+      "intro": "Vielen Dank für Ihre Registrierung bei SatHub! Um Ihre Registrierung abzuschließen und Ihr Konto zu aktivieren, klicken Sie bitte auf die Schaltfläche unten:",
+      "confirmButton": "Konto bestätigen",
+      "linkText": "Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+      "securityNote": "Sicherheitshinweis: Dieser Link läuft aus Sicherheitsgründen in 24 Stunden ab.",
+      "ignoreNote": "Wenn Sie dieses Konto nicht erstellt haben, ignorieren Sie bitte diese E-Mail.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde Ihnen gesendet, weil ein Konto mit dieser E-Mail-Adresse erstellt wurde.",
+      "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    },
+    "emailChangeConfirmation": {
+      "subject": "Bestätigen Sie Ihre E-Mail-Änderung - SatHub",
+      "title": "E-Mail-Änderung bestätigen",
+      "greeting": "Hallo",
+      "intro": "Sie haben eine Änderung Ihrer E-Mail-Adresse für Ihr SatHub-Konto beantragt. Um diese Änderung zu bestätigen, klicken Sie bitte auf die Schaltfläche unten:",
+      "confirmButton": "E-Mail-Änderung bestätigen",
+      "linkText": "Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+      "securityNote": "Sicherheitshinweis: Dieser Link läuft aus Sicherheitsgründen in 24 Stunden ab.",
+      "ignoreNote": "Wenn Sie diese E-Mail-Änderung nicht beantragt haben, ignorieren Sie bitte diese E-Mail. Ihre E-Mail-Adresse bleibt unverändert.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde Ihnen gesendet, weil eine E-Mail-Änderung für Ihr Konto beantragt wurde.",
+      "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    },
+    "passwordReset": {
+      "subject": "SatHub Passwort zurücksetzen",
+      "title": "SatHub Passwort zurücksetzen",
+      "greeting": "Hallo",
+      "intro": "Sie haben eine Zurücksetzung Ihres Passworts für Ihr SatHub-Konto beantragt. Klicken Sie auf die Schaltfläche unten, um Ihr Passwort zurückzusetzen:",
+      "resetButton": "Passwort zurücksetzen",
+      "linkText": "Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+      "securityNote": "Sicherheitshinweis: Dieser Link läuft aus Sicherheitsgründen in 1 Stunde ab.",
+      "ignoreNote": "Wenn Sie diese Passwort-Zurücksetzung nicht beantragt haben, ignorieren Sie bitte diese E-Mail. Ihr Passwort bleibt unverändert.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde Ihnen gesendet, weil eine Passwort-Zurücksetzung für Ihr Konto beantragt wurde.",
+      "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    },
+    "achievementNotification": {
+      "subject": "Erfolg freigeschaltet! - SatHub",
+      "title": "🎉 Erfolg freigeschaltet!",
+      "greeting": "Hallo",
+      "congratulations": "Herzlichen Glückwunsch! Sie haben einen neuen Erfolg in SatHub freigeschaltet:",
+      "keepWorking": "Machen Sie weiter so! Erforschen und tragen Sie zur Satellitengemeinschaft bei!",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde gesendet, weil Sie E-Mail-Benachrichtigungen für Erfolge aktiviert haben.",
+      "footerSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen ändern."
+    },
+    "commentNotification": {
+      "subject": "Neuer Kommentar zu Ihrem Beitrag - SatHub",
+      "title": "💬 Neuer Kommentar",
+      "greeting": "Hallo",
+      "commentAlert": "Jemand hat einen Ihrer Beiträge kommentiert!",
+      "commentInfo": "{{.CommenterUsername}} hat Ihren Beitrag kommentiert.",
+      "checkConversation": "Schauen Sie sich das Gespräch an und antworten Sie, wenn Sie möchten!",
+      "viewButton": "Kommentar ansehen",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde gesendet, weil Sie E-Mail-Benachrichtigungen für Kommentare aktiviert haben.",
+      "footerSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen ändern."
+    },
+    "likeNotification": {
+      "subject": "Jemand hat Ihren Beitrag geliebt! - SatHub",
+      "title": "❤️ Jemand hat Ihren Beitrag geliebt!",
+      "greeting": "Hallo",
+      "likeAlert": "Jemand hat einen Ihrer Beiträge geliebt!",
+      "likeInfo": "{{.LikerUsername}} hat Ihren Beitrag geliebt.",
+      "checkItOut": "Schauen Sie es sich an und sehen Sie, was er/sie dachte!",
+      "viewButton": "Beitrag ansehen",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde gesendet, weil Sie E-Mail-Benachrichtigungen für Likes aktiviert haben.",
+      "footerSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen ändern."
+    },
+    "stationHealthNotification": {
+      "title": "SatHub Stationsalarm",
+      "greeting": "Hallo",
+      "manageSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen verwalten.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Dies ist eine automatische Nachricht von SatHub. Bitte antworten Sie nicht auf diese E-Mail."
+    },
+    "twoFactorDisableConfirmation": {
+      "subject": "Bestätigen Sie die Deaktivierung der Zwei-Faktor-Authentifizierung - SatHub",
+      "title": "Bestätigen Sie die Deaktivierung der Zwei-Faktor-Authentifizierung",
+      "greeting": "Hallo",
+      "intro": "Sie haben beantragt, die Zwei-Faktor-Authentifizierung für Ihr SatHub-Konto zu deaktivieren. Aus Sicherheitsgründen benötigen wir eine Bestätigung, bevor wir diese Änderung vornehmen.",
+      "warning": "Warnung: Die Deaktivierung der Zwei-Faktor-Authentifizierung macht Ihr Konto weniger sicher. Wir empfehlen dringend, sie aktiviert zu lassen.",
+      "confirmButton": "Zwei-Faktor-Authentifizierung deaktivieren",
+      "linkText": "Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+      "securityNote": "Sicherheitshinweis: Dieser Link läuft in 1 Stunde ab, um Ihre Sicherheit zu gewährleisten.",
+      "ignoreNote": "Wenn Sie nicht beantragt haben, die Zwei-Faktor-Authentifizierung zu deaktivieren, ignorieren Sie diese E-Mail bitte. Ihre Zwei-Faktor-Authentifizierungs-Einstellungen bleiben unverändert.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde an Sie gesendet, weil eine Anfrage zur Deaktivierung der Zwei-Faktor-Authentifizierung für Ihr Konto gestellt wurde.",
+      "footerHelp": "Wenn Sie Fragen haben, kontaktieren Sie bitte unser Support-Team."
+    },
+    "approvalNotification": {
+      "subject": "Ihr SatHub-Konto wurde genehmigt",
+      "title": "🎉 Konto genehmigt!",
+      "greeting": "Hallo",
+      "congratulations": "Herzlichen Glückwunsch! Ihr SatHub-Konto wurde von einem Administrator genehmigt.",
+      "nowYouCan": "Sie können jetzt:",
+      "feature1": "Ihre Bodenstationen erstellen und verwalten",
+      "feature2": "Satellitendaten und Beobachtungen hochladen",
+      "feature3": "An der SatHub-Community teilnehmen",
+      "feature4": "Auf alle SatHub-Funktionen zugreifen",
+      "getStarted": "Beginnen Sie, indem Sie sich in Ihr Konto einloggen und Ihre erste Bodenstation einrichten!",
+      "loginButton": "Bei SatHub anmelden",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Willkommen in der SatHub-Community!",
+      "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    }
+  }
+}

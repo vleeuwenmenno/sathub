@@ -220,7 +220,7 @@ func CreateComment(c *gin.Context) {
 			var postOwner models.User
 			if err := db.Where("id = ?", post.Station.UserID).First(&postOwner).Error; err == nil && postOwner.EmailNotifications {
 				go func() {
-					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, commenterName); err != nil {
+					if err := utils.SendCommentNotificationEmail(postOwner.Email.String, postOwner.Username, commenterName, postOwner.Language); err != nil {
 						utils.Logger.Error().Err(err).Msg("Failed to send comment email notification")
 					}
 				}()

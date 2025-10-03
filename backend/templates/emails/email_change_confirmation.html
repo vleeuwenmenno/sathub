@@ -52,47 +52,41 @@
   </head>
   <body>
     <div class="header">
-      <h1>Confirm Email Change</h1>
+      <h1>{{.t.emails.emailChangeConfirmation.title}}</h1>
     </div>
     <div class="content">
-      <p>Hello {{.Username}},</p>
+      <p>{{.t.emails.emailChangeConfirmation.greeting}} {{.Username}},</p>
 
       <p>
-        You have requested to change your email address for your SatHub account.
-        Your new email address will be:
+        {{.t.emails.emailChangeConfirmation.intro}}
       </p>
 
       <p><strong>{{.NewEmail}}</strong></p>
 
-      <p>Click the button below to confirm this email change:</p>
+      <p>{{.t.emails.emailChangeConfirmation.confirmButton}}:</p>
 
-      <a href="{{.ConfirmURL}}" class="button">Confirm Email Change</a>
+      <a href="{{.ConfirmURL}}" class="button">{{.t.emails.emailChangeConfirmation.confirmButton}}</a>
 
       <p>
-        If the button doesn't work, you can copy and paste this link into your
-        browser:
+        {{.t.emails.emailChangeConfirmation.linkText}}
       </p>
       <p><a href="{{.ConfirmURL}}">{{.ConfirmURL}}</a></p>
 
       <p>
-        <strong>Security Note:</strong> This link will expire in 24 hours for
-        your security.
+        <strong>{{.t.emails.emailChangeConfirmation.securityNote}}</strong>
       </p>
 
       <div class="warning">
-        <strong>Important:</strong> If you didn't request this email change,
-        please ignore this email. Your current email address will remain
-        unchanged.
+        <strong>{{.t.emails.emailChangeConfirmation.ignoreNote}}</strong>
       </div>
 
-      <p>Best regards,<br />The SatHub Team</p>
+      <p>{{.t.emails.emailChangeConfirmation.regards}}<br />{{.t.emails.emailChangeConfirmation.team}}</p>
     </div>
     <div class="footer">
       <p>
-        This email was sent to you because an email change was requested for
-        your account.
+        {{.t.emails.emailChangeConfirmation.footer}}
       </p>
-      <p>If you have any questions, please contact our support team.</p>
+      <p>{{.t.emails.emailChangeConfirmation.footerHelp}}</p>
     </div>
   </body>
 </html>

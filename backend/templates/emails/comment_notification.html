@@ -55,33 +55,31 @@
   </head>
   <body>
     <div class="header">
-      <h1>💬 New Comment</h1>
+      <h1>{{.t.emails.commentNotification.title}}</h1>
     </div>
     <div class="content">
-      <p>Hello {{.Username}},</p>
+      <p>{{.t.emails.commentNotification.greeting}} {{.Username}},</p>
 
-      <p>Someone has commented on one of your posts!</p>
+      <p>{{.t.emails.commentNotification.commentAlert}}</p>
 
       <div class="comment-info">
         <p>
-          <span class="commenter">{{.CommenterUsername}}</span> left a comment
-          on your post.
+          <span class="commenter">{{.CommenterUsername}}</span> {{.t.emails.commentNotification.commentInfo}}
         </p>
       </div>
 
-      <p>Check out the conversation and respond if you'd like!</p>
+      <p>{{.t.emails.commentNotification.checkConversation}}</p>
 
-      <a href="#" class="action-button">View Comment</a>
+      <a href="#" class="action-button">{{.t.emails.commentNotification.viewButton}}</a>
 
-      <p>Best regards,<br />The SatHub Team</p>
+      <p>{{.t.emails.commentNotification.regards}}<br />{{.t.emails.commentNotification.team}}</p>
     </div>
     <div class="footer">
       <p>
-        This email was sent because you have email notifications enabled for
-        comments.
+        {{.t.emails.commentNotification.footer}}
       </p>
       <p>
-        You can change your notification preferences in your account settings.
+        {{.t.emails.commentNotification.footerSettings}}
       </p>
     </div>
   </body>

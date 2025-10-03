@@ -90,8 +90,9 @@ export const register = async (
   password: string,
   captchaId: string,
   captchaAnswer: string,
+  language?: string,
 ): Promise<void> => {
-  await api.post("/auth/register", { email, username, password, captcha_id: captchaId, captcha_answer: captchaAnswer });
+  await api.post("/auth/register", { email, username, password, captcha_id: captchaId, captcha_answer: captchaAnswer, language });
 };
 
 export const login = async (
@@ -677,6 +678,17 @@ export const getAdminOverview = async (): Promise<AdminStats> => {
   return res.data.data;
 };
 
+export const sendTestEmail = async (emailType: string, language?: string): Promise<void> => {
+  // Import dynamically to avoid bundling in production
+  const { isDebugMode } = await import("./utils/debug");
+  
+  if (!isDebugMode()) {
+    throw new Error("Debug functionality is only available in development mode");
+  }
+  
+  await api.post("/admin/send-test-email", { email_type: emailType, language });
+};
+
 export const getAllUsers = async (
   page: number = 1,
   limit: number = 20,
@@ -745,12 +757,6 @@ export const getAdminPosts = async (
   const res = await api.get(`/admin/posts?${params}`);
   return res.data.data;
 };
-
-export const getAdminInvite = async (): Promise<any> => {
-  const res = await api.get("/admin/invite");
-  return res.data.data;
-};
-
 
 // Achievement API functions
 export const getUserAchievements = async (): Promise<UserAchievement[]> => {

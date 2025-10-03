@@ -1,0 +1,123 @@
+{
+  "emails": {
+    "emailConfirmation": {
+      "subject": "Bevestig uw SatHub-account",
+      "title": "Welkom bij SatHub!",
+      "greeting": "Hallo",
+      "intro": "Bedankt voor uw registratie bij SatHub! Om uw registratie te voltooien en uw account te activeren, klikt u op de knop hieronder:",
+      "confirmButton": "Account bevestigen",
+      "linkText": "Als de knop niet werkt, kunt u deze link kopiëren en plakken in uw browser:",
+      "securityNote": "Beveiligingsnotitie: Deze link verloopt over 24 uur om uw veiligheid te waarborgen.",
+      "ignoreNote": "Als u dit account niet heeft aangemaakt, negeert u deze e-mail dan alstublieft.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is naar u verzonden omdat een account is aangemaakt met dit e-mailadres.",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    },
+    "emailChangeConfirmation": {
+      "subject": "Bevestig uw e-mailwijziging - SatHub",
+      "title": "E-mailwijziging bevestigen",
+      "greeting": "Hallo",
+      "intro": "U heeft verzocht om uw e-mailadres voor uw SatHub-account te wijzigen. Om deze wijziging te bevestigen, klikt u op de knop hieronder:",
+      "confirmButton": "E-mailwijziging bevestigen",
+      "linkText": "Als de knop niet werkt, kunt u deze link kopiëren en plakken in uw browser:",
+      "securityNote": "Beveiligingsnotitie: Deze link verloopt over 24 uur om uw veiligheid te waarborgen.",
+      "ignoreNote": "Als u deze e-mailwijziging niet heeft aangevraagd, negeert u deze e-mail dan alstublieft. Uw e-mailadres blijft ongewijzigd.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is naar u verzonden omdat een e-mailwijziging is aangevraagd voor uw account.",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    },
+    "passwordReset": {
+      "subject": "SatHub wachtwoord opnieuw instellen",
+      "title": "SatHub wachtwoord opnieuw instellen",
+      "greeting": "Hallo",
+      "intro": "U heeft verzocht om uw wachtwoord voor uw SatHub-account opnieuw in te stellen. Klik op de knop hieronder om uw wachtwoord opnieuw in te stellen:",
+      "resetButton": "Wachtwoord opnieuw instellen",
+      "linkText": "Als de knop niet werkt, kunt u deze link kopiëren en plakken in uw browser:",
+      "securityNote": "Beveiligingsnotitie: Deze link verloopt over 1 uur om uw veiligheid te waarborgen.",
+      "ignoreNote": "Als u deze wachtwoordreset niet heeft aangevraagd, negeert u deze e-mail dan alstublieft. Uw wachtwoord blijft ongewijzigd.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is naar u verzonden omdat een wachtwoordreset is aangevraagd voor uw account.",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    },
+    "achievementNotification": {
+      "subject": "Prestatie ontgrendeld! - SatHub",
+      "title": "🎉 Prestatie ontgrendeld!",
+      "greeting": "Hallo",
+      "congratulations": "Gefeliciteerd! U heeft een nieuwe prestatie ontgrendeld in SatHub:",
+      "keepWorking": "Ga zo door met het verkennen en bijdragen aan de satellietgemeenschap!",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is verzonden omdat u e-mailmeldingen heeft ingeschakeld voor prestaties.",
+      "footerSettings": "U kunt uw meldingsvoorkeuren wijzigen in uw accountinstellingen."
+    },
+    "commentNotification": {
+      "subject": "Nieuwe reactie op uw bericht - SatHub",
+      "title": "💬 Nieuwe reactie",
+      "greeting": "Hallo",
+      "commentAlert": "Iemand heeft gereageerd op een van uw berichten!",
+      "commentInfo": "{{.CommenterUsername}} heeft gereageerd op uw bericht.",
+      "checkConversation": "Bekijk het gesprek en reageer als u wilt!",
+      "viewButton": "Reactie bekijken",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is verzonden omdat u e-mailmeldingen heeft ingeschakeld voor reacties.",
+      "footerSettings": "U kunt uw meldingsvoorkeuren wijzigen in uw accountinstellingen."
+    },
+    "likeNotification": {
+      "subject": "Iemand vindt uw bericht leuk! - SatHub",
+      "title": "❤️ Iemand vindt uw bericht leuk!",
+      "greeting": "Hallo",
+      "likeAlert": "Iemand vindt een van uw berichten leuk!",
+      "likeInfo": "{{.LikerUsername}} vindt uw bericht leuk.",
+      "checkItOut": "Bekijk het en zie wat hij/zij ervan vond!",
+      "viewButton": "Bericht bekijken",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is verzonden omdat u e-mailmeldingen heeft ingeschakeld voor likes.",
+      "footerSettings": "U kunt uw meldingsvoorkeuren wijzigen in uw accountinstellingen."
+    },
+    "stationHealthNotification": {
+      "title": "SatHub Stationsalarm",
+      "greeting": "Hallo",
+      "manageSettings": "U kunt uw meldingsinstellingen beheren in uw accountinstellingen.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Dit is een automatische boodschap van SatHub. Reageer alstublieft niet op deze e-mail."
+    },
+    "twoFactorDisableConfirmation": {
+      "subject": "Bevestig uitschakeling twee-factor-authenticatie - SatHub",
+      "title": "Bevestig uitschakeling twee-factor-authenticatie",
+      "greeting": "Hallo",
+      "intro": "U heeft verzocht om twee-factor-authenticatie voor uw SatHub-account uit te schakelen. Om veiligheidsredenen vereisen wij bevestiging voordat we deze wijziging doorvoeren.",
+      "warning": "Waarschuwing: Het uitschakelen van twee-factor-authenticatie maakt uw account minder veilig. Wij raden sterk aan om het ingeschakeld te houden.",
+      "confirmButton": "Twee-factor-authenticatie uitschakelen",
+      "linkText": "Als de knop niet werkt, kunt u deze link kopiëren en plakken in uw browser:",
+      "securityNote": "Beveiligingsnotitie: Deze link verloopt over 1 uur om uw veiligheid te waarborgen.",
+      "ignoreNote": "Als u niet heeft verzocht om twee-factor-authenticatie uit te schakelen, negeert u deze e-mail dan alstublieft. Uw twee-factor-authenticatie-instellingen blijven ongewijzigd.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is naar u verzonden omdat een verzoek is gedaan om twee-factor-authenticatie voor uw account uit te schakelen.",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    },
+    "approvalNotification": {
+      "subject": "Uw SatHub-account is goedgekeurd",
+      "title": "🎉 Account goedgekeurd!",
+      "greeting": "Hallo",
+      "congratulations": "Gefeliciteerd! Uw SatHub-account is goedgekeurd door een beheerder.",
+      "nowYouCan": "U kunt nu:",
+      "feature1": "Uw grondstations aanmaken en beheren",
+      "feature2": "Satellietgegevens en waarnemingen uploaden",
+      "feature3": "Deelnemen aan de SatHub-gemeenschap",
+      "feature4": "Toegang krijgen tot alle SatHub-functies",
+      "getStarted": "Ga aan de slag door in te loggen op uw account en uw eerste grondstation in te stellen!",
+      "loginButton": "Inloggen bij SatHub",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Welkom bij de SatHub-gemeenschap!",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    }
+  }
+}

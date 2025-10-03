@@ -52,55 +52,47 @@
   </head>
   <body>
     <div class="header">
-      <h1>Confirm Two-Factor Authentication Disable</h1>
+      <h1>{{.t.emails.twoFactorDisableConfirmation.title}}</h1>
     </div>
     <div class="content">
-      <p>Hello {{.Username}},</p>
+      <p>{{.t.emails.twoFactorDisableConfirmation.greeting}} {{.Username}},</p>
 
       <p>
-        You have requested to disable two-factor authentication for your SatHub
-        account.
+        {{.t.emails.twoFactorDisableConfirmation.intro}}
       </p>
 
       <div class="warning">
-        <strong>Security Warning:</strong> Disabling two-factor authentication
-        will make your account less secure. We strongly recommend keeping 2FA
-        enabled.
+        <strong>{{.t.emails.twoFactorDisableConfirmation.warning}}</strong>
       </div>
 
       <p>
-        Click the button below to confirm disabling two-factor authentication:
+        {{.t.emails.twoFactorDisableConfirmation.confirmButton}}:
       </p>
 
       <a href="{{.ConfirmURL}}" class="button"
-        >Disable Two-Factor Authentication</a
+        >{{.t.emails.twoFactorDisableConfirmation.confirmButton}}</a
       >
 
       <p>
-        If the button doesn't work, you can copy and paste this link into your
-        browser:
+        {{.t.emails.twoFactorDisableConfirmation.linkText}}
       </p>
       <p><a href="{{.ConfirmURL}}">{{.ConfirmURL}}</a></p>
 
       <p>
-        <strong>Security Note:</strong> This link will expire in 24 hours for
-        your security.
+        <strong>{{.t.emails.twoFactorDisableConfirmation.securityNote}}</strong>
       </p>
 
       <div class="warning">
-        <strong>Important:</strong> If you didn't request to disable two-factor
-        authentication, please ignore this email. Your 2FA settings will remain
-        unchanged.
+        <strong>{{.t.emails.twoFactorDisableConfirmation.ignoreNote}}</strong>
       </div>
 
-      <p>Best regards,<br />The SatHub Team</p>
+      <p>{{.t.emails.twoFactorDisableConfirmation.regards}}<br />{{.t.emails.twoFactorDisableConfirmation.team}}</p>
     </div>
     <div class="footer">
       <p>
-        This email was sent to you because a two-factor authentication disable
-        request was made for your account.
+        {{.t.emails.twoFactorDisableConfirmation.footer}}
       </p>
-      <p>If you have any questions, please contact our support team.</p>
+      <p>{{.t.emails.twoFactorDisableConfirmation.footerHelp}}</p>
     </div>
   </body>
 </html>

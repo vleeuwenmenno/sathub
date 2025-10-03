@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Typography, IconButton, Link } from '@mui/joy';
+import { Box, Typography, IconButton, Link, Chip } from '@mui/joy';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { VERSION } from '../version';
+import { isDebugMode } from '../utils/debug';
 
 const Footer: React.FC = () => {
   return (
@@ -23,7 +24,7 @@ const Footer: React.FC = () => {
       <Typography level="body-xs" sx={{ mb: 2, color: 'text.tertiary' }}>
         Version {VERSION}
       </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 1 }}>
         <IconButton
           component={Link}
           href="https://github.com/vleeuwenmenno/sathub"
@@ -36,6 +37,23 @@ const Footer: React.FC = () => {
           <GitHubIcon />
         </IconButton>
       </Box>
+      {isDebugMode() && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+          <Chip
+            variant="soft"
+            color="warning"
+            size="sm"
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 'md',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Development Environment
+          </Chip>
+        </Box>
+      )}
     </Box>
   );
 };

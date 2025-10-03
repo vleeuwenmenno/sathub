@@ -49,7 +49,6 @@ SatHub has been set up with a complete i18n system including:
 - [ ] **AdminPendingUsers.tsx** - User approval queue
 - [ ] **AdminPostDetail.tsx** - Detailed post admin view
 - [ ] **AdminRegistrationSettings.tsx** - Registration configuration
-- [ ] **AdminInvite.tsx** - User invitation system
 - [ ] **AdminUserDetail.tsx** - Individual user admin view
 
 ### Phase 6: Utility & Supporting Components

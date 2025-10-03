@@ -25,13 +25,14 @@ import AdminOverview from "./components/AdminOverview";
 import AdminUserManagement from "./components/AdminUserManagement";
 import AdminUserDetail from "./components/AdminUserDetail";
 import AdminPendingUsers from "./components/AdminPendingUsers";
-import AdminInvite from "./components/AdminInvite";
 import AdminPosts from "./components/AdminPosts";
 import AdminPostDetail from "./components/AdminPostDetail";
 import Achievements from "./components/Achievements";
 import Notifications from "./components/Notifications";
 import AdminAuditLogs from "./components/AdminAuditLogs";
 import AdminStationsMap from "./components/AdminStationsMap";
+import AdminDebug from "./components/AdminDebug";
+import { isDebugMode } from "./utils/debug";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
 
@@ -99,7 +100,7 @@ function App() {
                 <Route path="/admin/posts/:id" element={<AdminPostDetail />} />
                 <Route path="/admin/stations" element={<AdminStationsMap />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-                <Route path="/admin/invite" element={<AdminInvite />} />
+                {isDebugMode() && <Route path="/admin/debug" element={<AdminDebug />} />}
               </Routes>
             </Box>
             <Footer />

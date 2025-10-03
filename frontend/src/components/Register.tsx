@@ -37,7 +37,7 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
 
   const fetchCaptcha = async () => {
@@ -72,7 +72,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await apiRegister(email, username, password, captchaId, captchaAnswer);
+      await apiRegister(email, username, password, captchaId, captchaAnswer, language);
       setSuccess(t('auth.register.successMessage'));
       setTimeout(() => navigate('/login'), 5000);
     } catch (err: any) {
