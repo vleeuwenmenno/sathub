@@ -14,6 +14,7 @@ import {
 } from '@mui/joy';
 import { Email as EmailIcon } from '@mui/icons-material';
 import { forgotPassword } from '../api';
+import { useTranslation } from '../contexts/TranslationContext';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ const ForgotPassword: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +73,7 @@ const ForgotPassword: React.FC = () => {
               SatHub
             </Typography>
             <Typography level="body-sm" sx={{ opacity: 0.9 }}>
-              Email Sent
+              {t('auth.forgotPassword.successTitle')}
             </Typography>
           </Box>
 
@@ -79,25 +81,25 @@ const ForgotPassword: React.FC = () => {
             <Stack spacing={3}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography level="h3" sx={{ mb: 1, fontWeight: 'bold' }}>
-                  Check Your Email
+                  {t('auth.forgotPassword.checkEmailTitle')}
                 </Typography>
                 <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                  We've sent you a password reset link
+                  {t('auth.forgotPassword.checkEmailSubtitle')}
                 </Typography>
               </Box>
 
               <Alert color="success" variant="soft" sx={{ borderRadius: 'lg' }}>
-                If an account with that email exists, a password reset link has been sent.
+                {t('auth.forgotPassword.successMessage')}
               </Alert>
 
               <Typography level="body-sm" textAlign="center" sx={{ color: 'text.tertiary' }}>
-                Didn't receive the email? Check your spam folder or{' '}
+                {t('auth.forgotPassword.didNotReceive')}{' '}
                 <Button
                   variant="plain"
                   onClick={() => setSuccess(false)}
                   sx={{ p: 0, minHeight: 'auto', fontSize: 'inherit' }}
                 >
-                  try again
+                  {t('auth.forgotPassword.tryAgain')}
                 </Button>
               </Typography>
 
@@ -112,7 +114,7 @@ const ForgotPassword: React.FC = () => {
                   fontWeight: 'bold',
                 }}
               >
-                Back to Login
+                {t('auth.forgotPassword.backToLogin')}
               </Button>
             </Stack>
           </CardContent>
@@ -155,7 +157,7 @@ const ForgotPassword: React.FC = () => {
             SatHub
           </Typography>
           <Typography level="body-sm" sx={{ opacity: 0.9 }}>
-            Password Recovery
+            {t('auth.forgotPassword.title')}
           </Typography>
         </Box>
 
@@ -163,10 +165,10 @@ const ForgotPassword: React.FC = () => {
           <Stack spacing={3}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography level="h3" sx={{ mb: 1, fontWeight: 'bold' }}>
-                Forgot Password
+                {t('auth.forgotPassword.formTitle')}
               </Typography>
               <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                Enter your email address and we'll send you a link to reset your password.
+                {t('auth.forgotPassword.formSubtitle')}
               </Typography>
             </Box>
 
@@ -175,7 +177,7 @@ const ForgotPassword: React.FC = () => {
                 <FormControl>
                   <FormLabel sx={{ fontWeight: 'bold' }}>
                     <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Email Address
+                    {t('auth.forgotPassword.email')}
                   </FormLabel>
                   <Input
                     type="email"
@@ -211,14 +213,14 @@ const ForgotPassword: React.FC = () => {
                     },
                   }}
                 >
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.submit')}
                 </Button>
               </Stack>
             </form>
 
             <Box sx={{ textAlign: 'center' }}>
               <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                Remember your password?{' '}
+                {t('auth.forgotPassword.rememberPassword')}{' '}
                 <Link
                   to="/login"
                   style={{
@@ -227,7 +229,7 @@ const ForgotPassword: React.FC = () => {
                     fontWeight: 'bold',
                   }}
                 >
-                  Back to Login
+                  {t('auth.forgotPassword.loginLink')}
                 </Link>
               </Typography>
             </Box>

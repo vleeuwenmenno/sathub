@@ -140,6 +140,49 @@
         "captchaRequired": "Voltooi de captcha",
         "registrationFailed": "Registratie mislukt"
       }
+    },
+    "forgotPassword": {
+      "title": "Wachtwoord resetten",
+      "subtitle": "Voer uw e-mail in om reset instructies te ontvangen",
+      "formTitle": "Wachtwoord vergeten",
+      "formSubtitle": "Voer uw e-mailadres in en we sturen u een link om uw wachtwoord te resetten.",
+      "email": "E-mailadres",
+      "submit": "Reset link verzenden",
+      "sending": "Bezig met verzenden...",
+      "backToLogin": "Terug naar inloggen",
+      "success": "Als er een account met dit e-mailadres bestaat, hebben we u een wachtwoord reset link gestuurd.",
+      "successTitle": "E-mail verzonden",
+      "checkEmailTitle": "Controleer uw e-mail",
+      "checkEmailSubtitle": "We hebben u een wachtwoord reset link gestuurd",
+      "successMessage": "Als er een account met dit e-mailadres bestaat, is er een wachtwoord reset link verzonden.",
+      "tryAgain": "probeer opnieuw",
+      "didNotReceive": "E-mail niet ontvangen? Controleer uw spam folder of",
+      "backToLoginLink": "Terug naar inloggen",
+      "rememberPassword": "Wachtwoord onthouden?",
+      "loginLink": "Terug naar inloggen"
+    },
+    "resetPassword": {
+      "title": "Nieuw wachtwoord instellen",
+      "subtitle": "Voer uw nieuwe wachtwoord hieronder in",
+      "password": "Nieuw wachtwoord",
+      "confirmPassword": "Nieuw wachtwoord bevestigen",
+      "submit": "Wachtwoord bijwerken",
+      "invalidLinkTitle": "Ongeldige reset link",
+      "invalidLinkMessage": "Deze wachtwoord reset link is ongeldig of verlopen.",
+      "requestNewLink": "Vraag een nieuwe wachtwoord reset link aan.",
+      "requestNewLinkButton": "Nieuwe reset link aanvragen",
+      "backToLogin": "Terug naar inloggen",
+      "successTitle": "Wachtwoord reset succesvol",
+      "successMessage": "Uw wachtwoord is succesvol gereset. U kunt nu inloggen met uw nieuwe wachtwoord.",
+      "redirecting": "Doorverwijzing naar inlogpagina...",
+      "goToLogin": "Ga naar inloggen",
+      "errors": {
+        "tokenExpired": "Deze reset link is verlopen",
+        "tokenInvalid": "Deze reset link is ongeldig",
+        "passwordMismatch": "Wachtwoorden komen niet overeen",
+        "passwordTooShort": "Wachtwoord moet minimaal 6 tekens lang zijn",
+        "failed": "Kan wachtwoord niet resetten"
+      }
     }
   },
   "navigation": {
@@ -152,7 +195,17 @@
     "profile": "Profiel",
     "notifications": "Meldingen",
     "help": "Help",
-    "logout": "Uitloggen"
+    "logout": "Uitloggen",
+    "overview": "Overzicht",
+    "achievements": "Prestaties",
+    "adminPanel": "Admin paneel",
+    "viewProfile": "Profiel bekijken",
+    "settingsSection": "Instellingen"
+  },
+  "dashboard": {
+    "recentPosts": "Recente berichten",
+    "loginToBrowse": "Log in om verder te bladeren.",
+    "noPosts": "Nog geen berichten beschikbaar."
   },
   "stations": {
     "title": "Grondstations",

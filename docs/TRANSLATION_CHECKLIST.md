@@ -15,10 +15,10 @@ SatHub has been set up with a complete i18n system including:
 ### Phase 1: Core User Experience (High Priority)
 - [x] **Login.tsx** - Login form and authentication
 - [x] **Register.tsx** - User registration form
-- [ ] **ForgotPassword.tsx** - Password reset request
-- [ ] **ResetPassword.tsx** - Password reset form
-- [ ] **Navbar.tsx** - Main navigation menu
-- [ ] **Overview.tsx** - Dashboard with recent posts
+- [x] **ForgotPassword.tsx** - Password reset request
+- [x] **ResetPassword.tsx** - Password reset form
+- [x] **Navbar.tsx** - Main navigation menu
+- [x] **Overview.tsx** - Dashboard with recent posts
 
 ### Phase 2: User Management
 - [ ] **UserSettings.tsx** - Profile and account settings
@@ -109,16 +109,17 @@ For each component to migrate:
 ## Current Progress
 
 - **Total Components**: 36
-- **Completed**: 1
+- **Completed**: 6
 - **In Progress**: 0
-- **Remaining**: 35
+- **Remaining**: 30
 
 ## Next Steps
 
-1. Start with **Phase 1** components (Login, Register, Navbar, Overview)
-2. Use `Login.i18n.tsx` as the template for migration patterns
-3. Update this checklist as components are completed
-4. Test translations in both English and German
+1. ✅ **Phase 1** components completed (Login, Register, ForgotPassword, ResetPassword, Navbar, Overview)
+2. Start with **Phase 2** components (UserSettings, UserOverview, Achievements)
+3. Use translated components as templates for migration patterns
+4. Update this checklist as components are completed
+5. Test translations in both English and German
 
 ## Resources
 

@@ -12,6 +12,7 @@ import {
   Sheet,
 } from '@mui/joy';
 import { resetPassword } from '../api';
+import { useTranslation } from '../contexts/TranslationContext';
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -23,12 +24,13 @@ const ResetPassword: React.FC = () => {
   const [tokenValid, setTokenValid] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
     if (!tokenFromUrl) {
       setTokenValid(false);
-      setError('Invalid reset link. No token provided.');
+      setError(t('auth.resetPassword.errors.tokenInvalid'));
     } else {
       setToken(tokenFromUrl);
     }
@@ -39,12 +41,12 @@ const ResetPassword: React.FC = () => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.resetPassword.errors.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError(t('auth.resetPassword.errors.passwordTooShort'));
       return;
     }
 
@@ -58,7 +60,7 @@ const ResetPassword: React.FC = () => {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Failed to reset password';
+      const errorMessage = err.response?.data?.error || t('auth.resetPassword.errors.failed');
       setError(errorMessage);
 
       // If token is invalid/expired, mark as invalid
@@ -93,24 +95,24 @@ const ResetPassword: React.FC = () => {
           }}
         >
           <Typography level="h3" textAlign="center">
-            Invalid Reset Link
+            {t('auth.resetPassword.invalidLinkTitle')}
           </Typography>
 
           <Alert color="danger" variant="soft">
-            {error || 'This password reset link is invalid or has expired.'}
+            {error || t('auth.resetPassword.invalidLinkMessage')}
           </Alert>
 
           <Typography textAlign="center">
-            Please request a new password reset link.
+            {t('auth.resetPassword.requestNewLink')}
           </Typography>
 
           <Button onClick={() => navigate('/forgot-password')} fullWidth>
-            Request New Reset Link
+            {t('auth.resetPassword.requestNewLinkButton')}
           </Button>
 
           <Typography textAlign="center">
             <Link to="/login" style={{ color: 'var(--joy-palette-primary-main)' }}>
-              Back to Login
+              {t('auth.resetPassword.backToLogin')}
             </Link>
           </Typography>
         </Sheet>
@@ -141,19 +143,19 @@ const ResetPassword: React.FC = () => {
           }}
         >
           <Typography level="h3" textAlign="center">
-            Password Reset Successful
+            {t('auth.resetPassword.successTitle')}
           </Typography>
 
           <Alert color="success" variant="soft">
-            Your password has been successfully reset. You can now log in with your new password.
+            {t('auth.resetPassword.successMessage')}
           </Alert>
 
           <Typography textAlign="center">
-            Redirecting to login page...
+            {t('auth.resetPassword.redirecting')}
           </Typography>
 
           <Button onClick={() => navigate('/login')} fullWidth>
-            Go to Login
+            {t('auth.resetPassword.goToLogin')}
           </Button>
         </Sheet>
       </Box>
@@ -182,17 +184,17 @@ const ResetPassword: React.FC = () => {
         }}
       >
         <Typography level="h3" textAlign="center">
-          Reset Your Password
+          {t('auth.resetPassword.title')}
         </Typography>
 
         <Typography textAlign="center" sx={{ mb: 2 }}>
-          Enter your new password below.
+          {t('auth.resetPassword.subtitle')}
         </Typography>
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <FormControl>
-              <FormLabel>New Password</FormLabel>
+              <FormLabel>{t('auth.resetPassword.password')}</FormLabel>
               <Input
                 type="password"
                 value={password}
@@ -204,7 +206,7 @@ const ResetPassword: React.FC = () => {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Confirm New Password</FormLabel>
+              <FormLabel>{t('auth.resetPassword.confirmPassword')}</FormLabel>
               <Input
                 type="password"
                 value={confirmPassword}
@@ -227,14 +229,14 @@ const ResetPassword: React.FC = () => {
               fullWidth
               size="lg"
             >
-              Reset Password
+              {t('auth.resetPassword.submit')}
             </Button>
           </Stack>
         </form>
 
         <Typography textAlign="center">
           <Link to="/login" style={{ color: 'var(--joy-palette-primary-main)' }}>
-            Back to Login
+            {t('auth.resetPassword.backToLogin')}
           </Link>
         </Typography>
       </Sheet>
