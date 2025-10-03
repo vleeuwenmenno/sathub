@@ -109,7 +109,7 @@ const AdminOverview: React.FC = () => {
         {approvalRequired && (
           <Grid xs={12} sm={6} md={4} lg={2.4}>
             <Card
-              onClick={() => navigate('/admin/pending-users')}
+              onClick={() => navigate('/admin/users?approved=false')}
               sx={{
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
@@ -234,36 +234,38 @@ const AdminOverview: React.FC = () => {
       </Grid>
 
       {import.meta.env.DEV && (
-        <Grid xs={12} sm={6} md={4} lg={2.4}>
-          <Card
-            onClick={() => navigate('/admin/debug')}
-            sx={{
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg',
-              },
-            }}
-          >
-            <CardContent>
-              <Stack spacing={1}>
-                <Typography level="h4" color="warning">
-                  🛠️ Debug Tools
-                </Typography>
-                <Typography level="h1">
-                  Dev
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  Development testing tools
-                </Typography>
-                <Typography level="body-xs" color="warning" sx={{ mt: 1 }}>
-                  Click to access debug tools →
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Box sx={{ mt: 3 }}>
+          <Grid xs={12} sm={6} md={4} lg={2.4}>
+            <Card
+              onClick={() => navigate('/admin/debug')}
+              sx={{
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'lg',
+                },
+              }}
+            >
+              <CardContent>
+                <Stack spacing={1}>
+                  <Typography level="h4" color="warning">
+                    🛠️ Debug Tools
+                  </Typography>
+                  <Typography level="h1">
+                    Dev
+                  </Typography>
+                  <Typography level="body-sm" color="neutral">
+                    Development testing tools
+                  </Typography>
+                  <Typography level="body-xs" color="warning" sx={{ mt: 1 }}>
+                    Click to access debug tools →
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Box>
       )}
 
       <Box sx={{ mt: 4 }}>

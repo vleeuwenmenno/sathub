@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -28,6 +28,10 @@ const AdminUserManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Initialize filters from URL params
+  const initialApprovedFilter = searchParams.get('approved') === 'false' ? 'false' : 'all';
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number }>({
@@ -40,7 +44,7 @@ const AdminUserManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [approvedFilter, setApprovedFilter] = useState<string>('all'); // 'all', 'true', 'false'
+  const [approvedFilter, setApprovedFilter] = useState<string>(initialApprovedFilter); // 'all', 'true', 'false'
   const [bannedFilter, setBannedFilter] = useState<string>('all'); // 'all', 'true', 'false'
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
@@ -62,12 +66,8 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
-  // Initial load
-  useEffect(() => {
-    fetchUsers(pagination.page, searchQuery);
-  }, []);
-
-  // Fetch users when filters change
+  // Fetch users when filters change (also handles initial load)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const approved = approvedFilter === 'all' ? undefined : approvedFilter === 'true';
     const banned = bannedFilter === 'all' ? undefined : bannedFilter === 'true';
