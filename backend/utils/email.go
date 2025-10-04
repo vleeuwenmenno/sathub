@@ -254,3 +254,19 @@ func SendApprovalNotificationEmail(toEmail, username, language string) error {
 
 	return SendEmail(data)
 }
+
+// SendProfilePictureClearedEmail sends a notification when an admin clears a user's profile picture
+func SendProfilePictureClearedEmail(toEmail, username, reason, language string) error {
+	data := EmailData{
+		Subject:  "Your Profile Picture Has Been Removed",
+		To:       toEmail,
+		Template: "profile_picture_cleared",
+		Language: language,
+		Data: map[string]interface{}{
+			"Username": username,
+			"Reason":   reason,
+		},
+	}
+
+	return SendEmail(data)
+}

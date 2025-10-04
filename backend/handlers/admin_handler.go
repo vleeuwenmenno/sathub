@@ -1125,6 +1125,11 @@ type ApproveUserRequest struct {
 	Approved bool `json:"approved"`
 }
 
+// ClearProfilePictureRequest represents the request to clear a user's profile picture
+type ClearProfilePictureRequest struct {
+	Reason string `json:"reason,omitempty"`
+}
+
 // AdminPostResponse represents post data for admin management
 type AdminPostResponse struct {
 	ID            uint   `json:"id"`
@@ -1320,6 +1325,86 @@ func ApproveUser(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("User %s successfully", action), nil)
+}
+
+// ClearUserProfilePicture clears a user's profile picture (admin only)
+func ClearUserProfilePicture(c *gin.Context) {
+	userIDStr := c.Param("id")
+	if userIDStr == "" {
+		utils.ValidationErrorResponse(c, "User ID is required")
+		return
+	}
+
+	// Parse user ID
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID format")
+		return
+	}
+
+	var req ClearProfilePictureRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ValidationErrorResponse(c, err.Error())
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find the target user
+	var user models.User
+	if err := db.First(&user, targetUserID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "User not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Database error")
+		return
+	}
+
+	// Check if user has a profile picture to clear
+	if len(user.ProfilePicture) == 0 {
+		utils.ValidationErrorResponse(c, "User does not have a profile picture to clear")
+		return
+	}
+
+	// Store old profile picture info for logging
+	oldProfilePictureURL := generateProfilePictureURL(user.ID.String(), user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"))
+
+	// Clear profile picture data
+	user.ProfilePicture = nil
+	user.ProfilePictureType = ""
+
+	if err := db.Save(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to clear profile picture")
+		return
+	}
+
+	// Log admin action
+	utils.LogUserAction(c, models.ActionAdminUserProfilePictureClear, targetUserID, models.AuditMetadata{
+		"target_username": user.Username,
+		"reason":          req.Reason,
+		"old_picture_url": oldProfilePictureURL,
+	})
+
+	// Send notification email to user if they have an email
+	if user.Email.Valid && user.Email.String != "" {
+		reasonText := req.Reason
+		if reasonText == "" {
+			reasonText = "No specific reason provided"
+		}
+
+		if err := utils.SendProfilePictureClearedEmail(user.Email.String, user.Username, reasonText, user.Language); err != nil {
+			// Log error but don't fail the operation
+			utils.Logger.Error().Err(err).Str("username", user.Username).Msg("Failed to send profile picture cleared notification email")
+		}
+	}
+
+	response := map[string]interface{}{
+		"profile_picture_url": "",
+		"has_profile_picture": false,
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Profile picture cleared successfully", response)
 }
 
 // SendTestEmail sends a test email of the specified type to the current admin user
