@@ -240,7 +240,7 @@ const AdminOverview: React.FC = () => {
            </Card>
          </Grid>
 
-         <Grid xs={12} sm={6} md={4} lg={2.4}>
+         <Grid xs={12}>
            <Card
              onClick={() => navigate('/admin/audit-logs')}
              sx={{
