@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Card,
   Typography,
@@ -259,10 +260,24 @@ const AdminAuditLogs: React.FC = () => {
                   </td>
                   <td>
                     {log.target_type && (
-                      <Chip size="sm" variant="outlined">
-                        {log.target_type}
-                        {log.target_id && ` (${log.target_id.slice(0, 8)}...)`}
-                      </Chip>
+                      (log.target_type === "station" && log.target_id) ? (
+                        <Link to={`/station/${log.target_id}`} style={{ textDecoration: 'none' }}>
+                          <Chip size="sm" variant="outlined" sx={{ cursor: 'pointer' }}>
+                            {log.target_type} ({log.target_id.slice(0, 8)}...)
+                          </Chip>
+                        </Link>
+                      ) : (log.target_type === "user" && log.target_id) ? (
+                        <Link to={`/user/${log.target_id}`} style={{ textDecoration: 'none' }}>
+                          <Chip size="sm" variant="outlined" sx={{ cursor: 'pointer' }}>
+                            {log.target_type} ({log.target_id.slice(0, 8)}...)
+                          </Chip>
+                        </Link>
+                      ) : (
+                        <Chip size="sm" variant="outlined">
+                          {log.target_type}
+                          {log.target_id && ` (${log.target_id.slice(0, 8)}...)`}
+                        </Chip>
+                      )
                     )}
                   </td>
                   <td style={{ maxWidth: 300 }}>
@@ -343,9 +358,17 @@ const AdminAuditLogs: React.FC = () => {
 
               <Box>
                 <Typography level="body-sm" color="neutral">User</Typography>
-                <Typography>
-                  {selectedLog.username || selectedLog.user_id || "System"}
-                </Typography>
+                {selectedLog.user_id ? (
+                  <Link to={`/user/${selectedLog.user_id}`} style={{ textDecoration: 'none' }}>
+                    <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
+                      {selectedLog.username || selectedLog.user_id}
+                    </Typography>
+                  </Link>
+                ) : (
+                  <Typography>
+                    {selectedLog.username || "System"}
+                  </Typography>
+                )}
               </Box>
 
               <Box>
@@ -357,10 +380,24 @@ const AdminAuditLogs: React.FC = () => {
 
               <Box>
                 <Typography level="body-sm" color="neutral">Target</Typography>
-                <Typography>
-                  {selectedLog.target_type}
-                  {selectedLog.target_id && ` (${selectedLog.target_id})`}
-                </Typography>
+                {(selectedLog.target_type === "station" && selectedLog.target_id) ? (
+                  <Link to={`/station/${selectedLog.target_id}`} style={{ textDecoration: 'none' }}>
+                    <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
+                      {selectedLog.target_type} ({selectedLog.target_id})
+                    </Typography>
+                  </Link>
+                ) : (selectedLog.target_type === "user" && selectedLog.target_id) ? (
+                  <Link to={`/user/${selectedLog.target_id}`} style={{ textDecoration: 'none' }}>
+                    <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
+                      {selectedLog.target_type} ({selectedLog.target_id})
+                    </Typography>
+                  </Link>
+                ) : (
+                  <Typography>
+                    {selectedLog.target_type}
+                    {selectedLog.target_id && ` (${selectedLog.target_id})`}
+                  </Typography>
+                )}
               </Box>
 
               {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (

@@ -13,7 +13,7 @@
       "cwd": "${workspaceFolder}/client",
       "args": ["--insecure"],
       "env": {
-        "STATION_TOKEN": "a39a1b1548b1d03535cca4517ac6a071",
+        "STATION_TOKEN": "db9b105540cde94dcc4ae1c55899d9b5",
         "API_URL": "https://api.sathub.local:9999",
         "WATCH_PATHS": "./data",
         "PROCESSED_DIR": "./data/processed",

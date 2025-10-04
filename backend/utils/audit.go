@@ -20,6 +20,17 @@ func LogAuditEvent(c *gin.Context, action models.AuditAction, targetType models.
 		if uid, err := uuid.Parse(userIDStr.(string)); err == nil {
 			userID = &uid
 		}
+	} else if stationUserID, exists := c.Get("station_user_id"); exists {
+		// If no user_id but station_user_id exists (station token auth), use that
+		// station_user_id can be either string or uuid.UUID depending on context
+		switch v := stationUserID.(type) {
+		case string:
+			if uid, err := uuid.Parse(v); err == nil {
+				userID = &uid
+			}
+		case uuid.UUID:
+			userID = &v
+		}
 	}
 
 	// Extract client information

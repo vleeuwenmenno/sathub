@@ -273,10 +273,9 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	// Log post creation (system action since it's done by station token)
-	utils.LogSystemAction(c, models.ActionPostCreate, models.AuditMetadata{
+	// Log post creation by station
+	utils.LogStationAction(c, models.ActionPostCreate, stationID, models.AuditMetadata{
 		"post_id":        post.ID,
-		"station_id":     stationID,
 		"satellite_name": req.SatelliteName,
 		"has_metadata":   req.Metadata != "",
 	})
@@ -362,8 +361,8 @@ func UploadPostImage(c *gin.Context) {
 		return
 	}
 
-	// Log image upload (system action since it's done by station token)
-	utils.LogSystemAction(c, models.ActionPostImageUpload, models.AuditMetadata{
+	// Log image upload by station
+	utils.LogStationAction(c, models.ActionPostImageUpload, stationID, models.AuditMetadata{
 		"post_id":      postID.String(),
 		"image_id":     postImage.ID,
 		"filename":     postImage.Filename,
@@ -470,8 +469,8 @@ func UploadPostCBOR(c *gin.Context) {
 		return
 	}
 
-	// Log CBOR upload (system action since it's done by station token)
-	utils.LogSystemAction(c, models.ActionPostCBORUpload, models.AuditMetadata{
+	// Log CBOR upload by station
+	utils.LogStationAction(c, models.ActionPostCBORUpload, stationID, models.AuditMetadata{
 		"post_id":   postID.String(),
 		"cbor_id":   postCBOR.ID,
 		"filename":  postCBOR.Filename,
@@ -558,8 +557,8 @@ func UploadPostCADU(c *gin.Context) {
 		return
 	}
 
-	// Log CADU upload (system action since it's done by station token)
-	utils.LogSystemAction(c, models.ActionPostCADUUpload, models.AuditMetadata{
+	// Log CADU upload by station
+	utils.LogStationAction(c, models.ActionPostCADUUpload, stationID, models.AuditMetadata{
 		"post_id":   postID.String(),
 		"cadu_id":   postCADU.ID,
 		"filename":  postCADU.Filename,
