@@ -21,7 +21,7 @@
       "description": "Lade 50 Posts hoch"
     },
     "communityBuilder": {
-      "name": "Gemeinschafts-Bauer",
+      "name": "Community-Bauer",
       "description": "Erhalte dein erstes Like auf einen Post"
     },
     "popularContributor": {
@@ -45,7 +45,7 @@
       "description": "Habe 10 erfolgreiche Datenübertragungen"
     },
     "veteranOperator": {
-      "name": "Veteranen-Bediener",
+      "name": "Veteranen-Betreiber",
       "description": "Konto seit 1 Jahr aktiv"
     },
     "satelliteExplorer": {
@@ -61,7 +61,7 @@
       "description": "Lade 100 Posts hoch"
     },
     "communityLeader": {
-      "name": "Gemeinschafts-Leader",
+      "name": "Community-Leiter",
       "description": "Erhalte 100 Likes auf deine Posts"
     },
     "commentGuru": {
@@ -97,11 +97,11 @@
       "description": "Halte 100% Verfügbarkeit auf einer Station für 7 Tage"
     },
     "consistentOperator": {
-      "name": "Konsistenter Bediener",
+      "name": "Konsistenter Betreiber",
       "description": "Halte 80% Verfügbarkeit auf einer Station für 30 Tage"
     },
     "dedicatedOperator": {
-      "name": "Engagierter Bediener",
+      "name": "Engagierter Betreiber",
       "description": "Halte 90% Verfügbarkeit auf einer Station für 30 Tage"
     },
     "longTermReliability": {

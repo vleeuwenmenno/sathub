@@ -370,9 +370,9 @@
       "showingPosts": "{{count}} von {{total}} Beiträgen anzeigen",
       "publicStationsTitle": "Öffentliche Stationen",
       "noPublicStations": "Keine öffentlichen Stationen verfügbar",
-      "likedPosts": "Gefällt mir Beiträge",
-      "noLikedPosts": "Noch keine gefällt mir Beiträge",
-      "showingLikedPosts": "{{count}} von {{total}} gefällt mir Beiträgen anzeigen",
+      "likedPosts": "Gelikte Beiträge",
+      "noLikedPosts": "Noch keine Gelikten Beiträge",
+      "showingLikedPosts": "{{count}} von {{total}} Gelikten Beiträgen anzeigen",
       "noContent": "Dieser Benutzer hat keine öffentlichen Inhalte verfügbar",
       "noContentDescription": "Keine öffentlichen Stationen oder Beiträge zum Anzeigen."
     }
