@@ -374,7 +374,7 @@
       "recoveryCodesSaved": "Ik heb deze codes opgeslagen",
       "notificationsSection": "Meldingsinstellingen",
       "notificationsDescription": "Kies hoe u wilt worden geïnformeerd over activiteiten op uw berichten en prestaties.",
-      "emailNotificationsAchievements": "E-mailmeldingen ontvangen voor prestaties, reacties en vind-ik-leuks",
+      "emailNotificationsAchievements": "E-mailmeldingen ontvangen voor prestaties, reacties en likes",
       "emailNotificationsStations": "E-mailmeldingen ontvangen voor stationsgezondheidswaarschuwingen",
       "languageSection": "Taalinstellingen",
       "languageDescription": "Kies uw voorkeurstaal voor de interface. Deze instelling wordt opgeslagen in uw account en gebruikt bij het inloggen.",
@@ -421,8 +421,8 @@
       "publicStationsTitle": "Openbare Stations",
       "noPublicStations": "Geen openbare stations beschikbaar",
       "likedPosts": "Vind ik leuk berichten",
-      "noLikedPosts": "Nog geen vind-ik-leuk berichten",
-      "showingLikedPosts": "{{count}} van {{total}} vind-ik-leuk berichten weergeven",
+      "noLikedPosts": "Nog geen liked berichten",
+      "showingLikedPosts": "{{count}} van {{total}} liked berichten weergeven",
       "noContent": "Deze gebruiker heeft geen openbare inhoud beschikbaar",
       "noContentDescription": "Geen openbare stations of berichten om weer te geven."
     }
