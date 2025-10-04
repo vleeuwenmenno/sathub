@@ -9,7 +9,10 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sathub-ui-backend/models"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 // GenerateRandomString generates a random string of the specified length
@@ -162,4 +165,30 @@ func DecryptSecret(ciphertext string) (string, error) {
 	stream.XORKeyStream(ciphertextBytes, ciphertextBytes)
 
 	return string(ciphertextBytes), nil
+}
+
+// SendNotificationToAdmins sends a notification to all admin users
+func SendNotificationToAdmins(db *gorm.DB, notificationType, message, relatedID string) error {
+	// Get all admin users
+	var admins []models.User
+	if err := db.Where("role = ?", "admin").Find(&admins).Error; err != nil {
+		return fmt.Errorf("failed to find admin users: %w", err)
+	}
+
+	// Create notification for each admin
+	for _, admin := range admins {
+		notification := models.Notification{
+			UserID:    admin.ID,
+			Type:      notificationType,
+			Message:   message,
+			RelatedID: relatedID,
+		}
+
+		if err := db.Create(&notification).Error; err != nil {
+			Logger.Error().Err(err).Str("admin_id", admin.ID.String()).Msg("Failed to create notification for admin")
+			// Continue with other admins even if one fails
+		}
+	}
+
+	return nil
 }

@@ -57,19 +57,21 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
   const t: TranslationFunction = (key, params) => {
     const keys = key.split('.');
     let value: any = translations;
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
+        console.warn(`Translation key not found: ${key}, missing at: ${k}`);
         return key; // Return key if translation not found
       }
     }
-    
+
     if (typeof value !== 'string') {
+      console.warn(`Translation value is not a string for key: ${key}, value:`, value);
       return key;
     }
-    
+
     // Replace parameters in translation
     if (params) {
       return Object.entries(params).reduce(
@@ -77,14 +79,14 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
         value
       );
     }
-    
+
     return value;
   };
 
   useEffect(() => {
     const initializeLanguage = async () => {
       let preferredLanguage = 'en';
-      
+
       // Check localStorage first for saved preference
       const savedLanguage = localStorage.getItem('preferred_language');
       if (savedLanguage) {
@@ -96,7 +98,7 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
         // Fall back to browser language detection
         preferredLanguage = detectBrowserLanguage();
       }
-      
+
       setLanguageState(preferredLanguage);
       const loadedTranslations = await loadTranslations(preferredLanguage);
       setTranslations(loadedTranslations);

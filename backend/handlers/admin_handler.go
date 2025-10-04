@@ -18,11 +18,12 @@ import (
 
 // AdminOverviewResponse represents the response for admin overview statistics
 type AdminOverviewResponse struct {
-	TotalUsers    int64  `json:"total_users"`
-	PendingUsers  int64  `json:"pending_users"`
-	TotalPosts    int64  `json:"total_posts"`
-	TotalStations int64  `json:"total_stations"`
-	SystemHealth  string `json:"system_health"`
+	TotalUsers     int64  `json:"total_users"`
+	PendingUsers   int64  `json:"pending_users"`
+	TotalPosts     int64  `json:"total_posts"`
+	TotalStations  int64  `json:"total_stations"`
+	PendingReports int64  `json:"pending_reports"`
+	SystemHealth   string `json:"system_health"`
 }
 
 // AdminUserResponse represents user data for admin management
@@ -70,6 +71,7 @@ func GetAdminOverview(c *gin.Context) {
 	var pendingUsers int64
 	var totalPosts int64
 	var totalStations int64
+	var pendingReports int64
 
 	// Count total users
 	if err := db.Model(&models.User{}).Count(&totalUsers).Error; err != nil {
@@ -107,15 +109,22 @@ func GetAdminOverview(c *gin.Context) {
 		return
 	}
 
+	// Count pending reports
+	if err := db.Model(&models.Report{}).Where("status = ?", "pending").Count(&pendingReports).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count pending reports")
+		return
+	}
+
 	// Simple system health check (can be expanded)
 	systemHealth := "healthy"
 
 	response := AdminOverviewResponse{
-		TotalUsers:    totalUsers,
-		PendingUsers:  pendingUsers,
-		TotalPosts:    totalPosts,
-		TotalStations: totalStations,
-		SystemHealth:  systemHealth,
+		TotalUsers:     totalUsers,
+		PendingUsers:   pendingUsers,
+		TotalPosts:     totalPosts,
+		TotalStations:  totalStations,
+		PendingReports: pendingReports,
+		SystemHealth:   systemHealth,
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Admin overview retrieved successfully", response)

@@ -118,6 +118,21 @@
       "team": "Das SatHub-Team",
       "footer": "Willkommen in der SatHub-Community!",
       "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    },
+    "reportNotification": {
+      "subject": "Neue Meldung eingereicht - SatHub",
+      "title": "🚨 Neue Meldung eingereicht",
+      "greeting": "Hallo Admin",
+      "reportAlert": "Eine neue Meldung wurde bei SatHub eingereicht, die Ihre Aufmerksamkeit erfordert.",
+      "reporterInfo": "Gemeldet von: {{.ReporterUsername}}",
+      "targetInfo": "Zieltyp: {{.TargetType}}",
+      "reportTitle": "Titel: {{.Title}}",
+      "reportMessage": "Nachricht: {{.Message}}",
+      "reviewButton": "Meldung überprüfen",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Dies ist eine automatische Benachrichtigung für Administratoren.",
+      "footerSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen verwalten."
     }
   }
 }

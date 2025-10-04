@@ -8,8 +8,8 @@ import (
 )
 
 type StationNotificationRule struct {
-	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	SettingsID uuid.UUID `gorm:"type:uuid;not null" json:"settings_id"`
+	ID         uuid.UUID `gorm:"type:text;primaryKey" json:"id"`
+	SettingsID uuid.UUID `gorm:"type:text;not null" json:"settings_id"`
 	Type       string    `gorm:"size:50;not null" json:"type"` // 'down_minutes', 'back_online', 'low_uptime'
 	Threshold  *int      `json:"threshold,omitempty"`          // For 'down_minutes' and 'low_uptime'
 	Enabled    bool      `gorm:"default:true" json:"enabled"`
@@ -18,7 +18,7 @@ type StationNotificationRule struct {
 }
 
 type StationNotificationSettings struct {
-	ID        uuid.UUID                 `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	ID        uuid.UUID                 `gorm:"type:text;primaryKey" json:"id"`
 	StationID string                    `gorm:"not null;index" json:"station_id"`
 	Station   Station                   `gorm:"foreignKey:StationID" json:"-"`
 	Rules     []StationNotificationRule `gorm:"foreignKey:SettingsID" json:"rules"`
@@ -33,5 +33,16 @@ func (StationNotificationSettings) TableName() string {
 
 // BeforeCreate is a GORM hook that runs before creating a notification setting
 func (s *StationNotificationSettings) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == uuid.Nil {
+		s.ID = uuid.New()
+	}
+	return nil
+}
+
+// BeforeCreate is a GORM hook that runs before creating a notification rule
+func (r *StationNotificationRule) BeforeCreate(tx *gorm.DB) error {
+	if r.ID == uuid.Nil {
+		r.ID = uuid.New()
+	}
 	return nil
 }

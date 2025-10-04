@@ -254,3 +254,25 @@ func SendApprovalNotificationEmail(toEmail, username, language string) error {
 
 	return SendEmail(data)
 }
+
+// SendReportNotificationEmail sends a report notification email to admins
+func SendReportNotificationEmail(toEmail, reporterUsername, targetType, title, message, language string) error {
+	appConfig := config.GetAppConfig()
+	adminURL := fmt.Sprintf("%s/admin/reports", appConfig.FrontendURL)
+
+	data := EmailData{
+		Subject:  "New Report Submitted",
+		To:       toEmail,
+		Template: "report_notification",
+		Language: language,
+		Data: map[string]interface{}{
+			"ReporterUsername": reporterUsername,
+			"TargetType":       targetType,
+			"Title":            title,
+			"Message":          message,
+			"AdminURL":         adminURL,
+		},
+	}
+
+	return SendEmail(data)
+}

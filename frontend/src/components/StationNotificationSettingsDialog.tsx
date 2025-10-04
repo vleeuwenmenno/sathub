@@ -23,7 +23,6 @@ import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import {
   getStationNotificationSettings,
   updateStationNotificationSettings,
-  type StationNotificationSettings,
   type StationNotificationRule,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
@@ -42,7 +41,6 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
   stationName,
 }) => {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<StationNotificationSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +54,6 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
       loadSettings();
     } else if (!open) {
       // Reset state when dialog closes
-      setSettings(null);
       setRules([]);
       setError(null);
       setHasChanges(false);
@@ -68,7 +65,6 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
       setLoading(true);
       setError(null);
       const data = await getStationNotificationSettings(stationId);
-      setSettings(data);
 
       // Initialize form state with existing rules
       setRules(data.rules || []);
@@ -152,7 +148,6 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
       });
 
       const updatedSettings = await updateStationNotificationSettings(stationId, cleanRules);
-      setSettings(updatedSettings);
       setRules(updatedSettings.rules);
       setHasChanges(false);
     } catch (err: any) {

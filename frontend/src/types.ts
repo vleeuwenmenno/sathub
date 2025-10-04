@@ -129,7 +129,7 @@ export interface UserAchievement {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'achievement' | 'comment' | 'like' | 'station_down' | 'station_online' | 'station_low_uptime';
+  type: 'achievement' | 'comment' | 'like' | 'station_down' | 'station_online' | 'station_low_uptime' | 'report';
   message: string;
   related_id: string | null;
   is_read: boolean;

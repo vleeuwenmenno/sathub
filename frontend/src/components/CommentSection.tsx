@@ -26,6 +26,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../contexts/AuthContext';
 import { getCommentsForPost, createComment, updateComment, deleteComment, likeComment, getProfilePictureUrl } from '../api';
 import type { PostComment } from '../types';
+import ReportButton from './ReportButton';
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -259,39 +260,48 @@ const CommentItem: React.FC<{
                   <Typography level="body-md" sx={{ mb: 1 }}>
                     {comment.content}
                   </Typography>
-                  {/* Like button */}
-                  {currentUserId && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <IconButton
-                        size="sm"
-                        onClick={handleLikeClick}
-                        disabled={isLikeLoading}
-                        sx={{
-                          color: isLiked ? "#ef4444" : "neutral.400",
-                          transition: "all 0.2s ease",
-                          p: 0.5,
-                          "&:hover": {
-                            color: isLiked ? "#dc2626" : "danger.500",
-                            transform: "scale(1.1)",
-                          },
-                        }}
-                      >
-                        {isLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
-                      </IconButton>
-                      <Typography
-                        level="body-xs"
-                        sx={{
-                          color: isLiked ? "#ef4444" : "neutral.500",
-                          fontWeight: isLiked ? "bold" : "normal",
-                          transition: "all 0.2s ease",
-                          minWidth: '20px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {likesCount}
-                      </Typography>
-                    </Box>
-                  )}
+                  {/* Like button and Report button */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {currentUserId && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconButton
+                          size="sm"
+                          onClick={handleLikeClick}
+                          disabled={isLikeLoading}
+                          sx={{
+                            color: isLiked ? "#ef4444" : "neutral.400",
+                            transition: "all 0.2s ease",
+                            p: 0.5,
+                            "&:hover": {
+                              color: isLiked ? "#dc2626" : "danger.500",
+                              transform: "scale(1.1)",
+                            },
+                          }}
+                        >
+                          {isLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                        </IconButton>
+                        <Typography
+                          level="body-xs"
+                          sx={{
+                            color: isLiked ? "#ef4444" : "neutral.500",
+                            fontWeight: isLiked ? "bold" : "normal",
+                            transition: "all 0.2s ease",
+                            minWidth: '20px',
+                            textAlign: 'center'
+                          }}
+                        >
+                          {likesCount}
+                        </Typography>
+                      </Box>
+                    )}
+                    <ReportButton
+                      targetType="comment"
+                      targetId={comment.id}
+                      size="sm"
+                      variant="plain"
+                      color="neutral"
+                    />
+                  </Box>
                 </Box>
               )}
             </Box>

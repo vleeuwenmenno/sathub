@@ -145,6 +145,10 @@ const NotificationDropdown: React.FC = () => {
         case 'like':
           navigate(`/post/${notification.related_id}`);
           break;
+        case 'report':
+          // Navigate to admin reports page with specific report ID
+          navigate(`/admin/reports?reportId=${notification.related_id}`);
+          break;
         default:
           // No navigation for unknown types
           break;
@@ -167,6 +171,8 @@ const NotificationDropdown: React.FC = () => {
         return <Comment color="info" />;
       case 'like':
         return <Favorite color="error" />;
+      case 'report':
+        return <Notifications color="warning" />;
       default:
         return <Notifications />;
     }

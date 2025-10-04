@@ -14,6 +14,7 @@ import {
 } from "@mui/joy";
 import { getUserPosts, getUserStations, getStationPictureBlob, getUserLikedPosts, getProfilePictureBlob, type Station } from "../api";
 import type { Post } from "../types";
+import ReportButton from "./ReportButton";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -214,9 +215,15 @@ const UserOverview: React.FC = () => {
                       {(userInfo.display_name || userInfo.username)?.charAt(0).toUpperCase()}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Typography level="h3" sx={{ mb: 0.5 }}>
-                        {userInfo.display_name || userInfo.username}
-                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                        <Typography level="h3">
+                          {userInfo.display_name || userInfo.username}
+                        </Typography>
+                        <ReportButton
+                          targetType="user"
+                          targetId={userInfo.id}
+                        />
+                      </Box>
                       {userInfo.display_name && (
                         <Typography level="body-md" color="neutral" sx={{ mb: 1 }}>
                           @{userInfo.username}

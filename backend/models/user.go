@@ -11,7 +11,7 @@ import (
 )
 
 type User struct {
-	ID                        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	ID                        uuid.UUID      `gorm:"type:text;primaryKey" json:"id"`
 	Username                  string         `gorm:"uniqueIndex;not null" json:"username"`
 	Email                     sql.NullString `gorm:"unique" json:"email,omitempty"`
 	EmailConfirmed            bool           `gorm:"default:false" json:"email_confirmed"`
@@ -51,6 +51,9 @@ func (u *User) CheckPassword(password string) bool {
 
 // BeforeCreate is a GORM hook that runs before creating a user
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == uuid.Nil {
+		u.ID = uuid.New()
+	}
 	if u.Role == "" {
 		u.Role = "user"
 	}

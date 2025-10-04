@@ -618,6 +618,7 @@ export interface AdminStats {
   pending_users: number;
   total_posts: number;
   total_stations: number;
+  pending_reports: number;
   system_health: string;
 }
 
@@ -873,6 +874,71 @@ export const getAuditLogs = async (
 
   const res = await api.get(`/admin/audit-logs?${params}`);
   return res.data.data;
+};
+
+// Report API functions
+export interface Report {
+  id: string;
+  user_id: string;
+  username?: string;
+  target_type: string;
+  target_id: string;
+  title: string;
+  message: string;
+  status: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportsResponse {
+  reports: Report[];
+  pagination: PaginationMeta;
+}
+
+export interface CreateReportRequest {
+  target_type: 'post' | 'station' | 'user' | 'comment';
+  target_id: string;
+  title: string;
+  message: string;
+}
+
+export const createReport = async (reportData: CreateReportRequest): Promise<{ id: string }> => {
+  const res = await api.post("/reports", reportData);
+  return res.data.data;
+};
+
+export const getReports = async (
+  page: number = 1,
+  limit: number = 20,
+  filters: {
+    status?: string;
+    target_type?: string;
+    target_id?: string;
+    user_id?: string;
+  } = {}
+): Promise<ReportsResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (filters.status) params.set("status", filters.status);
+  if (filters.target_type) params.set("target_type", filters.target_type);
+  if (filters.target_id) params.set("target_id", filters.target_id);
+  if (filters.user_id) params.set("user_id", filters.user_id);
+
+  const res = await api.get(`/admin/reports?${params}`);
+  return res.data.data;
+};
+
+export const updateReportStatus = async (reportId: string, status: string): Promise<void> => {
+  await api.put(`/admin/reports/${reportId}/status`, { status });
+};
+
+export const deleteReport = async (reportId: string): Promise<void> => {
+  await api.delete(`/admin/reports/${reportId}`);
 };
 
 // Station Notification Settings API functions
