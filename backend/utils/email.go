@@ -194,9 +194,9 @@ func TranslateAchievement(nameKey, descriptionKey, language string) (string, str
 	achievementSlug := parts[1]
 
 	// Navigate to achievement translations
-	achievementTranslations, ok := translations["achievementData"].(map[string]interface{})
+	achievementTranslations, ok := translations["achievements"].(map[string]interface{})
 	if !ok {
-		return nameKey, descriptionKey, fmt.Errorf("achievementData section not found in translations")
+		return nameKey, descriptionKey, fmt.Errorf("achievements section not found in translations")
 	}
 
 	achievementData, ok := achievementTranslations[achievementSlug].(map[string]interface{})
