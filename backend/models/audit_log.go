@@ -106,14 +106,14 @@ func (m *AuditMetadata) Scan(value interface{}) error {
 
 // AuditLog represents an audit log entry
 type AuditLog struct {
-	ID         uuid.UUID       `gorm:"type:text;primaryKey" json:"id"`
-	UserID     *uuid.UUID      `gorm:"type:text;index" json:"user_id,omitempty"`
+	ID         uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	UserID     *uuid.UUID      `gorm:"type:uuid;index" json:"user_id,omitempty"`
 	User       *User           `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
 	Action     AuditAction     `gorm:"type:varchar(50);not null;index" json:"action"`
 	TargetType AuditTargetType `gorm:"type:varchar(20);not null;index" json:"target_type"`
 	TargetID   string          `gorm:"type:varchar(100);index" json:"target_id,omitempty"`
-	Metadata   AuditMetadata   `gorm:"type:text" json:"metadata,omitempty"`
-	IPAddress  *string         `gorm:"type:text;index" json:"ip_address,omitempty"`
+	Metadata   AuditMetadata   `gorm:"type:jsonb" json:"metadata,omitempty"`
+	IPAddress  *string         `gorm:"type:inet;index" json:"ip_address,omitempty"`
 	UserAgent  *string         `gorm:"type:text" json:"user_agent,omitempty"`
 	CreatedAt  time.Time       `json:"created_at"`
 }
@@ -125,9 +125,6 @@ func (AuditLog) TableName() string {
 
 // BeforeCreate is a GORM hook that runs before creating an audit log
 func (a *AuditLog) BeforeCreate(tx *gorm.DB) error {
-	if a.ID == uuid.Nil {
-		a.ID = uuid.New()
-	}
 	if a.Metadata == nil {
 		a.Metadata = make(AuditMetadata)
 	}

@@ -4,12 +4,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type Report struct {
-	ID         uuid.UUID  `gorm:"type:text;primaryKey" json:"id"`
-	UserID     uuid.UUID  `gorm:"type:text;not null;index" json:"user_id"`
+	ID         uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	UserID     uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	User       User       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	TargetType string     `gorm:"not null;size:50;index" json:"target_type"` // "post", "station", "user", "comment"
 	TargetID   string     `gorm:"not null;index" json:"target_id"`           // UUID or string ID of the target
@@ -25,14 +24,6 @@ type Report struct {
 // TableName returns the table name for Report model
 func (Report) TableName() string {
 	return "reports"
-}
-
-// BeforeCreate generates a UUID for the report before creation
-func (r *Report) BeforeCreate(tx *gorm.DB) error {
-	if r.ID == uuid.Nil {
-		r.ID = uuid.New()
-	}
-	return nil
 }
 
 // ValidTargetTypes returns the valid target types for reports

@@ -4,11 +4,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type Post struct {
-	ID            uuid.UUID `gorm:"type:text;primaryKey" json:"id"`
+	ID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	StationID     string    `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"station_id"`
 	Station       Station   `gorm:"foreignKey:StationID" json:"-"`
 	Timestamp     time.Time `gorm:"not null" json:"timestamp"`
@@ -23,14 +22,6 @@ type Post struct {
 // TableName returns the table name for Post model
 func (Post) TableName() string {
 	return "posts"
-}
-
-// BeforeCreate generates a UUID for the post before creation
-func (p *Post) BeforeCreate(tx *gorm.DB) error {
-	if p.ID == uuid.Nil {
-		p.ID = uuid.New()
-	}
-	return nil
 }
 
 type PostImage struct {
