@@ -46,5 +46,5 @@ export const getSupportedLanguages = () => [
 
 export const getLanguageFlag = (languageCode: string): string => {
   const language = getSupportedLanguages().find(lang => lang.code === languageCode);
-  return language?.flag || '🇺🇸'; // Default to US flag if not found
+  return language?.flag || '🌍';
 };
