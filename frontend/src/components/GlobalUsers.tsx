@@ -17,9 +17,10 @@ import {
 } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
 import type { UserSummary } from "../api";
-import { getGlobalUsers, getProfilePictureBlob } from "../api";
+import { getGlobalUsers } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
+import { getApiBaseUrl } from "../config";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -42,7 +43,6 @@ const GlobalUsers: React.FC = () => {
   const [order, setOrder] = useState("desc");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [profilePictureUrls, setProfilePictureUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -55,34 +55,6 @@ const GlobalUsers: React.FC = () => {
       setLoading(true);
       const data = await getGlobalUsers(limit, page, sort, order, search);
       setUsers(data);
-
-      // Load profile pictures for users that have them
-      const picturePromises = data
-        .filter(user => user.has_profile_picture && user.profile_picture_url)
-        .map(async (user) => {
-          try {
-            // Remove /api/ prefix if it exists since the api client already includes it
-            const cleanUrl = user.profile_picture_url!.startsWith('/api/')
-              ? user.profile_picture_url!.substring(5) // Remove '/api/'
-              : user.profile_picture_url!;
-            const blobUrl = await getProfilePictureBlob(cleanUrl);
-            return { id: user.id, url: blobUrl };
-          } catch (err) {
-            console.error(`Failed to load profile picture for user ${user.id}:`, err);
-            return null;
-          }
-        });
-
-      const pictureResults = await Promise.all(picturePromises);
-      const newProfilePictureUrls: Record<string, string> = {};
-
-      pictureResults.forEach(result => {
-        if (result) {
-          newProfilePictureUrls[result.id] = result.url;
-        }
-      });
-
-      setProfilePictureUrls(newProfilePictureUrls);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to load users");
@@ -211,10 +183,10 @@ const GlobalUsers: React.FC = () => {
                   {/* Top Section: Avatar and User Info */}
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
                     <Avatar
-                      src={profilePictureUrls[user.id] || undefined}
+                      src={user.profile_picture_url ? `${getApiBaseUrl()}${user.profile_picture_url}` : undefined}
                       sx={{ width: 48, height: 48, flexShrink: 0 }}
                     >
-                      {!profilePictureUrls[user.id] && (user.display_name || user.username)?.charAt(0).toUpperCase()}
+                      {!user.profile_picture_url && (user.display_name || user.username)?.charAt(0).toUpperCase()}
                     </Avatar>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography 
