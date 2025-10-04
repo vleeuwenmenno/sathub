@@ -1,0 +1,112 @@
+{
+  "achievements": {
+    "welcomeAboard": {
+      "name": "Welcome Aboard",
+      "description": "Create your SatHub account"
+    },
+    "firstStation": {
+      "name": "First Station",
+      "description": "Set up your first ground station"
+    },
+    "stationNetwork": {
+      "name": "Station Network",
+      "description": "Create 5 ground stations"
+    },
+    "dataPioneer": {
+      "name": "Data Pioneer",
+      "description": "Upload your first satellite data post"
+    },
+    "proSharer": {
+      "name": "Pro Sharer",
+      "description": "Upload 50 posts"
+    },
+    "communityBuilder": {
+      "name": "Community Builder",
+      "description": "Receive your first like on a post"
+    },
+    "popularContributor": {
+      "name": "Popular Contributor",
+      "description": "Receive 50 likes on your posts"
+    },
+    "conversationStarter": {
+      "name": "Conversation Starter",
+      "description": "Post your first comment"
+    },
+    "activeDiscussant": {
+      "name": "Active Discussant",
+      "description": "Post 20 comments"
+    },
+    "insightfulCommenter": {
+      "name": "Insightful Commenter",
+      "description": "Receive 10 likes on your comments"
+    },
+    "dataTransmitter": {
+      "name": "Data Transmitter",
+      "description": "Have 10 successful data transmissions"
+    },
+    "veteranOperator": {
+      "name": "Veteran Operator",
+      "description": "Account active for 1 year"
+    },
+    "satelliteExplorer": {
+      "name": "Satellite Explorer",
+      "description": "Upload posts from 5 different satellites"
+    },
+    "globalNetwork": {
+      "name": "Global Network",
+      "description": "Create stations in 3 different locations"
+    },
+    "dataHoarder": {
+      "name": "Data Hoarder",
+      "description": "Upload 100 posts"
+    },
+    "communityLeader": {
+      "name": "Community Leader",
+      "description": "Receive 100 likes on your posts"
+    },
+    "commentGuru": {
+      "name": "Comment Guru",
+      "description": "Receive 50 likes on your comments"
+    },
+    "stationMaster": {
+      "name": "Station Master",
+      "description": "Create 10 ground stations"
+    },
+    "signalSpecialist": {
+      "name": "Signal Specialist",
+      "description": "Have 25 successful transmissions"
+    },
+    "engagementChampion": {
+      "name": "Engagement Champion",
+      "description": "Receive 10 comments on your posts"
+    },
+    "firstCheckIn": {
+      "name": "First Check-in",
+      "description": "Your station has made its first health check-in"
+    },
+    "reliableStation": {
+      "name": "Reliable Station",
+      "description": "Maintain 90% uptime on any station for 7 days"
+    },
+    "highlyReliable": {
+      "name": "Highly Reliable",
+      "description": "Maintain 95% uptime on any station for 7 days"
+    },
+    "perfectUptime": {
+      "name": "Perfect Uptime",
+      "description": "Maintain 100% uptime on any station for 7 days"
+    },
+    "consistentOperator": {
+      "name": "Consistent Operator",
+      "description": "Maintain 80% uptime on any station for 30 days"
+    },
+    "dedicatedOperator": {
+      "name": "Dedicated Operator",
+      "description": "Maintain 90% uptime on any station for 30 days"
+    },
+    "longTermReliability": {
+      "name": "Long-term Reliability",
+      "description": "Maintain 95% uptime on any station for 30 days"
+    }
+  }
+}

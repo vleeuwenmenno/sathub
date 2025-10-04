@@ -1,0 +1,112 @@
+{
+  "achievements": {
+    "welcomeAboard": {
+      "name": "Willkommen an Bord",
+      "description": "Erstelle dein SatHub-Konto"
+    },
+    "firstStation": {
+      "name": "Erste Station",
+      "description": "Richte deine erste Bodenstation ein"
+    },
+    "stationNetwork": {
+      "name": "Stationsnetzwerk",
+      "description": "Erstelle 5 Bodenstationen"
+    },
+    "dataPioneer": {
+      "name": "Datenpionier",
+      "description": "Lade deinen ersten Satellitendaten-Post hoch"
+    },
+    "proSharer": {
+      "name": "Profi-Teiler",
+      "description": "Lade 50 Posts hoch"
+    },
+    "communityBuilder": {
+      "name": "Community-Bauer",
+      "description": "Erhalte dein erstes Like auf einen Post"
+    },
+    "popularContributor": {
+      "name": "Beliebter Beitragender",
+      "description": "Erhalte 50 Likes auf deine Posts"
+    },
+    "conversationStarter": {
+      "name": "Gesprächs-Starter",
+      "description": "Schreibe deinen ersten Kommentar"
+    },
+    "activeDiscussant": {
+      "name": "Aktiver Teilnehmer",
+      "description": "Schreibe 20 Kommentare"
+    },
+    "insightfulCommenter": {
+      "name": "Einsichtsvoller Kommentator",
+      "description": "Erhalte 10 Likes auf deine Kommentare"
+    },
+    "dataTransmitter": {
+      "name": "Datensender",
+      "description": "Habe 10 erfolgreiche Datenübertragungen"
+    },
+    "veteranOperator": {
+      "name": "Veteranen-Betreiber",
+      "description": "Konto seit 1 Jahr aktiv"
+    },
+    "satelliteExplorer": {
+      "name": "Satelliten-Erkunder",
+      "description": "Lade Posts von 5 verschiedenen Satelliten hoch"
+    },
+    "globalNetwork": {
+      "name": "Globales Netzwerk",
+      "description": "Erstelle Stationen an 3 verschiedenen Standorten"
+    },
+    "dataHoarder": {
+      "name": "Datensammler",
+      "description": "Lade 100 Posts hoch"
+    },
+    "communityLeader": {
+      "name": "Community-Leiter",
+      "description": "Erhalte 100 Likes auf deine Posts"
+    },
+    "commentGuru": {
+      "name": "Kommentar-Guru",
+      "description": "Erhalte 50 Likes auf deine Kommentare"
+    },
+    "stationMaster": {
+      "name": "Stations-Meister",
+      "description": "Erstelle 10 Bodenstationen"
+    },
+    "signalSpecialist": {
+      "name": "Signal-Spezialist",
+      "description": "Habe 25 erfolgreiche Übertragungen"
+    },
+    "engagementChampion": {
+      "name": "Engagement-Champion",
+      "description": "Erhalte 10 Kommentare auf deine Posts"
+    },
+    "firstCheckIn": {
+      "name": "Erste Anmeldung",
+      "description": "Deine Station hat ihre erste Gesundheitsprüfung durchgeführt"
+    },
+    "reliableStation": {
+      "name": "Zuverlässige Station",
+      "description": "Halte 90% Verfügbarkeit auf einer Station für 7 Tage"
+    },
+    "highlyReliable": {
+      "name": "Hoch Zuverlässig",
+      "description": "Halte 95% Verfügbarkeit auf einer Station für 7 Tage"
+    },
+    "perfectUptime": {
+      "name": "Perfekte Verfügbarkeit",
+      "description": "Halte 100% Verfügbarkeit auf einer Station für 7 Tage"
+    },
+    "consistentOperator": {
+      "name": "Konsistenter Betreiber",
+      "description": "Halte 80% Verfügbarkeit auf einer Station für 30 Tage"
+    },
+    "dedicatedOperator": {
+      "name": "Engagierter Betreiber",
+      "description": "Halte 90% Verfügbarkeit auf einer Station für 30 Tage"
+    },
+    "longTermReliability": {
+      "name": "Langzeit-Zuverlässigkeit",
+      "description": "Halte 95% Verfügbarkeit auf einer Station für 30 Tage"
+    }
+  }
+}

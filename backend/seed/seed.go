@@ -46,6 +46,7 @@ func TestScenario85PercentUptime() error {
 		EmailConfirmed: true,
 		Role:           "user",
 		Approved:       true,
+		Language:       "en",
 	}
 	testUser.Email.String = "test@example.com"
 	testUser.Email.Valid = true
@@ -388,6 +389,7 @@ func DevelopmentSeed() error {
 		EmailConfirmed: true,
 		Role:           "admin",
 		Approved:       true,
+		Language:       "en",
 	}
 	testAdmin.Email.String = "admin@example.com"
 	testAdmin.Email.Valid = true
