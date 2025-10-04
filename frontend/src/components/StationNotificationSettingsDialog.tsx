@@ -34,12 +34,9 @@ interface StationNotificationSettingsDialogProps {
   stationName: string;
 }
 
-const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDialogProps> = ({
-  open,
-  onClose,
-  stationId,
-  stationName,
-}) => {
+const StationNotificationSettingsDialog: React.FC<
+  StationNotificationSettingsDialogProps
+> = ({ open, onClose, stationId, stationName }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,22 +67,26 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
       setRules(data.rules || []);
       setHasChanges(false);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to load notification settings");
+      setError(
+        err.response?.data?.error || "Failed to load notification settings"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const addRule = (type: 'down_minutes' | 'back_online' | 'low_uptime') => {
+  const addRule = (type: "down_minutes" | "back_online" | "low_uptime") => {
     // Only check for existing back_online rules (limit to one)
-    if (type === 'back_online') {
-      const existingBackOnline = rules.find((rule: StationNotificationRule) => rule.type === 'back_online');
+    if (type === "back_online") {
+      const existingBackOnline = rules.find(
+        (rule: StationNotificationRule) => rule.type === "back_online"
+      );
       if (existingBackOnline) {
-        setError('Only one Back Online notification is allowed per station');
+        setError("Only one Back Online notification is allowed per station");
         return;
       }
     }
-    
+
     // Clear any previous errors
     setError(null);
 
@@ -98,9 +99,9 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
     };
 
     // Set default thresholds
-    if (type === 'down_minutes') {
+    if (type === "down_minutes") {
       newRule.threshold = 30;
-    } else if (type === 'low_uptime') {
+    } else if (type === "low_uptime") {
       newRule.threshold = 80;
     }
 
@@ -108,7 +109,10 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
     setHasChanges(true);
   };
 
-  const updateRule = (index: number, updates: Partial<StationNotificationRule>) => {
+  const updateRule = (
+    index: number,
+    updates: Partial<StationNotificationRule>
+  ) => {
     const updatedRules = [...rules];
     updatedRules[index] = { ...updatedRules[index], ...updates };
     setRules(updatedRules);
@@ -128,30 +132,40 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
 
       // Validate rules
       for (const rule of rules) {
-        if (rule.type === 'down_minutes' && (!rule.threshold || rule.threshold < 1)) {
+        if (
+          rule.type === "down_minutes" &&
+          (!rule.threshold || rule.threshold < 1)
+        ) {
           setError("Down notification minutes must be at least 1");
           return;
         }
-        if (rule.type === 'low_uptime' && (!rule.threshold || rule.threshold < 1 || rule.threshold > 100)) {
+        if (
+          rule.type === "low_uptime" &&
+          (!rule.threshold || rule.threshold < 1 || rule.threshold > 100)
+        ) {
           setError("Low uptime percentage must be between 1 and 100");
           return;
         }
       }
 
       // Remove temp IDs for new rules
-      const cleanRules: StationNotificationRule[] = rules.map((rule: StationNotificationRule) => {
-        if (rule.id?.startsWith('temp-')) {
-          const { id, ...ruleWithoutId } = rule;
-          return ruleWithoutId as StationNotificationRule;
+      const cleanRules: StationNotificationRule[] = rules.map(
+        (rule: StationNotificationRule) => {
+          if (rule.id?.startsWith("temp-")) {
+            const { id, ...ruleWithoutId } = rule;
+            return ruleWithoutId as StationNotificationRule;
+          }
+          return rule;
         }
-        return rule;
-      });
+      );
 
       const updatedSettings = await updateStationNotificationSettings(stationId, cleanRules);
       setRules(updatedSettings.rules);
       setHasChanges(false);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to save notification settings");
+      setError(
+        err.response?.data?.error || "Failed to save notification settings"
+      );
     } finally {
       setSaving(false);
     }
@@ -159,7 +173,11 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
 
   const handleClose = () => {
     if (hasChanges) {
-      if (window.confirm("You have unsaved changes. Are you sure you want to close?")) {
+      if (
+        window.confirm(
+          "You have unsaved changes. Are you sure you want to close?"
+        )
+      ) {
         onClose();
       }
     } else {
@@ -169,25 +187,40 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
 
   const getRuleTypeLabel = (type: string) => {
     switch (type) {
-      case 'down_minutes': return 'Station Down';
-      case 'back_online': return 'Back Online';
-      case 'low_uptime': return 'Low Uptime';
-      default: return type;
+      case "down_minutes":
+        return "Station Down";
+      case "back_online":
+        return "Back Online";
+      case "low_uptime":
+        return "Low Uptime";
+      default:
+        return type;
     }
   };
 
   const getRuleDescription = (type: string) => {
     switch (type) {
-      case 'down_minutes': return 'Notify when station is down for X minutes';
-      case 'back_online': return 'Notify when station comes back online';
-      case 'low_uptime': return 'Notify when 24h uptime drops below X%';
-      default: return '';
+      case "down_minutes":
+        return "Notify when station is down for X minutes";
+      case "back_online":
+        return "Notify when station comes back online";
+      case "low_uptime":
+        return "Notify when 24h uptime drops below X%";
+      default:
+        return "";
     }
   };
 
   return (
     <Modal open={open} onClose={handleClose}>
-      <ModalDialog sx={{ maxWidth: 600, width: "90vw", maxHeight: "80vh", overflow: "auto" }}>
+      <ModalDialog
+        sx={{
+          maxWidth: 600,
+          width: "90vw",
+          maxHeight: "80vh",
+          overflow: "auto",
+        }}
+      >
         <ModalClose />
         <Typography level="h4" sx={{ mb: 1 }}>
           Notification Settings
@@ -210,12 +243,20 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
             {user && user.station_email_notifications === false && (
               <Alert color="warning">
                 <Typography>
-                  <strong>Note:</strong> Station email notifications are currently disabled in your profile settings.
-                  You will only receive in-app notifications for station health alerts.
-                  You can enable email notifications in your{' '}
-                  <RouterLink to="/user/settings" style={{ fontWeight: 'bold', color: 'var(--joy-palette-primary-main)' }}>
+                  <strong>Note:</strong> Station email notifications are
+                  currently disabled in your profile settings. You will only
+                  receive in-app notifications for station health alerts. You
+                  can enable email notifications in your{" "}
+                  <RouterLink
+                    to="/user/settings"
+                    style={{
+                      fontWeight: "bold",
+                      color: "var(--joy-palette-primary-main)",
+                    }}
+                  >
                     Account Settings
-                  </RouterLink>.
+                  </RouterLink>
+                  .
                 </Typography>
               </Alert>
             )}
@@ -224,9 +265,18 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
             {rules.map((rule, index) => (
               <Card key={rule.id} variant="outlined">
                 <CardContent>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 2,
+                    }}
+                  >
                     <Box>
-                      <Typography level="title-sm">{getRuleTypeLabel(rule.type)}</Typography>
+                      <Typography level="title-sm">
+                        {getRuleTypeLabel(rule.type)}
+                      </Typography>
                       <Typography level="body-xs" color="neutral">
                         {getRuleDescription(rule.type)}
                       </Typography>
@@ -252,29 +302,44 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
                   <Stack spacing={2}>
                     {/* Enable/Disable Switch */}
                     <FormControl>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <FormLabel>Enable this notification</FormLabel>
                         <Switch
                           checked={rule.enabled}
-                          onChange={(e) => updateRule(index, { enabled: e.target.checked })}
+                          onChange={(e) =>
+                            updateRule(index, { enabled: e.target.checked })
+                          }
                         />
                       </Box>
                     </FormControl>
 
                     {/* Threshold Input for applicable rules */}
-                    {(rule.type === 'down_minutes' || rule.type === 'low_uptime') && (
+                    {(rule.type === "down_minutes" ||
+                      rule.type === "low_uptime") && (
                       <FormControl>
                         <FormLabel>
-                          {rule.type === 'down_minutes' ? 'Minutes down:' : 'Uptime threshold (%):'}
+                          {rule.type === "down_minutes"
+                            ? "Minutes down:"
+                            : "Uptime threshold (%):"}
                         </FormLabel>
                         <Input
                           type="number"
                           value={rule.threshold || ""}
-                          onChange={(e) => updateRule(index, { threshold: parseInt(e.target.value) || undefined })}
+                          onChange={(e) =>
+                            updateRule(index, {
+                              threshold: parseInt(e.target.value) || undefined,
+                            })
+                          }
                           slotProps={{
                             input: {
                               min: 1,
-                              max: rule.type === 'low_uptime' ? 100 : undefined,
+                              max: rule.type === "low_uptime" ? 100 : undefined,
                             },
                           }}
                         />
@@ -288,13 +353,15 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
             {/* Add New Rule */}
             <Card variant="soft">
               <CardContent>
-                <Typography level="title-sm" sx={{ mb: 2 }}>Add New Notification</Typography>
+                <Typography level="title-sm" sx={{ mb: 2 }}>
+                  Add New Notification
+                </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   <Button
                     size="sm"
                     variant="outlined"
                     startDecorator={<AddIcon />}
-                    onClick={() => addRule('down_minutes')}
+                    onClick={() => addRule("down_minutes")}
                   >
                     Station Down Alert
                   </Button>
@@ -302,7 +369,7 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
                     size="sm"
                     variant="outlined"
                     startDecorator={<AddIcon />}
-                    onClick={() => addRule('back_online')}
+                    onClick={() => addRule("back_online")}
                   >
                     Back Online Alert
                   </Button>
@@ -310,7 +377,7 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
                     size="sm"
                     variant="outlined"
                     startDecorator={<AddIcon />}
-                    onClick={() => addRule('low_uptime')}
+                    onClick={() => addRule("low_uptime")}
                   >
                     Low Uptime Alert
                   </Button>
@@ -319,7 +386,14 @@ const StationNotificationSettingsDialog: React.FC<StationNotificationSettingsDia
             </Card>
 
             {/* Action Buttons */}
-            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", pt: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                justifyContent: "flex-end",
+                pt: 2,
+              }}
+            >
               <Button variant="plain" onClick={handleClose}>
                 Cancel
               </Button>

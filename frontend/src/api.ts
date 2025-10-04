@@ -1,5 +1,16 @@
 import axios from "axios";
-import type { Post, PostOverview, PostDetail, User, PostImage, DatabasePostDetail, PostComment, Achievement, UserAchievement, NotificationResponse } from "./types";
+import type {
+  Post,
+  PostOverview,
+  PostDetail,
+  User,
+  PostImage,
+  DatabasePostDetail,
+  PostComment,
+  Achievement,
+  UserAchievement,
+  NotificationResponse,
+} from "./types";
 import { getApiBaseUrl } from "./config";
 
 const API_BASE = `${getApiBaseUrl()}/api`;
@@ -25,7 +36,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !error.config._retry) {
       // Mark this request as retried to prevent infinite loops
       error.config._retry = true;
-      
+
       // Token expired, try refresh
       const refreshToken = localStorage.getItem("refresh_token");
       if (refreshToken) {
@@ -50,7 +61,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export const getPosts = async (): Promise<PostOverview[]> => {
@@ -69,7 +80,7 @@ export const getImageUrl = (id: string, filename: string): string => {
 
 export const getImageBlob = async (
   id: string,
-  filename: string,
+  filename: string
 ): Promise<string> => {
   const res = await api.get(`/posts/${id}/image/${filename}`, {
     responseType: "blob",
@@ -78,9 +89,9 @@ export const getImageBlob = async (
 };
 
 export const getStationPictureBlob = async (
-  pictureUrl: string,
+  pictureUrl: string
 ): Promise<string> => {
-  const res = await api.get(pictureUrl, { responseType: 'blob' });
+  const res = await api.get(pictureUrl, { responseType: "blob" });
   return URL.createObjectURL(res.data);
 };
 
@@ -90,16 +101,29 @@ export const register = async (
   password: string,
   captchaId: string,
   captchaAnswer: string,
-  language?: string,
+  language?: string
 ): Promise<void> => {
-  await api.post("/auth/register", { email, username, password, captcha_id: captchaId, captcha_answer: captchaAnswer, language });
+  await api.post("/auth/register", {
+    email,
+    username,
+    password,
+    captcha_id: captchaId,
+    captcha_answer: captchaAnswer,
+    language,
+  });
 };
 
 export const login = async (
   usernameOrEmail: string,
-  password: string,
-): Promise<{ token: string; refresh_token: string } | { requires_two_factor: boolean; user_id: string; username: string }> => {
-  const res = await api.post("/auth/login", { username: usernameOrEmail, password });
+  password: string
+): Promise<
+  | { token: string; refresh_token: string }
+  | { requires_two_factor: boolean; user_id: string; username: string }
+> => {
+  const res = await api.post("/auth/login", {
+    username: usernameOrEmail,
+    password,
+  });
   const authData = res.data.data; // Extract from the nested data structure
 
   // Check if 2FA is required
@@ -164,7 +188,7 @@ export const forgotPassword = async (email: string): Promise<void> => {
 
 export const resetPassword = async (
   token: string,
-  password: string,
+  password: string
 ): Promise<void> => {
   await axios.post(`${API_BASE}/auth/reset-password`, { token, password });
 };
@@ -228,7 +252,7 @@ export const getStation = async (id: string): Promise<Station> => {
 };
 
 export const createStation = async (
-  data: CreateStationRequest,
+  data: CreateStationRequest
 ): Promise<Station> => {
   const res = await api.post("/stations", data);
   return res.data.data;
@@ -236,7 +260,7 @@ export const createStation = async (
 
 export const updateStation = async (
   id: string,
-  data: UpdateStationRequest,
+  data: UpdateStationRequest
 ): Promise<Station> => {
   const res = await api.put(`/stations/${id}`, data);
   return res.data.data;
@@ -256,18 +280,24 @@ export const regenerateStationToken = async (id: string): Promise<string> => {
   return res.data.data.token;
 };
 
-export const stationHealthCheck = async (token: string): Promise<{ status: string; timestamp: string }> => {
-  const res = await api.post("/stations/health", {}, {
-    headers: {
-      "Authorization": `Station ${token}`,
-    },
-  });
+export const stationHealthCheck = async (
+  token: string
+): Promise<{ status: string; timestamp: string }> => {
+  const res = await api.post(
+    "/stations/health",
+    {},
+    {
+      headers: {
+        Authorization: `Station ${token}`,
+      },
+    }
+  );
   return res.data.data;
 };
 
 export const uploadStationPicture = async (
   id: string,
-  file: File,
+  file: File
 ): Promise<Station> => {
   const formData = new FormData();
   formData.append("picture", file);
@@ -306,7 +336,10 @@ export const getUserStations = async (userId: string): Promise<Station[]> => {
 };
 
 // Post API calls
-export const getLatestPosts = async (limit: number = 10, page: number = 1): Promise<Post[]> => {
+export const getLatestPosts = async (
+  limit: number = 10,
+  page: number = 1
+): Promise<Post[]> => {
   const res = await api.get(`/posts/latest?limit=${limit}&page=${page}`);
   return res.data.data;
 };
@@ -319,10 +352,10 @@ export const getUserPosts = async (userId: string): Promise<Post[]> => {
 export const getStationPosts = async (
   stationId: string,
   page: number = 1,
-  limit: number = 50,
+  limit: number = 50
 ): Promise<Post[]> => {
   const res = await api.get(
-    `/posts/station/${stationId}?page=${page}&limit=${limit}`,
+    `/posts/station/${stationId}?page=${page}&limit=${limit}`
   );
   return res.data.data;
 };
@@ -333,7 +366,7 @@ export const createPost = async (
     timestamp: string;
     satellite_name: string;
     metadata?: string;
-  },
+  }
 ): Promise<Post> => {
   const res = await axios.post(`${API_BASE}/posts`, data, {
     headers: {
@@ -346,7 +379,7 @@ export const createPost = async (
 export const uploadPostImage = async (
   stationToken: string,
   postId: string,
-  file: File,
+  file: File
 ): Promise<PostImage> => {
   const formData = new FormData();
   formData.append("image", file);
@@ -362,7 +395,7 @@ export const uploadPostImage = async (
 export const uploadPostCBOR = async (
   stationToken: string,
   postId: string,
-  file: File,
+  file: File
 ): Promise<{ id: number; filename: string }> => {
   const formData = new FormData();
   formData.append("cbor", file);
@@ -383,7 +416,10 @@ export const adminDeletePost = async (postId: string): Promise<void> => {
   await api.delete(`/admin/posts/${postId}`);
 };
 
-export const adminHidePost = async (postId: string, hidden: boolean): Promise<void> => {
+export const adminHidePost = async (
+  postId: string,
+  hidden: boolean
+): Promise<void> => {
   await api.put(`/admin/posts/${postId}/hide`, { hidden });
 };
 
@@ -393,7 +429,7 @@ export const getPostImageUrl = (postId: string, imageId: number): string => {
 
 export const getProfilePictureUrl = (profilePictureUrl: string): string => {
   // If the URL is already absolute (starts with http), return as-is
-  if (profilePictureUrl.startsWith('http')) {
+  if (profilePictureUrl.startsWith("http")) {
     return profilePictureUrl;
   }
   // The backend returns URLs starting with /api/, so we need to prepend the base URL (without /api)
@@ -404,7 +440,7 @@ export const getProfilePictureUrl = (profilePictureUrl: string): string => {
 
 export const getPostImageBlob = async (
   postId: string,
-  imageId: number,
+  imageId: number
 ): Promise<string> => {
   const res = await api.get(`/posts/${postId}/images/${imageId}`, {
     responseType: "blob",
@@ -417,13 +453,15 @@ export const getPostCBOR = async (postId: string): Promise<any> => {
   return res.data;
 };
 
-export const getDatabasePostDetail = async (id: string): Promise<DatabasePostDetail> => {
+export const getDatabasePostDetail = async (
+  id: string
+): Promise<DatabasePostDetail> => {
   const res = await api.get(`/posts/${id}`);
   return res.data.data;
 };
 
 export const getStationDetails = async (
-  stationId: string,
+  stationId: string
 ): Promise<Station> => {
   const res = await api.get(`/stations/${stationId}/details`);
   return res.data.data;
@@ -431,7 +469,7 @@ export const getStationDetails = async (
 
 export const getStationUptime = async (
   stationId: string,
-  days: number = 7,
+  days: number = 7
 ): Promise<StationUptimeData> => {
   const res = await api.get(`/stations/${stationId}/uptime?days=${days}`);
   return res.data.data;
@@ -494,7 +532,7 @@ export const verifyTwoFactorSetup = async (code: string): Promise<void> => {
 
 export const verifyTwoFactorCode = async (
   userId: string,
-  code: string,
+  code: string
 ): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-2fa", { user_id: userId, code });
   const authData = res.data.data;
@@ -517,17 +555,23 @@ export const getTwoFactorStatus = async (): Promise<{ enabled: boolean }> => {
   return res.data.data;
 };
 
-export const generateRecoveryCodes = async (): Promise<{ recovery_codes: string[] }> => {
+export const generateRecoveryCodes = async (): Promise<{
+  recovery_codes: string[];
+}> => {
   const res = await api.post("/auth/generate-recovery-codes");
   return res.data.data;
 };
 
-export const regenerateRecoveryCodes = async (): Promise<{ recovery_codes: string[] }> => {
+export const regenerateRecoveryCodes = async (): Promise<{
+  recovery_codes: string[];
+}> => {
   const res = await api.post("/auth/regenerate-recovery-codes");
   return res.data.data;
 };
 
-export const verifyRecoveryCode = async (code: string): Promise<{ token: string; refresh_token: string }> => {
+export const verifyRecoveryCode = async (
+  code: string
+): Promise<{ token: string; refresh_token: string }> => {
   const res = await api.post("/auth/verify-recovery-code", { code });
   const authData = res.data.data;
   return {
@@ -536,10 +580,12 @@ export const verifyRecoveryCode = async (code: string): Promise<{ token: string;
   };
 };
 
-export const uploadProfilePicture = async (file: File): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
+export const uploadProfilePicture = async (
+  file: File
+): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
   const formData = new FormData();
   formData.append("picture", file);
-  
+
   const res = await api.post("/auth/profile/upload-picture", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
@@ -548,15 +594,18 @@ export const uploadProfilePicture = async (file: File): Promise<{ profile_pictur
   return res.data.data; // Extract from the nested data structure
 };
 
-export const deleteProfilePicture = async (): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
+export const deleteProfilePicture = async (): Promise<{
+  profile_picture_url: string;
+  has_profile_picture: boolean;
+}> => {
   const res = await api.delete("/auth/profile/picture");
   return res.data.data; // Extract from the nested data structure
 };
 
 export const getProfilePictureBlob = async (
-  pictureUrl: string,
+  pictureUrl: string
 ): Promise<string> => {
-  const res = await api.get(pictureUrl, { responseType: 'blob' });
+  const res = await api.get(pictureUrl, { responseType: "blob" });
   return URL.createObjectURL(res.data);
 };
 
@@ -575,13 +624,21 @@ export const getUserLikedPosts = async (
   userId: string,
   page: number = 1,
   limit: number = 20
-): Promise<{ posts: Post[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
-  const res = await api.get(`/likes/user/${userId}?page=${page}&limit=${limit}`);
+): Promise<{
+  posts: Post[];
+  pagination: { page: number; limit: number; total: number; pages: number };
+}> => {
+  const res = await api.get(
+    `/likes/user/${userId}?page=${page}&limit=${limit}`
+  );
   return res.data.data;
 };
 
 // Comment API functions
-export const getCommentsForPost = async (postId: string, sortBy: 'newest' | 'most_liked' = 'newest'): Promise<PostComment[]> => {
+export const getCommentsForPost = async (
+  postId: string,
+  sortBy: "newest" | "most_liked" = "newest"
+): Promise<PostComment[]> => {
   const res = await api.get(`/comments/post/${postId}?sort_by=${sortBy}`);
   return res.data.data || [];
 };
@@ -607,7 +664,9 @@ export const deleteComment = async (commentId: string): Promise<void> => {
 };
 
 // Comment Like API functions
-export const likeComment = async (commentId: string): Promise<{ liked: boolean }> => {
+export const likeComment = async (
+  commentId: string
+): Promise<{ liked: boolean }> => {
   const res = await api.post(`/comments/likes/${commentId}`);
   return res.data.data;
 };
@@ -679,14 +738,19 @@ export const getAdminOverview = async (): Promise<AdminStats> => {
   return res.data.data;
 };
 
-export const sendTestEmail = async (emailType: string, language?: string): Promise<void> => {
+export const sendTestEmail = async (
+  emailType: string,
+  language?: string
+): Promise<void> => {
   // Import dynamically to avoid bundling in production
   const { isDebugMode } = await import("./utils/debug");
-  
+
   if (!isDebugMode()) {
-    throw new Error("Debug functionality is only available in development mode");
+    throw new Error(
+      "Debug functionality is only available in development mode"
+    );
   }
-  
+
   await api.post("/admin/send-test-email", { email_type: emailType, language });
 };
 
@@ -714,7 +778,10 @@ export const getAllUsers = async (
   return res.data.data;
 };
 
-export const updateUserRole = async (userId: string, role: string): Promise<void> => {
+export const updateUserRole = async (
+  userId: string,
+  role: string
+): Promise<void> => {
   await api.put(`/admin/users/${userId}/role`, { role });
 };
 
@@ -722,15 +789,23 @@ export const deleteUser = async (userId: string): Promise<void> => {
   await api.delete(`/admin/users/${userId}`);
 };
 
-export const banUser = async (userId: string, banned: boolean): Promise<void> => {
+export const banUser = async (
+  userId: string,
+  banned: boolean
+): Promise<void> => {
   await api.put(`/admin/users/${userId}/ban`, { banned });
 };
 
-export const approveUser = async (userId: string, approved: boolean): Promise<void> => {
+export const approveUser = async (
+  userId: string,
+  approved: boolean
+): Promise<void> => {
   await api.put(`/admin/users/${userId}/approve`, { approved });
 };
 
-export const getUserDetails = async (userId: string): Promise<AdminUserDetails> => {
+export const getUserDetails = async (
+  userId: string
+): Promise<AdminUserDetails> => {
   const res = await api.get(`/admin/users/${userId}`);
   return res.data.data;
 };
@@ -771,25 +846,36 @@ export const getAllAchievements = async (): Promise<Achievement[]> => {
 };
 
 // Notification API functions
-export const getNotifications = async (page: number = 1, limit: number = 20): Promise<NotificationResponse> => {
+export const getNotifications = async (
+  page: number = 1,
+  limit: number = 20
+): Promise<NotificationResponse> => {
   const res = await api.get(`/notifications?page=${page}&limit=${limit}`);
   return res.data.data;
 };
 
-export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+export const markNotificationAsRead = async (
+  notificationId: string
+): Promise<void> => {
   await api.put(`/notifications/${notificationId}/read`);
 };
 
-export const markAllNotificationsAsRead = async (): Promise<{ updated_count: number }> => {
+export const markAllNotificationsAsRead = async (): Promise<{
+  updated_count: number;
+}> => {
   const res = await api.put("/notifications/read-all");
   return res.data.data;
 };
 
-export const deleteNotification = async (notificationId: string): Promise<void> => {
+export const deleteNotification = async (
+  notificationId: string
+): Promise<void> => {
   await api.delete(`/notifications/${notificationId}`);
 };
 
-export const getUnreadNotificationCount = async (): Promise<{ unread_count: number }> => {
+export const getUnreadNotificationCount = async (): Promise<{
+  unread_count: number;
+}> => {
   const res = await api.get("/notifications/unread-count");
   return res.data.data;
 };
@@ -803,12 +889,15 @@ export interface ApprovalSettings {
   required: boolean;
 }
 
-export const getRegistrationSettings = async (): Promise<RegistrationSettings> => {
-  const res = await api.get("/admin/settings/registration");
-  return res.data.data;
-};
+export const getRegistrationSettings =
+  async (): Promise<RegistrationSettings> => {
+    const res = await api.get("/admin/settings/registration");
+    return res.data.data;
+  };
 
-export const updateRegistrationSettings = async (disabled: boolean): Promise<void> => {
+export const updateRegistrationSettings = async (
+  disabled: boolean
+): Promise<void> => {
   await api.put("/admin/settings/registration", { disabled });
 };
 
@@ -817,15 +906,28 @@ export const getApprovalSettings = async (): Promise<ApprovalSettings> => {
   return res.data.data;
 };
 
-export const updateApprovalSettings = async (required: boolean): Promise<void> => {
+export const updateApprovalSettings = async (
+  required: boolean
+): Promise<void> => {
   await api.put("/admin/settings/approval", { required });
 };
 
-// Public Settings API functions (no authentication required)
-export const getPublicRegistrationSettings = async (): Promise<RegistrationSettings> => {
-  const res = await axios.get(`${API_BASE}/settings/registration`);
+export const clearUserProfilePicture = async (
+  userId: string,
+  reason?: string
+): Promise<{ profile_picture_url: string; has_profile_picture: boolean }> => {
+  const res = await api.delete(`/admin/users/${userId}/profile-picture`, {
+    data: reason ? { reason } : undefined,
+  });
   return res.data.data;
 };
+
+// Public Settings API functions (no authentication required)
+export const getPublicRegistrationSettings =
+  async (): Promise<RegistrationSettings> => {
+    const res = await axios.get(`${API_BASE}/settings/registration`);
+    return res.data.data;
+  };
 
 // Audit Log API functions
 export interface AuditLog {
@@ -944,7 +1046,7 @@ export const deleteReport = async (reportId: string): Promise<void> => {
 // Station Notification Settings API functions
 export interface StationNotificationRule {
   id?: string; // Optional for new rules, required for existing
-  type: 'down_minutes' | 'back_online' | 'low_uptime';
+  type: "down_minutes" | "back_online" | "low_uptime";
   threshold?: number;
   enabled: boolean;
   created_at: string;
@@ -959,7 +1061,9 @@ export interface StationNotificationSettings {
   updated_at: string;
 }
 
-export const getStationNotificationSettings = async (stationId: string): Promise<StationNotificationSettings> => {
+export const getStationNotificationSettings = async (
+  stationId: string
+): Promise<StationNotificationSettings> => {
   const res = await api.get(`/stations/${stationId}/notification-settings`);
   return res.data.data;
 };
@@ -968,6 +1072,8 @@ export const updateStationNotificationSettings = async (
   stationId: string,
   rules: StationNotificationRule[]
 ): Promise<StationNotificationSettings> => {
-  const res = await api.put(`/stations/${stationId}/notification-settings`, { rules });
+  const res = await api.put(`/stations/${stationId}/notification-settings`, {
+    rules,
+  });
   return res.data.data;
 };

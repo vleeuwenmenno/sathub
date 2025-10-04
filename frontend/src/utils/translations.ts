@@ -39,12 +39,12 @@ export const detectBrowserLanguage = (): string => {
 };
 
 export const getSupportedLanguages = () => [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'en', name: 'English', flag: '🌍' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
   { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
 ];
 
 export const getLanguageFlag = (languageCode: string): string => {
   const language = getSupportedLanguages().find(lang => lang.code === languageCode);
-  return language?.flag || '🇺🇸'; // Default to US flag if not found
+  return language?.flag || '🌍';
 };

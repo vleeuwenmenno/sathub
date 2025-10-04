@@ -21,7 +21,7 @@ import {
   regenerateRecoveryCodes,
   uploadProfilePicture,
   deleteProfilePicture,
-  getProfilePictureBlob,
+  getProfilePictureUrl,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import { getSupportedLanguages } from "../utils/translations";
@@ -30,44 +30,60 @@ import TwoFactorSetup from "./TwoFactorSetup";
 const UserSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Profile section states
   const [displayName, setDisplayName] = useState(user?.display_name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
+    null
+  );
+  const [profilePicturePreview, setProfilePicturePreview] = useState<
+    string | null
+  >(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null
+  );
+
   // Password section states
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Loading states
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [twoFactorLoading, setTwoFactorLoading] = useState(false);
   const [recoveryCodesLoading, setRecoveryCodesLoading] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
-  
+
   // Success/Error states
   const [error, setError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [twoFactorSuccess, setTwoFactorSuccess] = useState<string | null>(null);
-  const [notificationSuccess, setNotificationSuccess] = useState<string | null>(null);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
-  
+  const [notificationSuccess, setNotificationSuccess] = useState<string | null>(
+    null
+  );
+  const [notificationError, setNotificationError] = useState<string | null>(
+    null
+  );
+
   // 2FA states
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(
+    user?.two_factor_enabled || false
+  );
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [disableCode, setDisableCode] = useState("");
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
   // Notification settings states
-  const [emailNotifications, setEmailNotifications] = useState(user?.email_notifications || false);
-  const [stationEmailNotifications, setStationEmailNotifications] = useState(user?.station_email_notifications ?? true);
+  const [emailNotifications, setEmailNotifications] = useState(
+    user?.email_notifications || false
+  );
+  const [stationEmailNotifications, setStationEmailNotifications] = useState(
+    user?.station_email_notifications ?? true
+  );
 
   // Language settings states
   const [language, setLanguage] = useState(user?.language || "en");
@@ -82,18 +98,10 @@ const UserSettings: React.FC = () => {
       }
     };
 
-    const fetchProfilePicture = async () => {
+    const fetchProfilePicture = () => {
       if (user?.has_profile_picture && user?.profile_picture_url) {
-        try {
-          // Remove /api/ prefix if it exists since the api client already includes it
-          const cleanUrl = user.profile_picture_url.startsWith('/api/')
-            ? user.profile_picture_url.substring(5) // Remove '/api/'
-            : user.profile_picture_url;
-          const blobUrl = await getProfilePictureBlob(cleanUrl);
-          setProfilePictureUrl(blobUrl);
-        } catch (err) {
-          console.error("Failed to fetch profile picture", err);
-        }
+        // Use direct image loading instead of fetch/XHR to avoid CORS issues
+        setProfilePictureUrl(getProfilePictureUrl(user.profile_picture_url));
       } else {
         // Clear profile picture if user doesn't have one
         setProfilePictureUrl(null);
@@ -170,7 +178,9 @@ const UserSettings: React.FC = () => {
       setTwoFactorLoading(true);
       clearMessages();
       await disableTwoFactor(disableCode);
-      setTwoFactorSuccess("2FA disable confirmation sent. Please check your email to complete the process.");
+      setTwoFactorSuccess(
+        "2FA disable confirmation sent. Please check your email to complete the process."
+      );
       setDisableCode("");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to disable 2FA");
@@ -206,7 +216,9 @@ const UserSettings: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       setProfilePictureFile(file);
@@ -255,12 +267,9 @@ const UserSettings: React.FC = () => {
 
         // Update the profile picture URL immediately from the upload response
         if (uploadResult.profile_picture_url) {
-          // Remove /api/ prefix if it exists since the api client already includes it
-          const cleanUrl = uploadResult.profile_picture_url.startsWith('/api/')
-            ? uploadResult.profile_picture_url.substring(5) // Remove '/api/'
-            : uploadResult.profile_picture_url;
-          const blobUrl = await getProfilePictureBlob(cleanUrl);
-          setProfilePictureUrl(blobUrl);
+          setProfilePictureUrl(
+            getProfilePictureUrl(uploadResult.profile_picture_url)
+          );
         }
 
         setProfilePictureFile(null);
@@ -323,7 +332,9 @@ const UserSettings: React.FC = () => {
       setEmailNotifications(enabled);
       setNotificationSuccess("Notification settings updated successfully");
     } catch (err: any) {
-      setNotificationError(err.response?.data?.error || "Failed to update notification settings");
+      setNotificationError(
+        err.response?.data?.error || "Failed to update notification settings"
+      );
       // Revert the checkbox state on error
       setEmailNotifications(!enabled);
     } finally {
@@ -344,11 +355,16 @@ const UserSettings: React.FC = () => {
 
       await updateProfile({ station_email_notifications: checked });
       setStationEmailNotifications(checked);
-      setNotificationSuccess("Station notification settings updated successfully");
+      setNotificationSuccess(
+        "Station notification settings updated successfully"
+      );
       // Refresh user data in context
       await refreshUser();
     } catch (err: any) {
-      setNotificationError(err.response?.data?.error || "Failed to update station notification settings");
+      setNotificationError(
+        err.response?.data?.error ||
+          "Failed to update station notification settings"
+      );
       // Revert the checkbox state on error
       setStationEmailNotifications(!checked);
     } finally {
@@ -369,7 +385,9 @@ const UserSettings: React.FC = () => {
       // Refresh user data in context
       await refreshUser();
     } catch (err: any) {
-      setNotificationError(err.response?.data?.error || "Failed to update language preference");
+      setNotificationError(
+        err.response?.data?.error || "Failed to update language preference"
+      );
       // Revert the select state on error
       setLanguage(user?.language || "en");
     } finally {
@@ -395,7 +413,7 @@ const UserSettings: React.FC = () => {
           <Typography level="h3" sx={{ mb: 2 }}>
             Profile Information
           </Typography>
-          
+
           {profileSuccess && (
             <Alert color="success" sx={{ mb: 2 }}>
               {profileSuccess}
@@ -403,51 +421,51 @@ const UserSettings: React.FC = () => {
           )}
 
           {/* Profile Picture Section */}
-          <Box sx={{ mb: 3, textAlign: 'center' }}>
+          <Box sx={{ mb: 3, textAlign: "center" }}>
             <Avatar
               src={getCurrentProfilePicture()}
               size="lg"
-              sx={{ 
-                width: 100, 
-                height: 100, 
-                mx: 'auto', 
+              sx={{
+                width: 100,
+                height: 100,
+                mx: "auto",
                 mb: 2,
-                cursor: 'pointer',
-                position: 'relative',
-                '&:hover': {
+                cursor: "pointer",
+                position: "relative",
+                "&:hover": {
                   opacity: 0.8,
-                  '&::after': {
+                  "&::after": {
                     content: '"Click to change"',
-                    position: 'absolute',
+                    position: "absolute",
                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    color: 'white',
-                    fontSize: '12px',
-                    borderRadius: '50%',
-                  }
-                }
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    fontSize: "12px",
+                    borderRadius: "50%",
+                  },
+                },
               }}
               onClick={handleProfilePictureClick}
             >
               {user?.username?.[0]?.toUpperCase()}
             </Avatar>
-            
+
             <input
               type="file"
               ref={fileInputRef}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               accept="image/*"
               onChange={handleProfilePictureChange}
             />
-            
+
             {profilePictureFile && (
-              <Box sx={{ textAlign: 'center', mt: 1 }}>
+              <Box sx={{ textAlign: "center", mt: 1 }}>
                 <Typography level="body-sm">
                   Selected: {profilePictureFile.name}
                 </Typography>
@@ -455,19 +473,20 @@ const UserSettings: React.FC = () => {
             )}
 
             {/* Clear Profile Picture Button - only show if user has a profile picture */}
-            {(profilePictureUrl || user?.has_profile_picture) && !profilePictureFile && (
-              <Box sx={{ textAlign: 'center', mt: 1 }}>
-                <Button
-                  size="sm"
-                  color="danger"
-                  variant="outlined"
-                  onClick={handleClearProfilePicture}
-                  loading={profileLoading}
-                >
-                  Clear Profile Picture
-                </Button>
-              </Box>
-            )}
+            {(profilePictureUrl || user?.has_profile_picture) &&
+              !profilePictureFile && (
+                <Box sx={{ textAlign: "center", mt: 1 }}>
+                  <Button
+                    size="sm"
+                    color="danger"
+                    variant="outlined"
+                    onClick={handleClearProfilePicture}
+                    loading={profileLoading}
+                  >
+                    Clear Profile Picture
+                  </Button>
+                </Box>
+              )}
           </Box>
 
           {/* Display Name */}
@@ -566,18 +585,23 @@ const UserSettings: React.FC = () => {
               {twoFactorSuccess}
             </Alert>
           )}
-          
+
           {twoFactorEnabled ? (
             <>
               <Typography sx={{ mb: 2 }}>
-                To disable 2FA, you'll need to enter a code from your authenticator app and confirm via email.
+                To disable 2FA, you'll need to enter a code from your
+                authenticator app and confirm via email.
               </Typography>
               <FormControl sx={{ mb: 2 }}>
                 <FormLabel>Enter 2FA Code</FormLabel>
                 <Input
                   type="text"
                   value={disableCode}
-                  onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={(e) =>
+                    setDisableCode(
+                      e.target.value.replace(/\D/g, "").slice(0, 6)
+                    )
+                  }
                   placeholder="000000"
                   slotProps={{ input: { maxLength: 6 } }}
                 />
@@ -594,7 +618,8 @@ const UserSettings: React.FC = () => {
           ) : (
             <>
               <Typography sx={{ mb: 2 }}>
-                Add an extra layer of security to your account by enabling two-factor authentication.
+                Add an extra layer of security to your account by enabling
+                two-factor authentication.
               </Typography>
               <Button
                 onClick={handleEnableTwoFactor}
@@ -615,29 +640,37 @@ const UserSettings: React.FC = () => {
               Recovery Codes
             </Typography>
             <Typography sx={{ mb: 2 }}>
-              Recovery codes can be used to access your account if you lose your authenticator device. 
-              Each code can only be used once.
+              Recovery codes can be used to access your account if you lose your
+              authenticator device. Each code can only be used once.
             </Typography>
-            
+
             {showRecoveryCodes && recoveryCodes.length > 0 && (
               <Alert color="warning" sx={{ mb: 2 }}>
-                <strong>Important:</strong> Save these recovery codes in a safe place. They will not be shown again.
+                <strong>Important:</strong> Save these recovery codes in a safe
+                place. They will not be shown again.
               </Alert>
             )}
-            
+
             {showRecoveryCodes && recoveryCodes.length > 0 ? (
               <>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 2 }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
                   {recoveryCodes.map((code, index) => (
                     <Typography
                       key={index}
                       level="body-sm"
                       sx={{
-                        fontFamily: 'monospace',
-                        bgcolor: 'neutral.100',
+                        fontFamily: "monospace",
+                        bgcolor: "neutral.100",
                         p: 1,
                         borderRadius: 1,
-                        textAlign: 'center',
+                        textAlign: "center",
                       }}
                     >
                       {code}
@@ -670,21 +703,22 @@ const UserSettings: React.FC = () => {
           <Typography level="h3" sx={{ mb: 2 }}>
             Notification Settings
           </Typography>
-          
+
           {notificationSuccess && (
             <Alert color="success" sx={{ mb: 2 }}>
               {notificationSuccess}
             </Alert>
           )}
-          
+
           {notificationError && (
             <Alert color="danger" sx={{ mb: 2 }}>
               {notificationError}
             </Alert>
           )}
-          
+
           <Typography sx={{ mb: 2 }}>
-            Choose how you want to be notified about activity on your posts and achievements.
+            Choose how you want to be notified about activity on your posts and
+            achievements.
           </Typography>
           <FormControl sx={{ mb: 2 }}>
             <Checkbox
@@ -698,7 +732,9 @@ const UserSettings: React.FC = () => {
             <Checkbox
               label="Receive email notifications for station health alerts"
               checked={stationEmailNotifications}
-              onChange={(e) => handleStationNotificationToggle(e.target.checked)}
+              onChange={(e) =>
+                handleStationNotificationToggle(e.target.checked)
+              }
               disabled={notificationLoading}
             />
           </FormControl>
@@ -711,11 +747,12 @@ const UserSettings: React.FC = () => {
           <Typography level="h3" sx={{ mb: 2 }}>
             Language Settings
           </Typography>
-          
+
           <Typography sx={{ mb: 2 }}>
-            Choose your preferred language for the interface. This setting is saved to your account and will be used when you log in.
+            Choose your preferred language for the interface. This setting is
+            saved to your account and will be used when you log in.
           </Typography>
-          
+
           <FormControl>
             <FormLabel>Language</FormLabel>
             <Select

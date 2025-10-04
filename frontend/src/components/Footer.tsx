@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, IconButton, Link, Chip } from '@mui/joy';
+import { Box, Typography, IconButton, Link, Chip, Tooltip } from '@mui/joy';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import MonitorIcon from '@mui/icons-material/Monitor';
 import { VERSION } from '../version';
 import { isDebugMode } from '../utils/debug';
 
@@ -25,17 +26,32 @@ const Footer: React.FC = () => {
         Version {VERSION}
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 1 }}>
-        <IconButton
-          component={Link}
-          href="https://github.com/vleeuwenmenno/sathub"
-          target="_blank"
-          rel="noopener noreferrer"
-          size="sm"
-          variant="plain"
-          sx={{ color: 'text.secondary' }}
-        >
-          <GitHubIcon />
-        </IconButton>
+        <Tooltip title="View source code on GitHub">
+          <IconButton
+            component={Link}
+            href="https://github.com/vleeuwenmenno/sathub"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            variant="plain"
+            sx={{ color: 'text.secondary' }}
+          >
+            <GitHubIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Check service status">
+          <IconButton
+            component={Link}
+            href="https://updown.io/p/itf3y"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            variant="plain"
+            sx={{ color: 'text.secondary' }}
+          >
+            <MonitorIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
       {isDebugMode() && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>

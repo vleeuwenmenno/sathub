@@ -25,14 +25,15 @@ const (
 	ActionUserProfilePicture    AuditAction = "user_profile_picture_change"
 
 	// Admin user management actions
-	ActionAdminUserRoleUpdate AuditAction = "admin_user_role_update"
-	ActionAdminUserBan        AuditAction = "admin_user_ban"
-	ActionAdminUserUnban      AuditAction = "admin_user_unban"
-	ActionAdminUserApprove    AuditAction = "admin_user_approve"
-	ActionAdminUserReject     AuditAction = "admin_user_reject"
-	ActionAdminUserDelete     AuditAction = "admin_user_delete"
-	ActionAdminPostDelete     AuditAction = "admin_post_delete"
-	ActionAdminPostHide       AuditAction = "admin_post_hide"
+	ActionAdminUserRoleUpdate          AuditAction = "admin_user_role_update"
+	ActionAdminUserBan                 AuditAction = "admin_user_ban"
+	ActionAdminUserUnban               AuditAction = "admin_user_unban"
+	ActionAdminUserApprove             AuditAction = "admin_user_approve"
+	ActionAdminUserReject              AuditAction = "admin_user_reject"
+	ActionAdminUserDelete              AuditAction = "admin_user_delete"
+	ActionAdminUserProfilePictureClear AuditAction = "admin_user_profile_picture_clear"
+	ActionAdminPostDelete              AuditAction = "admin_post_delete"
+	ActionAdminPostHide                AuditAction = "admin_post_hide"
 
 	// Admin report management actions
 	ActionAdminReportUpdate AuditAction = "admin_report_update"
