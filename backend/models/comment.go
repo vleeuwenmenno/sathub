@@ -23,7 +23,7 @@ func (Comment) TableName() string {
 	return "comments"
 }
 
-// BeforeCreate ensures content is not empty and generates UUID
+// BeforeCreate ensures content is not empty
 func (c *Comment) BeforeCreate(tx *gorm.DB) error {
 	if c.Content == "" {
 		return gorm.ErrInvalidData

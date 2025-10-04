@@ -8,7 +8,7 @@ import (
 
 type Notification struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	User      User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	Type      string    `gorm:"size:50;not null" json:"type"` // achievement, comment, like, station_down, station_online, station_low_uptime
 	Message   string    `gorm:"type:text;not null" json:"message"`

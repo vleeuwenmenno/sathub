@@ -16,7 +16,7 @@ type Like struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// BeforeCreate ensures unique likes (one like per user per post) and generates UUID
+// BeforeCreate ensures unique likes (one like per user per post)
 func (l *Like) BeforeCreate(tx *gorm.DB) error {
 	var count int64
 	tx.Model(&Like{}).Where("user_id = ? AND post_id = ?", l.UserID, l.PostID).Count(&count)
