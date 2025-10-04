@@ -1011,3 +1011,13 @@ export const updateStationNotificationSettings = async (
   });
   return res.data.data;
 };
+
+// Translation API functions (no authentication required)
+export const getTranslations = async (
+  language: string
+): Promise<Record<string, any>> => {
+  const res = await axios.get(`${API_BASE}/translations`, {
+    params: { lang: language },
+  });
+  return res.data.data;
+};

@@ -1,0 +1,112 @@
+{
+  "achievements": {
+    "welcomeAboard": {
+      "name": "Welkom aan Boord",
+      "description": "Maak je SatHub-account aan"
+    },
+    "firstStation": {
+      "name": "Eerste Station",
+      "description": "Stel je eerste grondstation in"
+    },
+    "stationNetwork": {
+      "name": "Stationsnetwerk",
+      "description": "Maak 5 grondstations aan"
+    },
+    "dataPioneer": {
+      "name": "Data Pionier",
+      "description": "Upload je eerste satellietdatapost"
+    },
+    "proSharer": {
+      "name": "Pro Deler",
+      "description": "Upload 50 posts"
+    },
+    "communityBuilder": {
+      "name": "Gemeenschapsbouwer",
+      "description": "Ontvang je eerste like op een post"
+    },
+    "popularContributor": {
+      "name": "Populaire Bijdrager",
+      "description": "Ontvang 50 likes op je posts"
+    },
+    "conversationStarter": {
+      "name": "Gespreksstarter",
+      "description": "Plaats je eerste reactie"
+    },
+    "activeDiscussant": {
+      "name": "Actieve Discussiant",
+      "description": "Plaats 20 reacties"
+    },
+    "insightfulCommenter": {
+      "name": "Inzichtelijke Reageerder",
+      "description": "Ontvang 10 likes op je reacties"
+    },
+    "dataTransmitter": {
+      "name": "Datazender",
+      "description": "Heb 10 succesvolle dataoverdrachten"
+    },
+    "veteranOperator": {
+      "name": "Veteraan Operator",
+      "description": "Account actief voor 1 jaar"
+    },
+    "satelliteExplorer": {
+      "name": "Satelliet Verkenner",
+      "description": "Upload posts van 5 verschillende satellieten"
+    },
+    "globalNetwork": {
+      "name": "Globaal Netwerk",
+      "description": "Maak stations aan op 3 verschillende locaties"
+    },
+    "dataHoarder": {
+      "name": "Data Hamster",
+      "description": "Upload 100 posts"
+    },
+    "communityLeader": {
+      "name": "Gemeenschapsleider",
+      "description": "Ontvang 100 likes op je posts"
+    },
+    "commentGuru": {
+      "name": "Reactie Guru",
+      "description": "Ontvang 50 likes op je reacties"
+    },
+    "stationMaster": {
+      "name": "Stationsmeester",
+      "description": "Maak 10 grondstations aan"
+    },
+    "signalSpecialist": {
+      "name": "Signaal Specialist",
+      "description": "Heb 25 succesvolle overdrachten"
+    },
+    "engagementChampion": {
+      "name": "Betrokkenheidskampioen",
+      "description": "Ontvang 10 reacties op je posts"
+    },
+    "firstCheckIn": {
+      "name": "Eerste Check-in",
+      "description": "Je station heeft zijn eerste gezondheidscheck uitgevoerd"
+    },
+    "reliableStation": {
+      "name": "Betrouwbare Station",
+      "description": "Behoud 90% uptime op een station voor 7 dagen"
+    },
+    "highlyReliable": {
+      "name": "Zeer Betrouwbaar",
+      "description": "Behoud 95% uptime op een station voor 7 dagen"
+    },
+    "perfectUptime": {
+      "name": "Perfecte Uptime",
+      "description": "Behoud 100% uptime op een station voor 7 dagen"
+    },
+    "consistentOperator": {
+      "name": "Consistente Operator",
+      "description": "Behoud 80% uptime op een station voor 30 dagen"
+    },
+    "dedicatedOperator": {
+      "name": "Toegewijde Operator",
+      "description": "Behoud 90% uptime op een station voor 30 dagen"
+    },
+    "longTermReliability": {
+      "name": "Langetermijn Betrouwbaarheid",
+      "description": "Behoud 95% uptime op een station voor 30 dagen"
+    }
+  }
+}

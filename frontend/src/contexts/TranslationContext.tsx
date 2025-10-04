@@ -1,9 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useAuth } from './AuthContext';
-import { loadTranslations, detectBrowserLanguage } from '../utils/translations';
-import { updateProfile } from '../api';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useAuth } from "./AuthContext";
+import {
+  detectBrowserLanguage,
+  getSupportedLanguages,
+} from "../utils/translations";
+import { updateProfile, getTranslations } from "../api";
 
-type TranslationFunction = (key: string, params?: Record<string, string | number>) => string;
+type TranslationFunction = (
+  key: string,
+  params?: Record<string, string | number>
+) => string;
 
 interface TranslationContextType {
   language: string;
@@ -12,12 +24,14 @@ interface TranslationContextType {
   isLoading: boolean;
 }
 
-const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
+const TranslationContext = createContext<TranslationContextType | undefined>(
+  undefined
+);
 
 export const useTranslation = () => {
   const context = useContext(TranslationContext);
   if (!context) {
-    throw new Error('useTranslation must be used within a TranslationProvider');
+    throw new Error("useTranslation must be used within a TranslationProvider");
   }
   return context;
 };
@@ -26,18 +40,20 @@ interface TranslationProviderProps {
   children: ReactNode;
 }
 
-export const TranslationProvider: React.FC<TranslationProviderProps> = ({ children }) => {
-  const [language, setLanguageState] = useState<string>('en');
+export const TranslationProvider: React.FC<TranslationProviderProps> = ({
+  children,
+}) => {
+  const [language, setLanguageState] = useState<string>("en");
   const [translations, setTranslations] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { user, refreshUser } = useAuth();
 
   const setLanguage = async (lang: string) => {
     setLanguageState(lang);
-    
+
     // Save to localStorage immediately for persistence across sessions
-    localStorage.setItem('preferred_language', lang);
-    
+    localStorage.setItem("preferred_language", lang);
+
     // Update user profile if authenticated
     if (user && user.language !== lang) {
       try {
@@ -45,48 +61,55 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
         // Refresh user data to get updated language preference
         await refreshUser();
       } catch (error) {
-        console.error('Failed to update language preference:', error);
+        console.error("Failed to update language preference:", error);
       }
     }
-    
-    // Load translations for new language
-    const newTranslations = await loadTranslations(lang);
-    setTranslations(newTranslations);
+
+    // Load translations from API for new language
+    try {
+      const newTranslations = await getTranslations(lang);
+      setTranslations(newTranslations);
+    } catch (error) {
+      console.error("Failed to load translations from API:", error);
+      // Fallback to empty translations
+      setTranslations({});
+    }
   };
 
   const t: TranslationFunction = (key, params) => {
-    const keys = key.split('.');
+    const keys = key.split(".");
     let value: any = translations;
-    
+
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
+      if (value && typeof value === "object" && k in value) {
         value = value[k];
       } else {
         return key; // Return key if translation not found
       }
     }
-    
-    if (typeof value !== 'string') {
+
+    if (typeof value !== "string") {
       return key;
     }
-    
+
     // Replace parameters in translation
     if (params) {
       return Object.entries(params).reduce(
-        (str: string, [param, replacement]) => str.replace(new RegExp(`{{${param}}}`, 'g'), String(replacement)),
+        (str: string, [param, replacement]) =>
+          str.replace(new RegExp(`{{${param}}}`, "g"), String(replacement)),
         value
       );
     }
-    
+
     return value;
   };
 
   useEffect(() => {
     const initializeLanguage = async () => {
-      let preferredLanguage = 'en';
-      
+      let preferredLanguage = "en";
+
       // Check localStorage first for saved preference
-      const savedLanguage = localStorage.getItem('preferred_language');
+      const savedLanguage = localStorage.getItem("preferred_language");
       if (savedLanguage) {
         preferredLanguage = savedLanguage;
       } else if (user?.language) {
@@ -96,10 +119,16 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
         // Fall back to browser language detection
         preferredLanguage = detectBrowserLanguage();
       }
-      
+
       setLanguageState(preferredLanguage);
-      const loadedTranslations = await loadTranslations(preferredLanguage);
-      setTranslations(loadedTranslations);
+      try {
+        const loadedTranslations = await getTranslations(preferredLanguage);
+        setTranslations(loadedTranslations);
+      } catch (error) {
+        console.error("Failed to load translations from API:", error);
+        // Fallback to empty translations
+        setTranslations({});
+      }
       setIsLoading(false);
     };
 
@@ -107,7 +136,9 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
   }, [user]);
 
   return (
-    <TranslationContext.Provider value={{ language, setLanguage, t, isLoading }}>
+    <TranslationContext.Provider
+      value={{ language, setLanguage, t, isLoading }}
+    >
       {children}
     </TranslationContext.Provider>
   );

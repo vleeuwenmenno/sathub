@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"os"
 	"sathub-ui-backend/config"
+	"strings"
 
 	"gopkg.in/gomail.v2"
 )
@@ -55,6 +56,165 @@ func loadEmailTranslations(language string) (map[string]interface{}, error) {
 	}
 
 	return translations, nil
+}
+
+// loadAchievementTranslations loads achievement translations for the specified language
+func loadAchievementTranslations(language string) (map[string]interface{}, error) {
+	// Default to English if language is empty or unsupported
+	if language == "" {
+		language = "en"
+	}
+
+	// Map of supported languages
+	supportedLanguages := map[string]bool{
+		"en": true,
+		"de": true,
+		"nl": true,
+	}
+
+	if !supportedLanguages[language] {
+		language = "en" // fallback to English
+	}
+
+	filePath := fmt.Sprintf("translations/achievements.%s.json", language)
+	file, err := os.Open(filePath)
+	if err != nil {
+		// If translation file doesn't exist, try English as fallback
+		if language != "en" {
+			return loadAchievementTranslations("en")
+		}
+		return nil, fmt.Errorf("failed to open achievement translation file: %w", err)
+	}
+	defer file.Close()
+
+	var translations map[string]interface{}
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&translations); err != nil {
+		return nil, fmt.Errorf("failed to decode achievement translation file: %w", err)
+	}
+
+	return translations, nil
+}
+
+// loadFrontendTranslations loads frontend translations for the specified language
+func loadFrontendTranslations(language string) (map[string]interface{}, error) {
+	// Default to English if language is empty or unsupported
+	if language == "" {
+		language = "en"
+	}
+
+	// Map of supported languages
+	supportedLanguages := map[string]bool{
+		"en": true,
+		"de": true,
+		"nl": true,
+	}
+
+	if !supportedLanguages[language] {
+		language = "en" // fallback to English
+	}
+
+	filePath := fmt.Sprintf("translations/frontend.%s.json", language)
+	file, err := os.Open(filePath)
+	if err != nil {
+		// If translation file doesn't exist, try English as fallback
+		if language != "en" {
+			return loadFrontendTranslations("en")
+		}
+		return nil, fmt.Errorf("failed to open frontend translation file: %w", err)
+	}
+	defer file.Close()
+
+	var translations map[string]interface{}
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&translations); err != nil {
+		return nil, fmt.Errorf("failed to decode frontend translation file: %w", err)
+	}
+
+	return translations, nil
+}
+
+// LoadUnifiedTranslations loads all translations (frontend + backend) for the specified language
+func LoadUnifiedTranslations(language string) (map[string]interface{}, error) {
+	// Load frontend translations
+	frontendTranslations, err := loadFrontendTranslations(language)
+	if err != nil {
+		Logger.Warn().Err(err).Str("language", language).Msg("Failed to load frontend translations")
+		frontendTranslations = make(map[string]interface{})
+	}
+
+	// Load email translations
+	emailTranslations, err := loadEmailTranslations(language)
+	if err != nil {
+		Logger.Warn().Err(err).Str("language", language).Msg("Failed to load email translations")
+		emailTranslations = make(map[string]interface{})
+	}
+
+	// Load achievement translations
+	achievementTranslations, err := loadAchievementTranslations(language)
+	if err != nil {
+		Logger.Warn().Err(err).Str("language", language).Msg("Failed to load achievement translations")
+		achievementTranslations = make(map[string]interface{})
+	}
+
+	// Combine all translations
+	unified := make(map[string]interface{})
+
+	// Add frontend translations
+	for k, v := range frontendTranslations {
+		unified[k] = v
+	}
+
+	// Add email translations under "emails" key
+	if len(emailTranslations) > 0 {
+		unified["emails"] = emailTranslations["emails"]
+	}
+
+	// Add achievement translations under "achievementData" key to avoid conflict with frontend achievements UI translations
+	if len(achievementTranslations) > 0 {
+		unified["achievementData"] = achievementTranslations["achievements"]
+	}
+
+	return unified, nil
+}
+
+// TranslateAchievement translates an achievement name and description using the provided keys and language
+func TranslateAchievement(nameKey, descriptionKey, language string) (string, string, error) {
+	translations, err := loadAchievementTranslations(language)
+	if err != nil {
+		Logger.Warn().Err(err).Str("language", language).Msg("Failed to load achievement translations, using English fallback")
+		translations, _ = loadAchievementTranslations("en")
+	}
+
+	// Extract name from translation key (e.g., "achievements.welcomeAboard.name" -> "welcomeAboard")
+	parts := strings.Split(nameKey, ".")
+	if len(parts) < 3 || parts[0] != "achievements" || parts[2] != "name" {
+		return nameKey, descriptionKey, fmt.Errorf("invalid achievement name key format: %s", nameKey)
+	}
+	achievementSlug := parts[1]
+
+	// Navigate to achievement translations
+	achievementTranslations, ok := translations["achievementData"].(map[string]interface{})
+	if !ok {
+		return nameKey, descriptionKey, fmt.Errorf("achievementData section not found in translations")
+	}
+
+	achievementData, ok := achievementTranslations[achievementSlug].(map[string]interface{})
+	if !ok {
+		return nameKey, descriptionKey, fmt.Errorf("achievement %s not found in translations", achievementSlug)
+	}
+
+	name, ok := achievementData["name"].(string)
+	if !ok {
+		return nameKey, descriptionKey, fmt.Errorf("name translation not found for achievement %s", achievementSlug)
+	}
+
+	description, ok := achievementData["description"].(string)
+	if !ok {
+		return nameKey, descriptionKey, fmt.Errorf("description translation not found for achievement %s", achievementSlug)
+	}
+
+	return name, description, nil
 }
 
 // SendEmail sends an email using the configured SMTP settings
