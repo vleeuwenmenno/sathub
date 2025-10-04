@@ -38,7 +38,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
 import { getSupportedLanguages, getLanguageFlag } from "../utils/translations";
-import { getProfilePictureBlob } from "../api";
+import { getProfilePictureUrl } from "../api";
 import NotificationDropdown from "./NotificationDropdown";
 import logo from "../assets/logo.svg";
 
@@ -49,31 +49,19 @@ const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const { language, setLanguage, t } = useTranslation();
   const isDetailPage = location.pathname.includes("/post/");
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProfilePicture = async () => {
-      if (user?.has_profile_picture && user?.profile_picture_url) {
-        try {
-          // Remove /api/ prefix if it exists since the api client already includes it
-          const cleanUrl = user.profile_picture_url.startsWith('/api/')
-            ? user.profile_picture_url.substring(5) // Remove '/api/'
-            : user.profile_picture_url;
-          const blobUrl = await getProfilePictureBlob(cleanUrl);
-          setProfilePictureUrl(blobUrl);
-        } catch (err) {
-          console.error("Failed to fetch profile picture", err);
-          setProfilePictureUrl(null);
-        }
-      } else {
-        setProfilePictureUrl(null);
-      }
-    };
-
-    fetchProfilePicture();
+    if (user?.has_profile_picture && user?.profile_picture_url) {
+      // Use direct image loading instead of fetch/XHR to avoid CORS issues
+      setProfilePictureUrl(getProfilePictureUrl(user.profile_picture_url));
+    } else {
+      setProfilePictureUrl(null);
+    }
   }, [user]);
-
 
   const toggleColorScheme = () => {
     setMode(mode === "dark" ? "light" : "dark");
@@ -94,10 +82,30 @@ const Navbar: React.FC = () => {
 
   const navigationItems = [
     { path: "/", label: t("navigation.dashboard"), icon: <Home />, show: true },
-    { path: "/stations/global", label: t("navigation.stations"), icon: <Router />, show: isAuthenticated },
-    { path: "/users/global", label: t("navigation.users"), icon: <Group />, show: isAuthenticated },
-    { path: "/stations", label: t("stations.myStations"), icon: <Build />, show: isAuthenticated },
-    { path: "/admin", label: t("navigation.admin"), icon: <AdminPanelSettings />, show: isAuthenticated && user?.role === "admin" },
+    {
+      path: "/stations/global",
+      label: t("navigation.stations"),
+      icon: <Router />,
+      show: isAuthenticated,
+    },
+    {
+      path: "/users/global",
+      label: t("navigation.users"),
+      icon: <Group />,
+      show: isAuthenticated,
+    },
+    {
+      path: "/stations",
+      label: t("stations.myStations"),
+      icon: <Build />,
+      show: isAuthenticated,
+    },
+    {
+      path: "/admin",
+      label: t("navigation.admin"),
+      icon: <AdminPanelSettings />,
+      show: isAuthenticated && user?.role === "admin",
+    },
   ];
 
   return (
@@ -106,7 +114,9 @@ const Navbar: React.FC = () => {
         position: "sticky",
         top: 0,
         zIndex: 1000,
-        background: `linear-gradient(135deg, ${mode === "dark" ? "#0f0f23" : "#f8fafc"} 0%, ${mode === "dark" ? "#1a1a2e" : "#ffffff"} 100%)`,
+        background: `linear-gradient(135deg, ${
+          mode === "dark" ? "#0f0f23" : "#f8fafc"
+        } 0%, ${mode === "dark" ? "#1a1a2e" : "#ffffff"} 100%)`,
         borderBottom: "1px solid",
         borderColor: "divider",
         boxShadow: "sm",
@@ -186,7 +196,14 @@ const Navbar: React.FC = () => {
           </Box>
 
           {/* Desktop Navigation */}
-          <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1, ml: 3 }}>
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              alignItems: "center",
+              gap: 1,
+              ml: 3,
+            }}
+          >
             {navigationItems
               .filter((item) => item.show)
               .map((item) => (
@@ -212,7 +229,9 @@ const Navbar: React.FC = () => {
         </Box>
 
         {/* Right side - Theme, Language and Account */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+        <Box
+          sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}
+        >
           <Dropdown>
             <MenuButton
               variant="soft"
@@ -248,9 +267,7 @@ const Navbar: React.FC = () => {
                     gap: 1.5,
                   }}
                 >
-                  <span style={{ fontSize: "1.2em" }}>
-                    {lang.flag}
-                  </span>
+                  <span style={{ fontSize: "1.2em" }}>{lang.flag}</span>
                   {lang.name}
                 </MenuItem>
               ))}
@@ -295,13 +312,15 @@ const Navbar: React.FC = () => {
                   src={profilePictureUrl || undefined}
                   sx={{ mr: { xs: 0, sm: 1 } }}
                 >
-                  {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
+                  {(user?.display_name || user?.username)
+                    ?.charAt(0)
+                    .toUpperCase()}
                 </Avatar>
-                <Typography 
-                  level="body-sm" 
-                  sx={{ 
+                <Typography
+                  level="body-sm"
+                  sx={{
                     fontWeight: "medium",
-                    display: { xs: "none", sm: "block" }
+                    display: { xs: "none", sm: "block" },
                   }}
                 >
                   {user?.display_name || user?.username}
@@ -310,29 +329,29 @@ const Navbar: React.FC = () => {
               <Menu sx={{ minWidth: 180 }}>
                 <MenuItem onClick={() => handleNavigate(`/user/${user?.id}`)}>
                   <Person sx={{ mr: 1 }} />
-                  {t('navigation.overview')}
+                  {t("navigation.overview")}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/achievements")}>
                   <EmojiEvents sx={{ mr: 1 }} />
-                  {t('navigation.achievements')}
+                  {t("navigation.achievements")}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/settings")}>
                   <Settings sx={{ mr: 1 }} />
-                  {t('navigation.settings')}
+                  {t("navigation.settings")}
                 </MenuItem>
                 {user?.role === "admin" && (
                   <>
                     <Divider />
                     <MenuItem onClick={() => handleNavigate("/admin")}>
                       <AdminPanelSettings sx={{ mr: 1 }} />
-                      {t('navigation.adminPanel')}
+                      {t("navigation.adminPanel")}
                     </MenuItem>
                   </>
                 )}
                 <Divider />
                 <MenuItem onClick={handleLogout}>
                   <Logout sx={{ mr: 1 }} />
-                  {t('navigation.logout')}
+                  {t("navigation.logout")}
                 </MenuItem>
               </Menu>
             </Dropdown>
@@ -350,7 +369,9 @@ const Navbar: React.FC = () => {
                 },
               }}
             >
-              <Typography sx={{ display: { xs: "none", sm: "block" } }}>Login</Typography>
+              <Typography sx={{ display: { xs: "none", sm: "block" } }}>
+                Login
+              </Typography>
               <Person sx={{ display: { xs: "block", sm: "none" } }} />
             </Button>
           )}
@@ -376,7 +397,14 @@ const Navbar: React.FC = () => {
           }}
         >
           {/* Drawer Header */}
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <img
                 src={logo}
@@ -426,7 +454,10 @@ const Navbar: React.FC = () => {
           {isAuthenticated && user?.role === "admin" && (
             <>
               <Divider sx={{ mb: 2 }} />
-              <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold", color: "primary.main" }}>
+              <Typography
+                level="body-sm"
+                sx={{ mb: 1, px: 2, fontWeight: "bold", color: "primary.main" }}
+              >
                 Admin
               </Typography>
               <List sx={{ gap: 1, mb: 2 }}>
@@ -454,7 +485,7 @@ const Navbar: React.FC = () => {
           {/* Settings Section */}
           <Divider sx={{ mb: 2 }} />
           <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold" }}>
-            {t('navigation.settingsSection')}
+            {t("navigation.settingsSection")}
           </Typography>
           <Box sx={{ display: "flex", gap: 1, px: 2, mb: 2 }}>
             <Dropdown>
@@ -493,9 +524,7 @@ const Navbar: React.FC = () => {
                       gap: 1.5,
                     }}
                   >
-                    <span style={{ fontSize: "1.2em" }}>
-                      {lang.flag}
-                    </span>
+                    <span style={{ fontSize: "1.2em" }}>{lang.flag}</span>
                     {lang.name}
                   </MenuItem>
                 ))}
@@ -536,19 +565,34 @@ const Navbar: React.FC = () => {
                       }}
                     >
                       <ListItemDecorator>
-                        <Avatar
-                          size="sm"
-                          src={profilePictureUrl || undefined}
-                        >
-                          {(user?.display_name || user?.username)?.charAt(0).toUpperCase()}
+                        <Avatar size="sm" src={profilePictureUrl || undefined}>
+                          {(user?.display_name || user?.username)
+                            ?.charAt(0)
+                            .toUpperCase()}
                         </Avatar>
                       </ListItemDecorator>
                       <Box sx={{ overflow: "hidden" }}>
-                        <Typography level="body-sm" sx={{ fontWeight: "medium", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <Typography
+                          level="body-sm"
+                          sx={{
+                            fontWeight: "medium",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
                           {user?.display_name || user?.username}
                         </Typography>
-                        <Typography level="body-xs" sx={{ color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {t('navigation.viewProfile')}
+                        <Typography
+                          level="body-xs"
+                          sx={{
+                            color: "text.tertiary",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {t("navigation.viewProfile")}
                         </Typography>
                       </Box>
                     </ListItemButton>
@@ -566,7 +610,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <EmojiEvents />
                       </ListItemDecorator>
-                      {t('navigation.achievements')}
+                      {t("navigation.achievements")}
                     </ListItemButton>
                   </ListItem>
                   <ListItem>
@@ -582,7 +626,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <Settings />
                       </ListItemDecorator>
-                      {t('navigation.settings')}
+                      {t("navigation.settings")}
                     </ListItemButton>
                   </ListItem>
                   <ListItem>
@@ -599,7 +643,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <Logout />
                       </ListItemDecorator>
-                      {t('navigation.logout')}
+                      {t("navigation.logout")}
                     </ListItemButton>
                   </ListItem>
                 </List>

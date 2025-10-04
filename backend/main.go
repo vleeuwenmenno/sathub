@@ -342,6 +342,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			admin.PUT("/users/:id/approve", handlers.ApproveUser)
 			admin.PUT("/users/:id/ban", handlers.BanUser)
 			admin.DELETE("/users/:id", handlers.DeleteUser)
+			admin.DELETE("/users/:id/profile-picture", handlers.ClearUserProfilePicture)
 			admin.GET("/posts", handlers.GetAllPosts)
 			admin.PUT("/posts/:id/hide", handlers.AdminHidePost)
 			admin.DELETE("/posts/:id", handlers.AdminDeletePost)

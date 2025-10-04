@@ -17,15 +17,14 @@ import {
 } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
 import type { UserSummary } from "../api";
-import { getGlobalUsers } from "../api";
+import { getGlobalUsers, getProfilePictureUrl } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
-import { getApiBaseUrl } from "../config";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
 
   return `${day}.${month}.${year}`;
@@ -46,7 +45,7 @@ const GlobalUsers: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [isAuthenticated, authLoading, navigate]);
 
@@ -95,176 +94,203 @@ const GlobalUsers: React.FC = () => {
 
       <Card>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', mb: 3, gap: 2, flexWrap: 'wrap' }}>
-        <FormControl size="sm">
-          <FormLabel>Search users</FormLabel>
-          <Input
-            placeholder="Enter username..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            endDecorator={
-              <IconButton
-                onClick={handleSearch}
-                disabled={loading}
-                size="sm"
-              >
-                <SearchIcon />
-              </IconButton>
-            }
-            sx={{ minWidth: 250 }}
-          />
-        </FormControl>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'end' }}>
-          <FormControl size="sm">
-            <FormLabel>Sort by</FormLabel>
-            <Select
-              value={sort}
-              onChange={(_, value) => setSort(value as string)}
-              sx={{ minWidth: 150 }}
-            >
-              <Option value="created_at">Created Date</Option>
-              <Option value="username">Username</Option>
-              <Option value="display_name">Display Name</Option>
-            </Select>
-          </FormControl>
-          <FormControl size="sm">
-            <FormLabel>Order</FormLabel>
-            <Select
-              value={order}
-              onChange={(_, value) => setOrder(value as string)}
-              sx={{ minWidth: 120 }}
-            >
-              <Option value="desc">Descending</Option>
-              <Option value="asc">Ascending</Option>
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "end",
+              mb: 3,
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <FormControl size="sm">
+              <FormLabel>Search users</FormLabel>
+              <Input
+                placeholder="Enter username..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                endDecorator={
+                  <IconButton
+                    onClick={handleSearch}
+                    disabled={loading}
+                    size="sm"
+                  >
+                    <SearchIcon />
+                  </IconButton>
+                }
+                sx={{ minWidth: 250 }}
+              />
+            </FormControl>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "end" }}>
+              <FormControl size="sm">
+                <FormLabel>Sort by</FormLabel>
+                <Select
+                  value={sort}
+                  onChange={(_, value) => setSort(value as string)}
+                  sx={{ minWidth: 150 }}
+                >
+                  <Option value="created_at">Created Date</Option>
+                  <Option value="username">Username</Option>
+                  <Option value="display_name">Display Name</Option>
+                </Select>
+              </FormControl>
+              <FormControl size="sm">
+                <FormLabel>Order</FormLabel>
+                <Select
+                  value={order}
+                  onChange={(_, value) => setOrder(value as string)}
+                  sx={{ minWidth: 120 }}
+                >
+                  <Option value="desc">Descending</Option>
+                  <Option value="asc">Ascending</Option>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
 
-      {users.length >= limit && (
-        <PaginationControls
-          limit={limit}
-          setLimit={setLimit}
-          page={page}
-          setPage={setPage}
-          hasMore={users.length >= limit}
-          loading={loading}
-        />
-      )}
+          {users.length >= limit && (
+            <PaginationControls
+              limit={limit}
+              setLimit={setLimit}
+              page={page}
+              setPage={setPage}
+              hasMore={users.length >= limit}
+              loading={loading}
+            />
+          )}
 
-      {users.length === 0 ? (
-        <Card>
-          <CardContent>
-            <Typography level="body-lg" sx={{ textAlign: "center", py: 4 }}>
-              No users found.
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={2}>
-          {users.map((user) => (
-            <Grid key={user.id} xs={12} sm={6} lg={4}>
-              <Card
-                sx={{
-                  height: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "lg",
-                    cursor: "pointer",
-                  },
-                }}
-                onClick={() => navigate(`/user/${user.id}`)}
-              >
-                <CardContent sx={{ p: 2 }}>
-                  {/* Top Section: Avatar and User Info */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                    <Avatar
-                      src={user.profile_picture_url ? `${getApiBaseUrl()}${user.profile_picture_url}` : undefined}
-                      sx={{ width: 48, height: 48, flexShrink: 0 }}
-                    >
-                      {!user.profile_picture_url && (user.display_name || user.username)?.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography 
-                        level="title-md" 
-                        sx={{ 
-                          mb: 0.25, 
-                          wordBreak: "break-word",
-                          hyphens: "auto"
+          {users.length === 0 ? (
+            <Card>
+              <CardContent>
+                <Typography level="body-lg" sx={{ textAlign: "center", py: 4 }}>
+                  No users found.
+                </Typography>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid container spacing={2}>
+              {users.map((user) => (
+                <Grid key={user.id} xs={12} sm={6} lg={4}>
+                  <Card
+                    sx={{
+                      height: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "lg",
+                        cursor: "pointer",
+                      },
+                    }}
+                    onClick={() => navigate(`/user/${user.id}`)}
+                  >
+                    <CardContent sx={{ p: 2 }}>
+                      {/* Top Section: Avatar and User Info */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          mb: 2,
                         }}
                       >
-                        {user.display_name || user.username}
-                      </Typography>
-                      {user.display_name && (
-                        <Typography 
-                          level="body-sm" 
-                          sx={{ 
-                            color: "text.tertiary",
-                            wordBreak: "break-word",
-                            hyphens: "auto"
+                        <Avatar
+                          src={
+                            user.profile_picture_url
+                              ? getProfilePictureUrl(user.profile_picture_url)
+                              : undefined
+                          }
+                          sx={{ width: 48, height: 48, flexShrink: 0 }}
+                        >
+                          {!user.profile_picture_url &&
+                            (user.display_name || user.username)
+                              ?.charAt(0)
+                              .toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            level="title-md"
+                            sx={{
+                              mb: 0.25,
+                              wordBreak: "break-word",
+                              hyphens: "auto",
+                            }}
+                          >
+                            {user.display_name || user.username}
+                          </Typography>
+                          {user.display_name && (
+                            <Typography
+                              level="body-sm"
+                              sx={{
+                                color: "text.tertiary",
+                                wordBreak: "break-word",
+                                hyphens: "auto",
+                              }}
+                            >
+                              @{user.username}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+
+                      {/* Bottom Section: Join Date and Statistics */}
+                      <Stack spacing={1.5}>
+                        <Typography
+                          level="body-sm"
+                          sx={{
+                            color: "text.secondary",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
                           }}
                         >
-                          @{user.username}
+                          <span>📅</span>
+                          Joined {formatDate(user.created_at)}
                         </Typography>
-                      )}
-                    </Box>
-                  </Box>
 
-                  {/* Bottom Section: Join Date and Statistics */}
-                  <Stack spacing={1.5}>
-                    <Typography 
-                      level="body-sm" 
-                      sx={{ 
-                        color: "text.secondary",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5
-                      }}
-                    >
-                      <span>📅</span> 
-                      Joined {formatDate(user.created_at)}
-                    </Typography>
-
-                    <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between" }}>
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography level="title-sm" color="primary">
-                          {user.public_stations}
-                        </Typography>
-                        <Typography level="body-xs" color="neutral">
-                          Station{user.public_stations !== 1 ? 's' : ''}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Typography level="title-sm" color="primary">
-                          {user.public_posts}
-                        </Typography>
-                        <Typography level="body-xs" color="neutral">
-                          Post{user.public_posts !== 1 ? 's' : ''}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          sx={{ justifyContent: "space-between" }}
+                        >
+                          <Box sx={{ textAlign: "center", flex: 1 }}>
+                            <Typography level="title-sm" color="primary">
+                              {user.public_stations}
+                            </Typography>
+                            <Typography level="body-xs" color="neutral">
+                              Station{user.public_stations !== 1 ? "s" : ""}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: "center", flex: 1 }}>
+                            <Typography level="title-sm" color="primary">
+                              {user.public_posts}
+                            </Typography>
+                            <Typography level="body-xs" color="neutral">
+                              Post{user.public_posts !== 1 ? "s" : ""}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      )}
+          )}
 
-      {users.length > 0 && (
-        <PaginationControls
-          limit={limit}
-          setLimit={setLimit}
-          page={page}
-          setPage={setPage}
-          hasMore={users.length >= limit}
-          loading={loading}
-        />
-      )}
+          {users.length > 0 && (
+            <PaginationControls
+              limit={limit}
+              setLimit={setLimit}
+              page={page}
+              setPage={setPage}
+              hasMore={users.length >= limit}
+              loading={loading}
+            />
+          )}
         </CardContent>
       </Card>
     </Box>

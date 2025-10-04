@@ -14,9 +14,22 @@ import {
   Chip,
   Select,
   Option,
+  Modal,
+  ModalDialog,
+  ModalClose,
+  Input,
+  Textarea,
 } from "@mui/joy";
 import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
-import { getUserDetails, updateUserRole, deleteUser, banUser, approveUser, getProfilePictureUrl } from "../api";
+import {
+  getUserDetails,
+  updateUserRole,
+  deleteUser,
+  banUser,
+  approveUser,
+  getProfilePictureUrl,
+  clearUserProfilePicture,
+} from "../api";
 import type { AdminUserDetails } from "../api";
 
 const AdminUserDetail: React.FC = () => {
@@ -28,15 +41,22 @@ const AdminUserDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [clearPictureDialog, setClearPictureDialog] = useState<{
+    open: boolean;
+    reason: string;
+  }>({
+    open: false,
+    reason: "",
+  });
 
   const getBackNavigation = () => {
     const from = (location.state as any)?.from;
-    if (from === 'posts') {
-      return { path: '/admin/posts', label: 'Back to Post Management' };
-    } else if (from === 'users') {
-      return { path: '/admin/users', label: 'Back to User Management' };
+    if (from === "posts") {
+      return { path: "/admin/posts", label: "Back to Post Management" };
+    } else if (from === "users") {
+      return { path: "/admin/users", label: "Back to User Management" };
     }
-    return { path: '/admin/users', label: 'Back to User Management' };
+    return { path: "/admin/users", label: "Back to User Management" };
   };
 
   const fetchUserDetails = async () => {
@@ -84,8 +104,8 @@ const AdminUserDetail: React.FC = () => {
       // Refresh user details
       await fetchUserDetails();
     } catch (err) {
-      setError(`Failed to ${approved ? 'approve' : 'reject'} user`);
-      console.error(`Error ${approved ? 'approving' : 'rejecting'} user:`, err);
+      setError(`Failed to ${approved ? "approve" : "reject"} user`);
+      console.error(`Error ${approved ? "approving" : "rejecting"} user:`, err);
     } finally {
       setUpdating(false);
     }
@@ -100,8 +120,8 @@ const AdminUserDetail: React.FC = () => {
       // Refresh user details
       await fetchUserDetails();
     } catch (err) {
-      setError(`Failed to ${banned ? 'ban' : 'unban'} user`);
-      console.error(`Error ${banned ? 'banning' : 'unbanning'} user:`, err);
+      setError(`Failed to ${banned ? "ban" : "unban"} user`);
+      console.error(`Error ${banned ? "banning" : "unbanning"} user:`, err);
     } finally {
       setUpdating(false);
     }
@@ -110,7 +130,11 @@ const AdminUserDetail: React.FC = () => {
   const handleDeleteUser = async () => {
     if (!user) return;
 
-    if (!window.confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
@@ -118,7 +142,7 @@ const AdminUserDetail: React.FC = () => {
       setUpdating(true);
       await deleteUser(user.id);
       // Navigate back to user management
-      navigate('/admin/users');
+      navigate("/admin/users");
     } catch (err) {
       setError("Failed to delete user");
       console.error("Error deleting user:", err);
@@ -127,17 +151,47 @@ const AdminUserDetail: React.FC = () => {
     }
   };
 
+  const handleClearProfilePicture = async () => {
+    if (!user) return;
+
+    try {
+      setUpdating(true);
+      await clearUserProfilePicture(
+        user.id,
+        clearPictureDialog.reason.trim() || undefined
+      );
+      setClearPictureDialog({ open: false, reason: "" });
+      // Refresh user details
+      await fetchUserDetails();
+    } catch (err) {
+      setError("Failed to clear profile picture");
+      console.error("Error clearing profile picture:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin": return "danger";
-      case "user": return "primary";
-      default: return "neutral";
+      case "admin":
+        return "danger";
+      case "user":
+        return "primary";
+      default:
+        return "neutral";
     }
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "200px",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -191,14 +245,66 @@ const AdminUserDetail: React.FC = () => {
         <CardContent sx={{ p: { xs: 2, md: 4 } }}>
           <Stack spacing={3}>
             {/* Profile Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Avatar
-                size="lg"
-                src={user.profile_picture_url ? getProfilePictureUrl(user.profile_picture_url) : undefined}
-                sx={{ width: 100, height: 100 }}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <Box
+                sx={{
+                  position: "relative",
+                  "&:hover .clear-overlay": {
+                    opacity: 1,
+                  },
+                }}
               >
-                {user.display_name?.charAt(0) || user.username.charAt(0)}
-              </Avatar>
+                <Avatar
+                  size="lg"
+                  src={
+                    user.profile_picture_url
+                      ? getProfilePictureUrl(user.profile_picture_url)
+                      : undefined
+                  }
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    cursor: user.has_profile_picture ? "pointer" : "default",
+                  }}
+                  onClick={() => {
+                    if (user.has_profile_picture) {
+                      setClearPictureDialog({ open: true, reason: "" });
+                    }
+                  }}
+                >
+                  {user.display_name?.charAt(0) || user.username.charAt(0)}
+                </Avatar>
+                {user.has_profile_picture && (
+                  <Box
+                    className="clear-overlay"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(220, 53, 69, 0.8)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: 0,
+                      transition: "opacity 0.2s",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      setClearPictureDialog({ open: true, reason: "" })
+                    }
+                  >
+                    <Typography
+                      level="body-sm"
+                      sx={{ color: "white", fontWeight: "bold" }}
+                    >
+                      Clear
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography level="h3">
                   {user.display_name || user.username}
@@ -207,7 +313,11 @@ const AdminUserDetail: React.FC = () => {
                   @{user.username}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                  <Chip size="md" color={getRoleColor(user.role)} variant="soft">
+                  <Chip
+                    size="md"
+                    color={getRoleColor(user.role)}
+                    variant="soft"
+                  >
                     {user.role}
                   </Chip>
                   <Chip
@@ -232,14 +342,16 @@ const AdminUserDetail: React.FC = () => {
 
             {/* Account Information */}
             <Box>
-              <Typography level="h4" sx={{ mb: 2 }}>Account Information</Typography>
+              <Typography level="h4" sx={{ mb: 2 }}>
+                Account Information
+              </Typography>
               <Stack spacing={2}>
                 <Typography level="body-lg">
                   <strong>User ID:</strong> <code>{user.id}</code>
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography level="body-lg">
-                    <strong>Email:</strong> {user.email || 'Not provided'}
+                    <strong>Email:</strong> {user.email || "Not provided"}
                   </Typography>
                   {user.email && (
                     <Chip
@@ -252,15 +364,17 @@ const AdminUserDetail: React.FC = () => {
                   )}
                 </Box>
                 <Typography level="body-lg">
-                  <strong>Two-Factor Auth:</strong>{' '}
-                  {user.two_factor_enabled ? 'Enabled' : 'Disabled'}
+                  <strong>Two-Factor Auth:</strong>{" "}
+                  {user.two_factor_enabled ? "Enabled" : "Disabled"}
                 </Typography>
                 <Typography level="body-lg">
-                  <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString('de-DE')}
+                  <strong>Created:</strong>{" "}
+                  {new Date(user.created_at).toLocaleDateString("de-DE")}
                 </Typography>
                 {user.banned && user.banned_at && (
                   <Typography level="body-lg">
-                    <strong>Banned At:</strong> {new Date(user.banned_at).toLocaleDateString('de-DE')}
+                    <strong>Banned At:</strong>{" "}
+                    {new Date(user.banned_at).toLocaleDateString("de-DE")}
                   </Typography>
                 )}
               </Stack>
@@ -270,7 +384,9 @@ const AdminUserDetail: React.FC = () => {
 
             {/* Activity Statistics */}
             <Box>
-              <Typography level="h4" sx={{ mb: 2 }}>Activity Statistics</Typography>
+              <Typography level="h4" sx={{ mb: 2 }}>
+                Activity Statistics
+              </Typography>
               <Stack spacing={1}>
                 <Typography level="body-lg">
                   <strong>Stations:</strong> {user.station_count}
@@ -285,14 +401,24 @@ const AdminUserDetail: React.FC = () => {
 
             {/* Actions */}
             <Box>
-              <Typography level="h4" sx={{ mb: 3 }}>Actions</Typography>
-              <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ flexWrap: 'wrap' }}>
+              <Typography level="h4" sx={{ mb: 3 }}>
+                Actions
+              </Typography>
+              <Stack
+                spacing={2}
+                direction={{ xs: "column", sm: "row" }}
+                sx={{ flexWrap: "wrap" }}
+              >
                 {/* Role Change */}
                 <Box>
-                  <Typography level="body-sm" sx={{ mb: 1 }}>Change Role:</Typography>
+                  <Typography level="body-sm" sx={{ mb: 1 }}>
+                    Change Role:
+                  </Typography>
                   <Select
                     value={user.role}
-                    onChange={(_, newValue) => handleRoleChange(newValue as string)}
+                    onChange={(_, newValue) =>
+                      handleRoleChange(newValue as string)
+                    }
                     disabled={updating}
                     size="sm"
                   >
@@ -347,6 +473,59 @@ const AdminUserDetail: React.FC = () => {
           </Stack>
         </CardContent>
       </Card>
+
+      {/* Clear Profile Picture Confirmation Modal */}
+      <Modal
+        open={clearPictureDialog.open}
+        onClose={() => setClearPictureDialog({ open: false, reason: "" })}
+      >
+        <ModalDialog>
+          <ModalClose />
+          <Typography level="h4" sx={{ mb: 2 }}>
+            Clear Profile Picture
+          </Typography>
+          <Typography sx={{ mb: 3 }}>
+            Are you sure you want to clear the profile picture for user "
+            {user.username}"? This action will remove their current profile
+            picture and cannot be undone.
+          </Typography>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography level="body-sm" sx={{ mb: 1 }}>
+              Reason (optional):
+            </Typography>
+            <Textarea
+              placeholder="Provide a reason for clearing the profile picture..."
+              value={clearPictureDialog.reason}
+              onChange={(e) =>
+                setClearPictureDialog((prev) => ({
+                  ...prev,
+                  reason: e.target.value,
+                }))
+              }
+              minRows={3}
+              maxRows={5}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setClearPictureDialog({ open: false, reason: "" })}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="danger"
+              onClick={handleClearProfilePicture}
+              disabled={updating}
+            >
+              {updating ? "Clearing..." : "Clear Profile Picture"}
+            </Button>
+          </Box>
+        </ModalDialog>
+      </Modal>
     </Box>
   );
 };

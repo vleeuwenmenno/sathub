@@ -118,6 +118,19 @@
       "team": "Das SatHub-Team",
       "footer": "Willkommen in der SatHub-Community!",
       "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
+    },
+    "profilePictureCleared": {
+      "subject": "Ihr Profilbild wurde entfernt - SatHub",
+      "title": "Profilbild entfernt",
+      "greeting": "Hallo",
+      "message": "Wir möchten Sie darüber informieren, dass Ihr Profilbild von Ihrem SatHub-Konto durch einen Administrator entfernt wurde.",
+      "reason": "Vom Administrator angegebener Grund",
+      "uploadNew": "Sie können jederzeit ein neues Profilbild über Ihre Kontoeinstellungen hochladen, wenn Sie dies wünschen.",
+      "contactAdmin": "Wenn Sie glauben, dass dies irrtümlich geschehen ist oder Fragen zu dieser Aktion haben, wenden Sie sich bitte an einen Administrator.",
+      "regards": "Mit freundlichen Grüßen,",
+      "team": "Das SatHub-Team",
+      "footer": "Diese E-Mail wurde gesendet, weil Ihr Profilbild von einem Administrator entfernt wurde.",
+      "footerHelp": "Bei Fragen wenden Sie sich bitte an unser Support-Team."
     }
   }
 }

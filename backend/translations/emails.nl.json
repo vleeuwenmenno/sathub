@@ -118,6 +118,19 @@
       "team": "Het SatHub-team",
       "footer": "Welkom bij de SatHub-gemeenschap!",
       "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
+    },
+    "profilePictureCleared": {
+      "subject": "Uw profielfoto is verwijderd - SatHub",
+      "title": "Profielfoto verwijderd",
+      "greeting": "Hallo",
+      "message": "We willen u informeren dat uw profielfoto van uw SatHub-account is verwijderd door een beheerder.",
+      "reason": "Door beheerder opgegeven reden",
+      "uploadNew": "U kunt op elk moment een nieuwe profielfoto uploaden via uw accountinstellingen als u dat wilt.",
+      "contactAdmin": "Als u denkt dat dit per ongeluk is gebeurd of vragen heeft over deze actie, neem dan contact op met een beheerder.",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Deze e-mail is verzonden omdat uw profielfoto door een beheerder is verwijderd.",
+      "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
     }
   }
 }

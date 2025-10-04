@@ -118,6 +118,19 @@
       "team": "The SatHub Team",
       "footer": "Welcome to the SatHub community!",
       "footerHelp": "If you have any questions, please contact our support team."
+    },
+    "profilePictureCleared": {
+      "subject": "Your Profile Picture Has Been Removed - SatHub",
+      "title": "Profile Picture Removed",
+      "greeting": "Hello",
+      "message": "We wanted to inform you that your profile picture has been removed from your SatHub account by an administrator.",
+      "reason": "Reason provided by administrator",
+      "uploadNew": "You can upload a new profile picture at any time from your account settings if you wish to do so.",
+      "contactAdmin": "If you believe this was done in error or have questions about this action, please contact an administrator.",
+      "regards": "Best regards,",
+      "team": "The SatHub Team",
+      "footer": "This email was sent because your profile picture was removed by an administrator.",
+      "footerHelp": "If you have any questions, please contact our support team."
     }
   }
 }

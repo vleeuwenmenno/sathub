@@ -12,13 +12,20 @@ import {
   Stack,
   Avatar,
 } from "@mui/joy";
-import { getUserPosts, getUserStations, getStationPictureBlob, getUserLikedPosts, getProfilePictureBlob, type Station } from "../api";
+import {
+  getUserPosts,
+  getUserStations,
+  getStationPictureBlob,
+  getUserLikedPosts,
+  getProfilePictureUrl,
+  type Station,
+} from "../api";
 import type { Post } from "../types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
 
   return `${day}.${month}.${year}`;
@@ -56,11 +63,11 @@ const formatFullTimestamp = (station: Station): string => {
   }
 
   const date = new Date(station.last_seen);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
 
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 };
@@ -72,7 +79,9 @@ const UserOverview: React.FC = () => {
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,24 +130,21 @@ const UserOverview: React.FC = () => {
             console.error(
               "Failed to load image for station",
               station.id,
-              error,
+              error
             );
           }
         }
       }
 
-      // Load user profile picture
-      if (stations.length > 0 && stations[0].user?.has_profile_picture && stations[0].user?.profile_picture_url) {
-        try {
-          // Remove /api/ prefix if it exists since the api client already includes it
-          const cleanUrl = stations[0].user.profile_picture_url.startsWith('/api/') 
-            ? stations[0].user.profile_picture_url.substring(5) // Remove '/api/'
-            : stations[0].user.profile_picture_url;
-          const blobUrl = await getProfilePictureBlob(cleanUrl);
-          setProfilePictureUrl(blobUrl);
-        } catch (error) {
-          console.error("Failed to load user profile picture", error);
-        }
+      // Load user profile picture using direct image loading
+      if (
+        stations.length > 0 &&
+        stations[0].user?.has_profile_picture &&
+        stations[0].user?.profile_picture_url
+      ) {
+        setProfilePictureUrl(
+          getProfilePictureUrl(stations[0].user.profile_picture_url)
+        );
       }
 
       setImageBlobs(newImageBlobs);
@@ -174,12 +180,12 @@ const UserOverview: React.FC = () => {
 
   if (stations.length === 0 && posts.length === 0) {
     return (
-      <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1400px', mx: 'auto' }}>
+      <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
         <Typography level="h2" sx={{ mb: 3 }}>
           User Overview
         </Typography>
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
+          <CardContent sx={{ textAlign: "center", py: 6 }}>
             <Typography level="h4" color="neutral" sx={{ mb: 2 }}>
               This user has no public content available
             </Typography>
@@ -193,7 +199,7 @@ const UserOverview: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1400px', mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
       <Typography level="h2" sx={{ mb: 3 }}>
         User Profile
       </Typography>
@@ -211,26 +217,40 @@ const UserOverview: React.FC = () => {
                       src={profilePictureUrl || undefined}
                       sx={{ width: 80, height: 80 }}
                     >
-                      {(userInfo.display_name || userInfo.username)?.charAt(0).toUpperCase()}
+                      {(userInfo.display_name || userInfo.username)
+                        ?.charAt(0)
+                        .toUpperCase()}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
                       <Typography level="h3" sx={{ mb: 0.5 }}>
                         {userInfo.display_name || userInfo.username}
                       </Typography>
                       {userInfo.display_name && (
-                        <Typography level="body-md" color="neutral" sx={{ mb: 1 }}>
+                        <Typography
+                          level="body-md"
+                          color="neutral"
+                          sx={{ mb: 1 }}
+                        >
                           @{userInfo.username}
                         </Typography>
                       )}
                       <Stack direction="row" spacing={3} sx={{ mt: 2 }}>
                         <Box>
-                          <Typography level="body-sm" startDecorator={<span>📡</span>}>
-                            {stations.length} Public Station{stations.length !== 1 ? 's' : ''}
+                          <Typography
+                            level="body-sm"
+                            startDecorator={<span>📡</span>}
+                          >
+                            {stations.length} Public Station
+                            {stations.length !== 1 ? "s" : ""}
                           </Typography>
                         </Box>
                         <Box>
-                          <Typography level="body-sm" startDecorator={<span>📊</span>}>
-                            {posts.length} Public Post{posts.length !== 1 ? 's' : ''}
+                          <Typography
+                            level="body-sm"
+                            startDecorator={<span>📊</span>}
+                          >
+                            {posts.length} Public Post
+                            {posts.length !== 1 ? "s" : ""}
                           </Typography>
                         </Box>
                       </Stack>
@@ -239,7 +259,7 @@ const UserOverview: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-            
+
             {/* Recent Posts Section - Compact */}
             {posts.length > 0 && (
               <Card>
@@ -253,24 +273,29 @@ const UserOverview: React.FC = () => {
                         key={post.id}
                         variant="outlined"
                         onClick={() => navigate(`/post/${post.id}`)}
-                        sx={{ 
+                        sx={{
                           cursor: "pointer",
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
+                          transition: "all 0.2s ease",
+                          "&:hover": {
                             backgroundColor: "neutral.softHoverBg",
                             borderColor: "neutral.outlinedHoverBorder",
-                            transform: 'translateY(-1px)',
-                          }
+                            transform: "translateY(-1px)",
+                          },
                         }}
                       >
                         <CardContent sx={{ py: 2 }}>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                               <Typography level="title-md" sx={{ mb: 0.5 }}>
                                 {post.satellite_name}
                               </Typography>
                               <Typography level="body-sm" color="neutral">
-                                📡 {post.station_name} • 📅 {formatDate(post.timestamp)}
+                                📡 {post.station_name} • 📅{" "}
+                                {formatDate(post.timestamp)}
                               </Typography>
                             </Box>
                             {post.images.length > 0 && (
@@ -284,7 +309,11 @@ const UserOverview: React.FC = () => {
                     ))}
                   </Stack>
                   {posts.length > 8 && (
-                    <Typography level="body-sm" color="neutral" sx={{ mt: 2, textAlign: 'center' }}>
+                    <Typography
+                      level="body-sm"
+                      color="neutral"
+                      sx={{ mt: 2, textAlign: "center" }}
+                    >
                       Showing 8 of {posts.length} posts
                     </Typography>
                   )}
@@ -304,16 +333,16 @@ const UserOverview: React.FC = () => {
                   <Grid container spacing={2}>
                     {stations.map((station) => (
                       <Grid key={station.id} xs={12} sm={6}>
-                        <Card 
+                        <Card
                           variant="outlined"
                           onClick={() => navigate(`/station/${station.id}`)}
-                          sx={{ 
-                            cursor: 'pointer',
-                            transition: 'transform 0.2s, box-shadow 0.2s',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: 'lg',
-                            }
+                          sx={{
+                            cursor: "pointer",
+                            transition: "transform 0.2s, box-shadow 0.2s",
+                            "&:hover": {
+                              transform: "translateY(-2px)",
+                              boxShadow: "lg",
+                            },
                           }}
                         >
                           {imageBlobs[`${station.id}-picture`] && (
@@ -339,7 +368,11 @@ const UserOverview: React.FC = () => {
                             <Typography level="title-lg" sx={{ mb: 1 }}>
                               {station.name}
                             </Typography>
-                            <Typography level="body-sm" color="neutral" sx={{ mb: 2 }}>
+                            <Typography
+                              level="body-sm"
+                              color="neutral"
+                              sx={{ mb: 2 }}
+                            >
                               📍 {station.location}
                             </Typography>
                             {station.equipment && (
@@ -347,7 +380,9 @@ const UserOverview: React.FC = () => {
                                 🔧 {station.equipment}
                               </Typography>
                             )}
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Box
+                              sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
+                            >
                               <Chip size="sm" color="success">
                                 Public
                               </Chip>
@@ -355,7 +390,13 @@ const UserOverview: React.FC = () => {
                                 <Chip
                                   size="sm"
                                   variant="soft"
-                                  color={station.is_online ? "success" : station.last_seen ? "warning" : "neutral"}
+                                  color={
+                                    station.is_online
+                                      ? "success"
+                                      : station.last_seen
+                                      ? "warning"
+                                      : "neutral"
+                                  }
                                 >
                                   {formatLastSeen(station)}
                                 </Chip>
@@ -369,20 +410,18 @@ const UserOverview: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-
-            
           </Stack>
         </Grid>
 
         {/* Right Column: Liked Posts */}
         <Grid xs={12} md={4}>
-          <Card sx={{ height: 'fit-content' }}>
+          <Card sx={{ height: "fit-content" }}>
             <CardContent>
               <Typography level="h4" sx={{ mb: 3 }}>
                 Liked Posts ({likedPosts.length})
               </Typography>
               {likedPosts.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Box sx={{ textAlign: "center", py: 4 }}>
                   <Typography level="body-md" color="neutral">
                     No liked posts yet
                   </Typography>
@@ -394,19 +433,27 @@ const UserOverview: React.FC = () => {
                       key={post.id}
                       variant="outlined"
                       onClick={() => navigate(`/post/${post.id}`)}
-                      sx={{ 
+                      sx={{
                         cursor: "pointer",
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
+                        transition: "all 0.2s ease",
+                        "&:hover": {
                           backgroundColor: "neutral.softHoverBg",
                           borderColor: "neutral.outlinedHoverBorder",
-                          transform: 'translateY(-1px)',
-                        }
+                          transform: "translateY(-1px)",
+                        },
                       }}
                     >
                       <CardContent sx={{ py: 1, px: 1.5 }}>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                          <Typography level="title-sm" sx={{ flex: 1, minWidth: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{ mb: 0.5 }}
+                        >
+                          <Typography
+                            level="title-sm"
+                            sx={{ flex: 1, minWidth: 0 }}
+                          >
                             {post.satellite_name}
                           </Typography>
                           {post.images.length > 0 && (
@@ -415,7 +462,11 @@ const UserOverview: React.FC = () => {
                             </Chip>
                           )}
                         </Stack>
-                        <Typography level="body-xs" color="neutral" sx={{ mb: 0.25 }}>
+                        <Typography
+                          level="body-xs"
+                          color="neutral"
+                          sx={{ mb: 0.25 }}
+                        >
                           � {post.station_name}
                         </Typography>
                         <Typography level="body-xs" color="neutral">
@@ -425,7 +476,11 @@ const UserOverview: React.FC = () => {
                     </Card>
                   ))}
                   {likedPosts.length > 10 && (
-                    <Typography level="body-xs" color="neutral" sx={{ textAlign: 'center', mt: 1 }}>
+                    <Typography
+                      level="body-xs"
+                      color="neutral"
+                      sx={{ textAlign: "center", mt: 1 }}
+                    >
                       Showing 10 of {likedPosts.length} liked posts
                     </Typography>
                   )}
