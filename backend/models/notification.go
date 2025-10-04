@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Notification struct {
@@ -21,4 +22,9 @@ type Notification struct {
 // TableName returns the table name for Notification model
 func (Notification) TableName() string {
 	return "notifications"
+}
+
+// BeforeCreate is a GORM hook that runs before creating a notification
+func (n *Notification) BeforeCreate(tx *gorm.DB) error {
+	return nil
 }
