@@ -74,6 +74,9 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
       // Fallback to empty translations
       setTranslations({});
     }
+
+    // Force page reload to ensure new language is applied
+    window.location.reload();
   };
 
   const t: TranslationFunction = (key, params) => {
