@@ -41,6 +41,9 @@ COPY --from=builder /app/main .
 # Copy email templates (needed at runtime)
 COPY --from=builder /app/templates ./templates
 
+# Copy email translations (needed at runtime)
+COPY --from=builder /app/translations ./translations
+
 # Create directory for database and uploads
 RUN mkdir -p /app/data /app/uploads && \
   chown -R appuser:appuser /app
