@@ -3,7 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"sathub-ui-backend/config"
 	"sathub-ui-backend/middleware"
+	"sathub-ui-backend/models"
 	"sathub-ui-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -44,13 +46,29 @@ func GetUserAchievements(c *gin.Context) {
 		return
 	}
 
+	// Get user language for translations
+	var user models.User
+	if err := config.GetDB().Where("id = ?", userID).First(&user).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch user language")
+		return
+	}
+
 	response := make([]UserAchievementResponse, len(userAchievements))
 	for i, ua := range userAchievements {
+		// Translate achievement name and description
+		name, description, err := utils.TranslateAchievement(ua.Achievement.NameKey, ua.Achievement.DescriptionKey, user.Language)
+		if err != nil {
+			utils.Logger.Error().Err(err).Str("achievement_id", ua.Achievement.ID.String()).Msg("Failed to translate achievement")
+			// Fallback to keys if translation fails
+			name = ua.Achievement.NameKey
+			description = ua.Achievement.DescriptionKey
+		}
+
 		response[i] = UserAchievementResponse{
 			Achievement: AchievementResponse{
 				ID:          ua.Achievement.ID.String(),
-				Name:        ua.Achievement.Name,
-				Description: ua.Achievement.Description,
+				Name:        name,
+				Description: description,
 				Icon:        ua.Achievement.Icon,
 			},
 			UnlockedAt: ua.UnlockedAt.Format("2006-01-02T15:04:05Z07:00"),
@@ -68,12 +86,32 @@ func GetAllAchievements(c *gin.Context) {
 		return
 	}
 
+	// Get user language for translations (default to 'en' if not authenticated)
+	language := "en"
+	if userIDStr, exists := middleware.GetCurrentUserID(c); exists {
+		if userID, err := uuid.Parse(userIDStr); err == nil {
+			var user models.User
+			if err := config.GetDB().Where("id = ?", userID).First(&user).Error; err == nil {
+				language = user.Language
+			}
+		}
+	}
+
 	response := make([]AchievementResponse, len(achievements))
 	for i, achievement := range achievements {
+		// Translate achievement name and description
+		name, description, err := utils.TranslateAchievement(achievement.NameKey, achievement.DescriptionKey, language)
+		if err != nil {
+			utils.Logger.Error().Err(err).Str("achievement_id", achievement.ID.String()).Msg("Failed to translate achievement")
+			// Fallback to keys if translation fails
+			name = achievement.NameKey
+			description = achievement.DescriptionKey
+		}
+
 		response[i] = AchievementResponse{
 			ID:          achievement.ID.String(),
-			Name:        achievement.Name,
-			Description: achievement.Description,
+			Name:        name,
+			Description: description,
 			Icon:        achievement.Icon,
 		}
 	}

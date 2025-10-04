@@ -24,11 +24,13 @@ import {
   getProfilePictureUrl,
 } from "../api";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../contexts/TranslationContext";
 import { getSupportedLanguages } from "../utils/translations";
 import TwoFactorSetup from "./TwoFactorSetup";
 
 const UserSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile section states
@@ -126,17 +128,17 @@ const UserSettings: React.FC = () => {
 
   const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("All password fields are required");
+      setError(t("user.settings.errors.allPasswordFieldsRequired"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
+      setError(t("user.settings.errors.passwordsDoNotMatch"));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters long");
+      setError(t("user.settings.errors.passwordTooShort"));
       return;
     }
 
@@ -144,7 +146,7 @@ const UserSettings: React.FC = () => {
       setPasswordLoading(true);
       clearMessages();
       await updateProfile({ password: newPassword });
-      setPasswordSuccess("Password updated successfully");
+      setPasswordSuccess(t("user.settings.success.passwordUpdated"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -165,12 +167,12 @@ const UserSettings: React.FC = () => {
     setShowTwoFactorSetup(false);
     setTwoFactorEnabled(true);
     clearMessages();
-    setTwoFactorSuccess("Two-factor authentication enabled successfully");
+    setTwoFactorSuccess(t("user.settings.success.twoFactorEnabled"));
   };
 
   const handleDisableTwoFactor = async () => {
     if (!disableCode.trim()) {
-      setError("2FA code is required");
+      setError(t("user.settings.errors.twoFactorCodeRequired"));
       return;
     }
 
@@ -179,11 +181,14 @@ const UserSettings: React.FC = () => {
       clearMessages();
       await disableTwoFactor(disableCode);
       setTwoFactorSuccess(
-        "2FA disable confirmation sent. Please check your email to complete the process."
+        t("user.settings.success.twoFactorDisableConfirmationSent")
       );
       setDisableCode("");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to disable 2FA");
+      setError(
+        err.response?.data?.message ||
+          t("user.settings.errors.twoFactorDisableFailed")
+      );
     } finally {
       setTwoFactorLoading(false);
     }
@@ -196,9 +201,9 @@ const UserSettings: React.FC = () => {
       const result = await regenerateRecoveryCodes();
       setRecoveryCodes(result.recovery_codes);
       setShowRecoveryCodes(true);
-      setTwoFactorSuccess("New recovery codes generated successfully");
+      setTwoFactorSuccess(t("user.settings.success.recoveryCodesGenerated"));
     } catch (err) {
-      setError("Failed to regenerate recovery codes");
+      setError(t("user.settings.errors.recoveryCodesRegenerateFailed"));
       console.error(err);
     } finally {
       setRecoveryCodesLoading(false);
@@ -245,7 +250,7 @@ const UserSettings: React.FC = () => {
 
     if (email.trim() !== (user?.email || "")) {
       if (!email.trim()) {
-        setError("Email is required");
+        setError(t("user.settings.errors.emailRequired"));
         return;
       }
       updates.email = email.trim();
@@ -253,7 +258,7 @@ const UserSettings: React.FC = () => {
     }
 
     if (!hasProfileUpdates && !hasPictureUpdate) {
-      setError("No changes to save");
+      setError(t("user.settings.errors.noChanges"));
       return;
     }
 
@@ -283,19 +288,22 @@ const UserSettings: React.FC = () => {
 
       // Set appropriate success message
       if (hasPictureUpdate && hasProfileUpdates) {
-        setProfileSuccess("Profile updated successfully");
+        setProfileSuccess(t("user.settings.success.profileUpdated"));
       } else if (hasPictureUpdate) {
-        setProfileSuccess("Profile picture uploaded successfully");
+        setProfileSuccess(t("user.settings.success.profilePictureUploaded"));
       } else if (updates.email) {
         setProfileSuccess(
-          "Email change confirmation sent. Please check your new email address to confirm the change."
+          t("user.settings.success.emailChangeConfirmationSent")
         );
         setEmail(user?.email || ""); // Reset to current email
       } else {
-        setProfileSuccess("Profile updated successfully");
+        setProfileSuccess(t("user.settings.success.profileUpdated"));
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to update profile");
+      setError(
+        err.response?.data?.error ||
+          t("user.settings.errors.profileUpdateFailed")
+      );
     } finally {
       setProfileLoading(false);
     }
@@ -313,9 +321,12 @@ const UserSettings: React.FC = () => {
       setProfilePictureFile(null);
       setProfilePicturePreview(null);
 
-      setProfileSuccess("Profile picture cleared successfully");
+      setProfileSuccess(t("user.settings.success.profilePictureCleared"));
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to clear profile picture");
+      setError(
+        err.response?.data?.error ||
+          t("user.settings.errors.profilePictureClearFailed")
+      );
     } finally {
       setProfileLoading(false);
     }
@@ -330,10 +341,11 @@ const UserSettings: React.FC = () => {
 
       await updateProfile({ email_notifications: enabled });
       setEmailNotifications(enabled);
-      setNotificationSuccess("Notification settings updated successfully");
+      setNotificationSuccess(t("user.settings.success.notificationsUpdated"));
     } catch (err: any) {
       setNotificationError(
-        err.response?.data?.error || "Failed to update notification settings"
+        err.response?.data?.error ||
+          t("user.settings.errors.notificationsUpdateFailed")
       );
       // Revert the checkbox state on error
       setEmailNotifications(!enabled);
@@ -356,14 +368,14 @@ const UserSettings: React.FC = () => {
       await updateProfile({ station_email_notifications: checked });
       setStationEmailNotifications(checked);
       setNotificationSuccess(
-        "Station notification settings updated successfully"
+        t("user.settings.success.stationNotificationsUpdated")
       );
       // Refresh user data in context
       await refreshUser();
     } catch (err: any) {
       setNotificationError(
         err.response?.data?.error ||
-          "Failed to update station notification settings"
+          t("user.settings.errors.stationNotificationsUpdateFailed")
       );
       // Revert the checkbox state on error
       setStationEmailNotifications(!checked);
@@ -381,12 +393,13 @@ const UserSettings: React.FC = () => {
 
       await updateProfile({ language: newLanguage });
       setLanguage(newLanguage);
-      setNotificationSuccess("Language preference updated successfully");
+      setNotificationSuccess(t("user.settings.success.languageUpdated"));
       // Refresh user data in context
       await refreshUser();
     } catch (err: any) {
       setNotificationError(
-        err.response?.data?.error || "Failed to update language preference"
+        err.response?.data?.error ||
+          t("user.settings.errors.languageUpdateFailed")
       );
       // Revert the select state on error
       setLanguage(user?.language || "en");
@@ -398,7 +411,7 @@ const UserSettings: React.FC = () => {
   return (
     <Box sx={{ p: 3, maxWidth: 600, mx: "auto" }}>
       <Typography level="h2" sx={{ mb: 3 }}>
-        Account Settings
+        {t("user.settings.title")}
       </Typography>
 
       {error && (
@@ -411,7 +424,7 @@ const UserSettings: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Profile Information
+            {t("user.settings.profileSection")}
           </Typography>
 
           {profileSuccess && (
@@ -435,7 +448,9 @@ const UserSettings: React.FC = () => {
                 "&:hover": {
                   opacity: 0.8,
                   "&::after": {
-                    content: '"Click to change"',
+                    content: `"${t(
+                      "user.settings.profilePicture.clickToChange"
+                    )}"`,
                     position: "absolute",
                     top: 0,
                     left: 0,
@@ -467,7 +482,8 @@ const UserSettings: React.FC = () => {
             {profilePictureFile && (
               <Box sx={{ textAlign: "center", mt: 1 }}>
                 <Typography level="body-sm">
-                  Selected: {profilePictureFile.name}
+                  {t("user.settings.profilePicture.selected")}{" "}
+                  {profilePictureFile.name}
                 </Typography>
               </Box>
             )}
@@ -483,7 +499,7 @@ const UserSettings: React.FC = () => {
                     onClick={handleClearProfilePicture}
                     loading={profileLoading}
                   >
-                    Clear Profile Picture
+                    {t("user.settings.profilePicture.clear")}
                   </Button>
                 </Box>
               )}
@@ -491,22 +507,22 @@ const UserSettings: React.FC = () => {
 
           {/* Display Name */}
           <FormControl sx={{ mb: 2 }}>
-            <FormLabel>Display Name</FormLabel>
+            <FormLabel>{t("user.settings.displayName")}</FormLabel>
             <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Enter your display name"
+              placeholder={t("user.settings.displayNamePlaceholder")}
             />
           </FormControl>
 
           {/* Email */}
           <FormControl sx={{ mb: 2 }}>
-            <FormLabel>Email</FormLabel>
+            <FormLabel>{t("user.settings.email")}</FormLabel>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder={t("user.settings.emailPlaceholder")}
             />
           </FormControl>
 
@@ -519,7 +535,7 @@ const UserSettings: React.FC = () => {
               !profilePictureFile
             }
           >
-            Save Changes
+            {t("user.settings.saveChanges")}
           </Button>
         </CardContent>
       </Card>
@@ -528,7 +544,7 @@ const UserSettings: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Change Password
+            {t("user.settings.passwordSection")}
           </Typography>
           {passwordSuccess && (
             <Alert color="success" sx={{ mb: 2 }}>
@@ -536,30 +552,30 @@ const UserSettings: React.FC = () => {
             </Alert>
           )}
           <FormControl sx={{ mb: 2 }}>
-            <FormLabel>Current Password</FormLabel>
+            <FormLabel>{t("user.settings.currentPassword")}</FormLabel>
             <Input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
+              placeholder={t("user.settings.currentPasswordPlaceholder")}
             />
           </FormControl>
           <FormControl sx={{ mb: 2 }}>
-            <FormLabel>New Password</FormLabel>
+            <FormLabel>{t("user.settings.newPassword")}</FormLabel>
             <Input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
+              placeholder={t("user.settings.newPasswordPlaceholder")}
             />
           </FormControl>
           <FormControl sx={{ mb: 2 }}>
-            <FormLabel>Confirm New Password</FormLabel>
+            <FormLabel>{t("user.settings.confirmPassword")}</FormLabel>
             <Input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
+              placeholder={t("user.settings.confirmPasswordPlaceholder")}
             />
           </FormControl>
           <Button
@@ -567,7 +583,7 @@ const UserSettings: React.FC = () => {
             loading={passwordLoading}
             disabled={!currentPassword || !newPassword || !confirmPassword}
           >
-            Update Password
+            {t("user.settings.updatePassword")}
           </Button>
         </CardContent>
       </Card>
@@ -578,7 +594,7 @@ const UserSettings: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Two-Factor Authentication
+            {t("user.settings.twoFactorSection")}
           </Typography>
           {twoFactorSuccess && (
             <Alert color="success" sx={{ mb: 2 }}>
@@ -589,11 +605,10 @@ const UserSettings: React.FC = () => {
           {twoFactorEnabled ? (
             <>
               <Typography sx={{ mb: 2 }}>
-                To disable 2FA, you'll need to enter a code from your
-                authenticator app and confirm via email.
+                {t("user.settings.twoFactorDisableInstructions")}
               </Typography>
               <FormControl sx={{ mb: 2 }}>
-                <FormLabel>Enter 2FA Code</FormLabel>
+                <FormLabel>{t("user.settings.twoFactorCode")}</FormLabel>
                 <Input
                   type="text"
                   value={disableCode}
@@ -602,7 +617,7 @@ const UserSettings: React.FC = () => {
                       e.target.value.replace(/\D/g, "").slice(0, 6)
                     )
                   }
-                  placeholder="000000"
+                  placeholder={t("user.settings.twoFactorCodePlaceholder")}
                   slotProps={{ input: { maxLength: 6 } }}
                 />
               </FormControl>
@@ -612,20 +627,19 @@ const UserSettings: React.FC = () => {
                 disabled={disableCode.length !== 6}
                 color="danger"
               >
-                Disable 2FA
+                {t("user.settings.disable2FA")}
               </Button>
             </>
           ) : (
             <>
               <Typography sx={{ mb: 2 }}>
-                Add an extra layer of security to your account by enabling
-                two-factor authentication.
+                {t("user.settings.twoFactorEnableDescription")}
               </Typography>
               <Button
                 onClick={handleEnableTwoFactor}
                 loading={twoFactorLoading}
               >
-                Enable 2FA
+                {t("user.settings.enable2FA")}
               </Button>
             </>
           )}
@@ -637,17 +651,16 @@ const UserSettings: React.FC = () => {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography level="h3" sx={{ mb: 2 }}>
-              Recovery Codes
+              {t("user.settings.recoveryCodesSection")}
             </Typography>
             <Typography sx={{ mb: 2 }}>
-              Recovery codes can be used to access your account if you lose your
-              authenticator device. Each code can only be used once.
+              {t("user.settings.recoveryCodesDescription")}
             </Typography>
 
             {showRecoveryCodes && recoveryCodes.length > 0 && (
               <Alert color="warning" sx={{ mb: 2 }}>
-                <strong>Important:</strong> Save these recovery codes in a safe
-                place. They will not be shown again.
+                <strong>{t("user.settings.recoveryCodesImportant")}</strong>{" "}
+                {t("user.settings.recoveryCodesSaveWarning")}
               </Alert>
             )}
 
@@ -682,7 +695,7 @@ const UserSettings: React.FC = () => {
                   variant="outlined"
                   sx={{ mr: 1 }}
                 >
-                  I've Saved These Codes
+                  {t("user.settings.recoveryCodesSaved")}
                 </Button>
               </>
             ) : (
@@ -690,7 +703,7 @@ const UserSettings: React.FC = () => {
                 onClick={handleRegenerateRecoveryCodes}
                 loading={recoveryCodesLoading}
               >
-                Generate New Recovery Codes
+                {t("user.settings.generateRecoveryCodes")}
               </Button>
             )}
           </CardContent>
@@ -701,7 +714,7 @@ const UserSettings: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Notification Settings
+            {t("user.settings.notificationsSection")}
           </Typography>
 
           {notificationSuccess && (
@@ -717,12 +730,11 @@ const UserSettings: React.FC = () => {
           )}
 
           <Typography sx={{ mb: 2 }}>
-            Choose how you want to be notified about activity on your posts and
-            achievements.
+            {t("user.settings.notificationsDescription")}
           </Typography>
           <FormControl sx={{ mb: 2 }}>
             <Checkbox
-              label="Receive email notifications for achievements, comments, and likes"
+              label={t("user.settings.emailNotificationsAchievements")}
               checked={emailNotifications}
               onChange={(e) => handleNotificationToggle(e.target.checked)}
               disabled={notificationLoading}
@@ -730,7 +742,7 @@ const UserSettings: React.FC = () => {
           </FormControl>
           <FormControl>
             <Checkbox
-              label="Receive email notifications for station health alerts"
+              label={t("user.settings.emailNotificationsStations")}
               checked={stationEmailNotifications}
               onChange={(e) =>
                 handleStationNotificationToggle(e.target.checked)
@@ -745,16 +757,15 @@ const UserSettings: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography level="h3" sx={{ mb: 2 }}>
-            Language Settings
+            {t("user.settings.languageSection")}
           </Typography>
 
           <Typography sx={{ mb: 2 }}>
-            Choose your preferred language for the interface. This setting is
-            saved to your account and will be used when you log in.
+            {t("user.settings.languageDescription")}
           </Typography>
 
           <FormControl>
-            <FormLabel>Language</FormLabel>
+            <FormLabel>{t("user.settings.language")}</FormLabel>
             <Select
               value={language}
               onChange={(_, value) => value && handleLanguageChange(value)}

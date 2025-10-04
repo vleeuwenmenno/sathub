@@ -20,6 +20,7 @@ import {
   getProfilePictureUrl,
   type Station,
 } from "../api";
+import { useTranslation } from "../contexts/TranslationContext";
 import type { Post } from "../types";
 import ReportButton from "./ReportButton";
 
@@ -76,6 +77,7 @@ const formatFullTimestamp = (station: Station): string => {
 const UserOverview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
@@ -183,15 +185,15 @@ const UserOverview: React.FC = () => {
     return (
       <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
         <Typography level="h2" sx={{ mb: 3 }}>
-          User Overview
+          {t("user.overview.title")}
         </Typography>
         <Card>
           <CardContent sx={{ textAlign: "center", py: 6 }}>
             <Typography level="h4" color="neutral" sx={{ mb: 2 }}>
-              This user has no public content available
+              {t("user.overview.noContent")}
             </Typography>
             <Typography level="body-md" color="neutral">
-              No public stations or posts to display.
+              {t("user.overview.noContentDescription")}
             </Typography>
           </CardContent>
         </Card>
@@ -202,7 +204,7 @@ const UserOverview: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
       <Typography level="h2" sx={{ mb: 3 }}>
-        User Profile
+        {t("user.overview.profile")}
       </Typography>
 
       <Grid container spacing={3}>
@@ -247,8 +249,10 @@ const UserOverview: React.FC = () => {
                             level="body-sm"
                             startDecorator={<span>📡</span>}
                           >
-                            {stations.length} Public Station
-                            {stations.length !== 1 ? "s" : ""}
+                            {stations.length}{" "}
+                            {stations.length === 1
+                              ? t("user.overview.publicStation")
+                              : t("user.overview.publicStations")}
                           </Typography>
                         </Box>
                         <Box>
@@ -256,8 +260,10 @@ const UserOverview: React.FC = () => {
                             level="body-sm"
                             startDecorator={<span>📊</span>}
                           >
-                            {posts.length} Public Post
-                            {posts.length !== 1 ? "s" : ""}
+                            {posts.length}{" "}
+                            {posts.length === 1
+                              ? t("user.overview.publicPost")
+                              : t("user.overview.publicPosts")}
                           </Typography>
                         </Box>
                       </Stack>
@@ -272,7 +278,7 @@ const UserOverview: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography level="h3" sx={{ mb: 3 }}>
-                    Recent Posts ({posts.length})
+                    {t("user.overview.recentPosts")} ({posts.length})
                   </Typography>
                   <Stack spacing={2}>
                     {posts.slice(0, 8).map((post) => (
@@ -321,7 +327,10 @@ const UserOverview: React.FC = () => {
                       color="neutral"
                       sx={{ mt: 2, textAlign: "center" }}
                     >
-                      Showing 8 of {posts.length} posts
+                      {t("user.overview.showingPosts", {
+                        count: 8,
+                        total: posts.length,
+                      })}
                     </Typography>
                   )}
                 </CardContent>
@@ -332,10 +341,10 @@ const UserOverview: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography level="h3" sx={{ mb: 3 }}>
-                  Public Stations ({stations.length})
+                  {t("user.overview.publicStationsTitle")} ({stations.length})
                 </Typography>
                 {stations.length === 0 ? (
-                  <Typography>No public stations available</Typography>
+                  <Typography>{t("user.overview.noPublicStations")}</Typography>
                 ) : (
                   <Grid container spacing={2}>
                     {stations.map((station) => (
@@ -425,12 +434,12 @@ const UserOverview: React.FC = () => {
           <Card sx={{ height: "fit-content" }}>
             <CardContent>
               <Typography level="h4" sx={{ mb: 3 }}>
-                Liked Posts ({likedPosts.length})
+                {t("user.overview.likedPosts")} ({likedPosts.length})
               </Typography>
               {likedPosts.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 4 }}>
                   <Typography level="body-md" color="neutral">
-                    No liked posts yet
+                    {t("user.overview.noLikedPosts")}
                   </Typography>
                 </Box>
               ) : (
@@ -488,7 +497,10 @@ const UserOverview: React.FC = () => {
                       color="neutral"
                       sx={{ textAlign: "center", mt: 1 }}
                     >
-                      Showing 10 of {likedPosts.length} liked posts
+                      {t("user.overview.showingLikedPosts", {
+                        count: 10,
+                        total: likedPosts.length,
+                      })}
                     </Typography>
                   )}
                 </Stack>

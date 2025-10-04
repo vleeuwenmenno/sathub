@@ -24,6 +24,7 @@ import {
   OpenInNew,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../contexts/TranslationContext";
 import {
   getNotifications,
   markNotificationAsRead,
@@ -34,6 +35,7 @@ import type { Notification, NotificationResponse } from "../types";
 
 const NotificationDropdown: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -61,8 +63,11 @@ const NotificationDropdown: React.FC = () => {
       const result: NotificationResponse = await getNotifications(1, 10);
       // Filter for unread notifications only and sort by newest first
       const unreadNotifications = result.notifications
-        .filter(n => !n.is_read)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        .filter((n) => !n.is_read)
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       setNotifications(unreadNotifications);
     } catch (err) {
       console.error("Failed to fetch notifications", err);
@@ -104,8 +109,8 @@ const NotificationDropdown: React.FC = () => {
     try {
       await markNotificationAsRead(notificationId);
       // Remove the notification from the dropdown (since we only show unread)
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Failed to mark notification as read", err);
     }
@@ -132,17 +137,17 @@ const NotificationDropdown: React.FC = () => {
     // Navigate based on notification type
     if (notification.related_id) {
       switch (notification.type) {
-        case 'achievement':
+        case "achievement":
           navigate(`/user/achievements#achievement-${notification.related_id}`);
           break;
-        case 'comment':
+        case "comment":
           // RelatedID format: "postId:commentId"
-          const [postId, commentId] = notification.related_id.split(':');
+          const [postId, commentId] = notification.related_id.split(":");
           if (postId && commentId) {
             navigate(`/post/${postId}#comment-${commentId}`);
           }
           break;
-        case 'like':
+        case "like":
           navigate(`/post/${notification.related_id}`);
           break;
         case 'report':
@@ -165,11 +170,11 @@ const NotificationDropdown: React.FC = () => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'achievement':
+      case "achievement":
         return <EmojiEvents color="primary" />;
-      case 'comment':
+      case "comment":
         return <Comment color="info" />;
-      case 'like':
+      case "like":
         return <Favorite color="error" />;
       case 'report':
         return <Notifications color="warning" />;
@@ -183,10 +188,20 @@ const NotificationDropdown: React.FC = () => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
+
+  const formatNotificationMessage = (message: string) => {
+    if (message.startsWith("achievement_unlocked:")) {
+      const achievementKey = message.substring("achievement_unlocked:".length);
+      const achievementName = t(achievementKey);
+      return `You unlocked the achievement: ${achievementName}`;
+    }
+    return message;
   };
 
   if (!isAuthenticated) return null;
@@ -218,114 +233,132 @@ const NotificationDropdown: React.FC = () => {
           onClose={() => handleOpenChange(false)}
           sx={{ minWidth: 320, maxWidth: 400 }}
         >
-        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography level="title-md" sx={{ mb: 1 }}>
-            Notifications
-          </Typography>
-          {unreadCount > 0 && (
-            <Button
-              size="sm"
-              variant="outlined"
-              onClick={handleMarkAllAsRead}
-              loading={markingAll}
-              sx={{ fontSize: '0.75rem' }}
-            >
-              Mark all as read
-            </Button>
-          )}
-        </Box>
+          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+            <Typography level="title-md" sx={{ mb: 1 }}>
+              Notifications
+            </Typography>
+            {unreadCount > 0 && (
+              <Button
+                size="sm"
+                variant="outlined"
+                onClick={handleMarkAllAsRead}
+                loading={markingAll}
+                sx={{ fontSize: "0.75rem" }}
+              >
+                Mark all as read
+              </Button>
+            )}
+          </Box>
 
-        <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <CircularProgress size="sm" />
-            </Box>
-          ) : notifications.length === 0 ? (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                No unread notifications
-              </Typography>
-            </Box>
-          ) : (
-            <List sx={{ gap: 0 }}>
-              {notifications.map((notification, index) => (
-                <React.Fragment key={notification.id}>
-                  <ListItem
-                    sx={{
-                      py: 1.5,
-                      px: 2,
-                      bgcolor: 'primary.softBg',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      gap: 1,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
-                      <ListItemDecorator sx={{ alignSelf: 'flex-start', mt: 0.5 }}>
-                        {getNotificationIcon(notification.type)}
-                      </ListItemDecorator>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          level="body-sm"
-                          sx={{
-                            fontWeight: 'bold',
-                            mb: 0.5,
-                          }}
+          <Box sx={{ maxHeight: 400, overflow: "auto" }}>
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                <CircularProgress size="sm" />
+              </Box>
+            ) : notifications.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: "center" }}>
+                <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
+                  No unread notifications
+                </Typography>
+              </Box>
+            ) : (
+              <List sx={{ gap: 0 }}>
+                {notifications.map((notification, index) => (
+                  <React.Fragment key={notification.id}>
+                    <ListItem
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        bgcolor: "primary.softBg",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 1,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", gap: 1.5, width: "100%" }}>
+                        <ListItemDecorator
+                          sx={{ alignSelf: "flex-start", mt: 0.5 }}
                         >
-                          {notification.message}
-                        </Typography>
-                        <Typography level="body-xs" sx={{ color: 'text.tertiary' }}>
-                          {formatTimeAgo(notification.created_at)}
-                        </Typography>
+                          {getNotificationIcon(notification.type)}
+                        </ListItemDecorator>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            level="body-sm"
+                            sx={{
+                              fontWeight: "bold",
+                              mb: 0.5,
+                            }}
+                          >
+                            {formatNotificationMessage(notification.message)}
+                          </Typography>
+                          <Typography
+                            level="body-xs"
+                            sx={{ color: "text.tertiary" }}
+                          >
+                            {formatTimeAgo(notification.created_at)}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                    <Stack direction="row" spacing={1} sx={{ width: '100%', pl: 4 }}>
-                      <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        startDecorator={<CheckCircle />}
-                        onClick={() => handleMarkAsRead(notification.id)}
-                        sx={{ flex: 1 }}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ width: "100%", pl: 4 }}
                       >
-                        Mark Read
-                      </Button>
-                      {notification.related_id && (
                         <Button
                           size="sm"
-                          variant="solid"
-                          color="primary"
-                          startDecorator={<OpenInNew />}
-                          onClick={() => handleMarkAsReadAndOpen(notification)}
+                          variant="outlined"
+                          color="neutral"
+                          startDecorator={<CheckCircle />}
+                          onClick={() => handleMarkAsRead(notification.id)}
                           sx={{ flex: 1 }}
                         >
-                          Open
+                          Mark Read
                         </Button>
-                      )}
-                    </Stack>
-                  </ListItem>
-                  {index < notifications.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
-          )}
-        </Box>
+                        {notification.related_id && (
+                          <Button
+                            size="sm"
+                            variant="solid"
+                            color="primary"
+                            startDecorator={<OpenInNew />}
+                            onClick={() =>
+                              handleMarkAsReadAndOpen(notification)
+                            }
+                            sx={{ flex: 1 }}
+                          >
+                            Open
+                          </Button>
+                        )}
+                      </Stack>
+                    </ListItem>
+                    {index < notifications.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            )}
+          </Box>
 
-        <Box sx={{ p: 1, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-          <Button
-            size="sm"
-            variant="plain"
-            onClick={() => {
-              setOpen(false);
-              window.location.href = '/notifications';
+          <Box
+            sx={{
+              p: 1,
+              borderTop: "1px solid",
+              borderColor: "divider",
+              textAlign: "center",
             }}
-            sx={{ fontSize: '0.75rem' }}
           >
-            View all notifications
-          </Button>
-        </Box>
-      </Menu>
+            <Button
+              size="sm"
+              variant="plain"
+              onClick={() => {
+                setOpen(false);
+                window.location.href = "/notifications";
+              }}
+              sx={{ fontSize: "0.75rem" }}
+            >
+              View all notifications
+            </Button>
+          </Box>
+        </Menu>
       </Box>
     </ClickAwayListener>
   );

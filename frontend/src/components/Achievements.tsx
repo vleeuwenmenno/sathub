@@ -11,10 +11,14 @@ import {
 } from "@mui/joy";
 import { EmojiEvents, Lock } from "@mui/icons-material";
 import { getUserAchievements, getAllAchievements } from "../api";
+import { useTranslation } from "../contexts/TranslationContext";
 import type { UserAchievement, Achievement } from "../types";
 
 const Achievements: React.FC = () => {
-  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const { t } = useTranslation();
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
+    []
+  );
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +35,7 @@ const Achievements: React.FC = () => {
         setUserAchievements(userAchievementsData);
         setAllAchievements(allAchievementsData);
       } catch (err) {
-        setError("Failed to load achievements");
+        setError(t("achievements.errors.loadFailed"));
         console.error("Error fetching achievements:", err);
       } finally {
         setLoading(false);
@@ -45,16 +49,16 @@ const Achievements: React.FC = () => {
   useEffect(() => {
     if (!loading && window.location.hash) {
       const hash = window.location.hash.substring(1); // Remove #
-      if (hash.startsWith('achievement-')) {
-        const achievementId = hash.replace('achievement-', '');
+      if (hash.startsWith("achievement-")) {
+        const achievementId = hash.replace("achievement-", "");
         const element = document.getElementById(hash);
         if (element) {
           // Scroll to the achievement
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+
           // Highlight the achievement
           setHighlightedId(achievementId);
-          
+
           // Remove highlight after 3 seconds
           setTimeout(() => {
             setHighlightedId(null);
@@ -74,11 +78,11 @@ const Achievements: React.FC = () => {
     const element = document.getElementById(`achievement-${achievementId}`);
     if (element) {
       // Scroll to the achievement
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+
       // Highlight the achievement
       setHighlightedId(achievementId);
-      
+
       // Remove highlight after 3 seconds
       setTimeout(() => {
         setHighlightedId(null);
@@ -99,8 +103,18 @@ const Achievements: React.FC = () => {
               <Card>
                 <CardContent>
                   <Skeleton variant="text" width="60%" height={24} />
-                  <Skeleton variant="text" width="100%" height={16} sx={{ mt: 1 }} />
-                  <Skeleton variant="text" width="80%" height={16} sx={{ mt: 1 }} />
+                  <Skeleton
+                    variant="text"
+                    width="100%"
+                    height={16}
+                    sx={{ mt: 1 }}
+                  />
+                  <Skeleton
+                    variant="text"
+                    width="80%"
+                    height={16}
+                    sx={{ mt: 1 }}
+                  />
                 </CardContent>
               </Card>
             </Grid>
@@ -122,17 +136,24 @@ const Achievements: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Typography level="h2" sx={{ mb: 3 }}>
         <EmojiEvents sx={{ mr: 1 }} />
-        Achievements
+        {t("achievements.title")}
       </Typography>
 
       <Typography level="body-lg" sx={{ mb: 4, color: "text.secondary" }}>
-        Track your progress and unlock achievements as you explore the world of satellite data!
+        {t("achievements.subtitle")}
       </Typography>
 
       {userAchievements.length > 0 && (
-        <Box sx={{ mt: 4, p: 3, bgcolor: "background.surface", borderRadius: "lg" }}>
+        <Box
+          sx={{
+            mt: 4,
+            p: 3,
+            bgcolor: "background.surface",
+            borderRadius: "lg",
+          }}
+        >
           <Typography level="h3" sx={{ mb: 2 }}>
-            Recent Achievements
+            {t("achievements.recentAchievements")}
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
             {userAchievements.slice(0, 5).map((ua) => (
@@ -182,11 +203,13 @@ const Achievements: React.FC = () => {
                     animation: "highlight-pulse 1.5s ease-in-out 2",
                     "@keyframes highlight-pulse": {
                       "0%, 100%": {
-                        boxShadow: "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
+                        boxShadow:
+                          "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
                         transform: "scale(1)",
                       },
                       "50%": {
-                        boxShadow: "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
+                        boxShadow:
+                          "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
                         transform: "scale(1.02)",
                       },
                     },
@@ -209,7 +232,7 @@ const Achievements: React.FC = () => {
                           variant="soft"
                           startDecorator={<EmojiEvents />}
                         >
-                          Unlocked
+                          {t("achievements.unlocked")}
                         </Chip>
                       ) : (
                         <Chip
@@ -218,7 +241,7 @@ const Achievements: React.FC = () => {
                           variant="outlined"
                           startDecorator={<Lock />}
                         >
-                          Locked
+                          {t("achievements.locked")}
                         </Chip>
                       )}
                     </Box>
@@ -229,8 +252,12 @@ const Achievements: React.FC = () => {
                   </Typography>
 
                   {isUnlocked && unlockedAt && (
-                    <Typography level="body-xs" sx={{ color: "text.secondary" }}>
-                      Unlocked on {new Date(unlockedAt).toLocaleDateString()}
+                    <Typography
+                      level="body-xs"
+                      sx={{ color: "text.secondary" }}
+                    >
+                      {t("achievements.unlockedOn")}{" "}
+                      {new Date(unlockedAt).toLocaleDateString()}
                     </Typography>
                   )}
                 </CardContent>

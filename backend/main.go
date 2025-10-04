@@ -374,6 +374,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		public := api.Group("/")
 		{
 			public.GET("/settings/registration", handlers.GetRegistrationSettings)
+			public.GET("/translations", handlers.GetTranslations)
 		}
 	}
 
