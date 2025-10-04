@@ -39,7 +39,7 @@ export const detectBrowserLanguage = (): string => {
 };
 
 export const getSupportedLanguages = () => [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'en', name: 'English', flag: '🌍' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
   { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
 ];
