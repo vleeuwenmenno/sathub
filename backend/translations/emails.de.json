@@ -67,11 +67,11 @@
       "footerSettings": "Sie können Ihre Benachrichtigungseinstellungen in Ihren Kontoeinstellungen ändern."
     },
     "likeNotification": {
-      "subject": "Jemand hat Ihren Beitrag geliebt! - SatHub",
-      "title": "❤️ Jemand hat Ihren Beitrag geliebt!",
+      "subject": "Jemand hat Ihren Beitrag geliked! - SatHub",
+      "title": "❤️ Jemand hat Ihren Beitrag geliked!",
       "greeting": "Hallo",
-      "likeAlert": "Jemand hat einen Ihrer Beiträge geliebt!",
-      "likeInfo": "{{.LikerUsername}} hat Ihren Beitrag geliebt.",
+      "likeAlert": "Jemand hat einen Ihrer Beiträge geliked!",
+      "likeInfo": "{{.LikerUsername}} hat Ihren Beitrag geliked.",
       "checkItOut": "Schauen Sie es sich an und sehen Sie, was er/sie dachte!",
       "viewButton": "Beitrag ansehen",
       "regards": "Mit freundlichen Grüßen,",

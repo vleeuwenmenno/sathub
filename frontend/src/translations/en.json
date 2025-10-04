@@ -143,10 +143,22 @@
     "forgotPassword": {
       "title": "Reset Password",
       "subtitle": "Enter your email to receive reset instructions",
+      "formTitle": "Forgot Password",
+      "formSubtitle": "Enter your email address and we'll send you a link to reset your password.",
       "email": "Email Address",
       "submit": "Send Reset Link",
+      "sending": "Sending...",
       "backToLogin": "Back to Sign In",
-      "success": "If an account with that email exists, we've sent you a password reset link."
+      "success": "If an account with that email exists, we've sent you a password reset link.",
+      "successTitle": "Email Sent",
+      "checkEmailTitle": "Check Your Email",
+      "checkEmailSubtitle": "We've sent you a password reset link",
+      "successMessage": "If an account with that email exists, a password reset link has been sent.",
+      "tryAgain": "try again",
+      "didNotReceive": "Didn't receive the email? Check your spam folder or",
+      "backToLoginLink": "Back to Login",
+      "rememberPassword": "Remember your password?",
+      "loginLink": "Back to Login"
     },
     "resetPassword": {
       "title": "Set New Password",
@@ -154,10 +166,21 @@
       "password": "New Password",
       "confirmPassword": "Confirm New Password",
       "submit": "Update Password",
+      "invalidLinkTitle": "Invalid Reset Link",
+      "invalidLinkMessage": "This password reset link is invalid or has expired.",
+      "requestNewLink": "Please request a new password reset link.",
+      "requestNewLinkButton": "Request New Reset Link",
+      "backToLogin": "Back to Login",
+      "successTitle": "Password Reset Successful",
+      "successMessage": "Your password has been successfully reset. You can now log in with your new password.",
+      "redirecting": "Redirecting to login page...",
+      "goToLogin": "Go to Login",
       "errors": {
         "tokenExpired": "This reset link has expired",
         "tokenInvalid": "This reset link is invalid",
-        "passwordMismatch": "Passwords do not match"
+        "passwordMismatch": "Passwords do not match",
+        "passwordTooShort": "Password must be at least 6 characters long",
+        "failed": "Failed to reset password"
       }
     }
   },
@@ -171,7 +194,17 @@
     "profile": "Profile",
     "notifications": "Notifications",
     "help": "Help",
-    "logout": "Logout"
+    "logout": "Logout",
+    "overview": "Overview",
+    "achievements": "Achievements",
+    "adminPanel": "Admin Panel",
+    "viewProfile": "View Profile",
+    "settingsSection": "Settings"
+  },
+  "dashboard": {
+    "recentPosts": "Recent Posts",
+    "loginToBrowse": "Please login to browse further.",
+    "noPosts": "No posts available yet."
   },
   "stations": {
     "title": "Ground Stations",

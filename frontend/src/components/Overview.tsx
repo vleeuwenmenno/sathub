@@ -15,6 +15,7 @@ import { getLatestPosts, getPostImageUrl } from "../api";
 import PaginationControls from "./PaginationControls";
 import { useAuth } from "../contexts/AuthContext";
 import LikeButton from "./LikeButton";
+import { useTranslation } from '../contexts/TranslationContext';
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -32,6 +33,7 @@ const Overview: React.FC = () => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
@@ -50,7 +52,7 @@ const Overview: React.FC = () => {
   return (
     <Box sx={{ py: { xs: 1, md: 2 }, px: 0, maxWidth: "1400px", mx: "auto" }}>
       <Typography level="h2" sx={{ mb: 3, textAlign: "center" }}>
-        Recent Posts
+        {t('dashboard.recentPosts')}
       </Typography>
 
       {!loading && posts && posts.length > 0 && isAuthenticated && (
@@ -161,7 +163,7 @@ const Overview: React.FC = () => {
       {!loading && posts && posts.length > 0 && !isAuthenticated && (
         <Box sx={{ mt: 3, textAlign: "center" }}>
           <Alert color="primary" variant="soft">
-            Please login to browse further.
+            {t('dashboard.loginToBrowse')}
           </Alert>
         </Box>
       )}
@@ -169,7 +171,7 @@ const Overview: React.FC = () => {
       {!loading && (!posts || posts.length === 0) && (
         <Box sx={{ textAlign: "center", py: 4 }}>
           <Alert color="neutral" variant="soft">
-            No posts available yet.
+            {t('dashboard.noPosts')}
           </Alert>
         </Box>
       )}

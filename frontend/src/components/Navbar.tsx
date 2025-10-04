@@ -310,29 +310,29 @@ const Navbar: React.FC = () => {
               <Menu sx={{ minWidth: 180 }}>
                 <MenuItem onClick={() => handleNavigate(`/user/${user?.id}`)}>
                   <Person sx={{ mr: 1 }} />
-                  Overview
+                  {t('navigation.overview')}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/achievements")}>
                   <EmojiEvents sx={{ mr: 1 }} />
-                  Achievements
+                  {t('navigation.achievements')}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigate("/user/settings")}>
                   <Settings sx={{ mr: 1 }} />
-                  Settings
+                  {t('navigation.settings')}
                 </MenuItem>
                 {user?.role === "admin" && (
                   <>
                     <Divider />
                     <MenuItem onClick={() => handleNavigate("/admin")}>
                       <AdminPanelSettings sx={{ mr: 1 }} />
-                      Admin Panel
+                      {t('navigation.adminPanel')}
                     </MenuItem>
                   </>
                 )}
                 <Divider />
                 <MenuItem onClick={handleLogout}>
                   <Logout sx={{ mr: 1 }} />
-                  Logout
+                  {t('navigation.logout')}
                 </MenuItem>
               </Menu>
             </Dropdown>
@@ -454,7 +454,7 @@ const Navbar: React.FC = () => {
           {/* Settings Section */}
           <Divider sx={{ mb: 2 }} />
           <Typography level="body-sm" sx={{ mb: 1, px: 2, fontWeight: "bold" }}>
-            Settings
+            {t('navigation.settingsSection')}
           </Typography>
           <Box sx={{ display: "flex", gap: 1, px: 2, mb: 2 }}>
             <Dropdown>
@@ -548,7 +548,7 @@ const Navbar: React.FC = () => {
                           {user?.display_name || user?.username}
                         </Typography>
                         <Typography level="body-xs" sx={{ color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          View Profile
+                          {t('navigation.viewProfile')}
                         </Typography>
                       </Box>
                     </ListItemButton>
@@ -566,7 +566,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <EmojiEvents />
                       </ListItemDecorator>
-                      Achievements
+                      {t('navigation.achievements')}
                     </ListItemButton>
                   </ListItem>
                   <ListItem>
@@ -582,7 +582,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <Settings />
                       </ListItemDecorator>
-                      Settings
+                      {t('navigation.settings')}
                     </ListItemButton>
                   </ListItem>
                   <ListItem>
@@ -599,7 +599,7 @@ const Navbar: React.FC = () => {
                       <ListItemDecorator>
                         <Logout />
                       </ListItemDecorator>
-                      Logout
+                      {t('navigation.logout')}
                     </ListItemButton>
                   </ListItem>
                 </List>

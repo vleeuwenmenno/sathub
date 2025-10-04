@@ -140,6 +140,49 @@
         "captchaRequired": "Bitte vervollständigen Sie das Captcha",
         "registrationFailed": "Registrierung fehlgeschlagen"
       }
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Geben Sie Ihre E-Mail ein, um Anweisungen zum Zurücksetzen zu erhalten",
+      "formTitle": "Passwort vergessen",
+      "formSubtitle": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.",
+      "email": "E-Mail-Adresse",
+      "submit": "Reset-Link senden",
+      "sending": "Wird gesendet...",
+      "backToLogin": "Zurück zur Anmeldung",
+      "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen einen Link zum Zurücksetzen des Passworts gesendet.",
+      "successTitle": "E-Mail gesendet",
+      "checkEmailTitle": "Überprüfen Sie Ihre E-Mail",
+      "checkEmailSubtitle": "Wir haben Ihnen einen Link zum Zurücksetzen des Passworts gesendet",
+      "successMessage": "Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen des Passworts gesendet.",
+      "tryAgain": "Erneut versuchen",
+      "didNotReceive": "E-Mail nicht erhalten? Überprüfen Sie Ihren Spam-Ordner oder",
+      "backToLoginLink": "Zurück zur Anmeldung",
+      "rememberPassword": "Passwort wieder gefunden?",
+      "loginLink": "Zurück zur Anmeldung"
+    },
+    "resetPassword": {
+      "title": "Neues Passwort festlegen",
+      "subtitle": "Geben Sie Ihr neues Passwort unten ein",
+      "password": "Neues Passwort",
+      "confirmPassword": "Neues Passwort bestätigen",
+      "submit": "Passwort aktualisieren",
+      "invalidLinkTitle": "Ungültiger Reset-Link",
+      "invalidLinkMessage": "Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.",
+      "requestNewLink": "Bitte fordern Sie einen neuen Link zum Zurücksetzen des Passworts an.",
+      "requestNewLinkButton": "Neuen Reset-Link anfordern",
+      "backToLogin": "Zurück zur Anmeldung",
+      "successTitle": "Passwort-Reset erfolgreich",
+      "successMessage": "Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
+      "redirecting": "Weiterleitung zur Anmeldeseite...",
+      "goToLogin": "Zur Anmeldung gehen",
+      "errors": {
+        "tokenExpired": "Dieser Reset-Link ist abgelaufen",
+        "tokenInvalid": "Dieser Reset-Link ist ungültig",
+        "passwordMismatch": "Passwörter stimmen nicht überein",
+        "passwordTooShort": "Passwort muss mindestens 6 Zeichen lang sein",
+        "failed": "Fehler beim Zurücksetzen des Passworts"
+      }
     }
   },
   "navigation": {
@@ -152,7 +195,17 @@
     "profile": "Profil",
     "notifications": "Benachrichtigungen",
     "help": "Hilfe",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "overview": "Übersicht",
+    "achievements": "Erfolge",
+    "adminPanel": "Admin-Bereich",
+    "viewProfile": "Profil anzeigen",
+    "settingsSection": "Einstellungen"
+  },
+  "dashboard": {
+    "recentPosts": "Aktuelle Beiträge",
+    "loginToBrowse": "Bitte melden Sie sich an, um weiter zu stöbern.",
+    "noPosts": "Noch keine Beiträge verfügbar."
   },
   "stations": {
     "title": "Bodenstationen",
