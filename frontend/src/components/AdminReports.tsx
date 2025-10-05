@@ -51,12 +51,22 @@ const AdminReports: React.FC = () => {
   const { t, language, isLoading: translationsLoading } = useTranslation();
   const componentRef = useRef<HTMLDivElement>(null);
 
-  // Filters
-  const [filters, setFilters] = useState({
+  // Filters - current filter values (what user is typing)
+  const [currentFilters, setCurrentFilters] = useState({
     status: "",
     target_type: "",
     target_id: "",
     user_id: "",
+    reporter_username: "",
+  });
+
+  // Applied filters - what is actually sent to API
+  const [appliedFilters, setAppliedFilters] = useState({
+    status: "",
+    target_type: "",
+    target_id: "",
+    user_id: "",
+    reporter_username: "",
   });
 
   const [showFilters, setShowFilters] = useState(false);
@@ -67,12 +77,13 @@ const AdminReports: React.FC = () => {
     null
   );
 
-  const fetchReports = async () => {
+  const fetchReports = async (filtersOverride?: typeof appliedFilters) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response: ReportsResponse = await getReports(page, limit, filters);
+      const searchFilters = filtersOverride || appliedFilters;
+      const response: ReportsResponse = await getReports(page, limit, searchFilters);
       setReports(response.reports);
       setTotalPages(response.pagination.pages);
       setTotal(response.pagination.total);
@@ -86,7 +97,13 @@ const AdminReports: React.FC = () => {
 
   useEffect(() => {
     fetchReports();
-  }, [page, filters]);
+  }, [page]);
+
+  const handleSearch = () => {
+    setAppliedFilters(currentFilters);
+    setPage(1);
+    fetchReports(currentFilters);
+  };
 
   // Check for reportId URL parameter and open details modal
   useEffect(() => {
@@ -124,18 +141,21 @@ const AdminReports: React.FC = () => {
   }, [actionMenuOpen]);
 
   const handleFilterChange = (field: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-    setPage(1); // Reset to first page when filters change
+    setCurrentFilters((prev) => ({ ...prev, [field]: value }));
   };
 
   const clearFilters = () => {
-    setFilters({
+    const emptyFilters = {
       status: "",
       target_type: "",
       target_id: "",
       user_id: "",
-    });
+      reporter_username: "",
+    };
+    setCurrentFilters(emptyFilters); // Clear input fields visually
+    setAppliedFilters(emptyFilters);
     setPage(1);
+    fetchReports(emptyFilters); // Reload table immediately with cleared filters
   };
 
   const getStatusColor = (status: string) => {
@@ -285,7 +305,7 @@ const AdminReports: React.FC = () => {
           <IconButton onClick={() => setShowFilters(!showFilters)}>
             <FilterListIcon />
           </IconButton>
-          <IconButton onClick={fetchReports} disabled={loading}>
+          <IconButton onClick={() => fetchReports()} disabled={loading}>
             <RefreshIcon />
           </IconButton>
         </Stack>
@@ -310,7 +330,7 @@ const AdminReports: React.FC = () => {
             <FormControl size="sm" sx={{ minWidth: 150 }}>
               <FormLabel>{t("admin.reports.status")}</FormLabel>
               <Select
-                value={filters.status}
+                value={currentFilters.status}
                 onChange={(_, value) =>
                   handleFilterChange("status", value as string)
                 }
@@ -334,7 +354,7 @@ const AdminReports: React.FC = () => {
             <FormControl size="sm" sx={{ minWidth: 150 }}>
               <FormLabel>{t("admin.reports.targetType")}</FormLabel>
               <Select
-                value={filters.target_type}
+                value={currentFilters.target_type}
                 onChange={(_, value) =>
                   handleFilterChange("target_type", value as string)
                 }
@@ -355,7 +375,7 @@ const AdminReports: React.FC = () => {
               <FormLabel>{t("admin.reports.targetId")}</FormLabel>
               <Input
                 placeholder={t("admin.reports.targetIdPlaceholder")}
-                value={filters.target_id}
+                value={currentFilters.target_id}
                 onChange={(e) =>
                   handleFilterChange("target_id", e.target.value)
                 }
@@ -366,21 +386,41 @@ const AdminReports: React.FC = () => {
               <FormLabel>{t("admin.reports.userId")}</FormLabel>
               <Input
                 placeholder={t("admin.reports.reporterUserId")}
-                value={filters.user_id}
+                value={currentFilters.user_id}
                 onChange={(e) => handleFilterChange("user_id", e.target.value)}
               />
             </FormControl>
 
-            <Button
-              variant="outlined"
-              color="neutral"
-              onClick={clearFilters}
-              startDecorator={<ClearIcon />}
-              size="sm"
-              sx={{ alignSelf: "flex-end" }}
-            >
-              {t("admin.reports.clear")}
-            </Button>
+            <FormControl size="sm" sx={{ minWidth: 200 }}>
+              <FormLabel>{t("admin.reports.reporterUsername")}</FormLabel>
+              <Input
+                placeholder={t("admin.reports.reporterUsernamePlaceholder")}
+                value={currentFilters.reporter_username}
+                onChange={(e) => handleFilterChange("reporter_username", e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </FormControl>
+
+
+            <Stack direction="row" spacing={1} sx={{ alignSelf: "flex-end" }}>
+              <Button
+                variant="solid"
+                color="primary"
+                onClick={handleSearch}
+                size="sm"
+              >
+                {t("admin.reports.search")}
+              </Button>
+              <Button
+                variant="outlined"
+                color="neutral"
+                onClick={clearFilters}
+                startDecorator={<ClearIcon />}
+                size="sm"
+              >
+                {t("admin.reports.clear")}
+              </Button>
+            </Stack>
           </Stack>
         </Card>
       )}

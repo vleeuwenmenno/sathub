@@ -208,6 +208,7 @@ func GetReports(c *gin.Context) {
 	targetType := c.Query("target_type")
 	targetID := c.Query("target_id")
 	userID := c.Query("user_id")
+	reporterUsername := c.Query("reporter_username")
 
 	if pageStr := c.Query("page"); pageStr != "" {
 		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
@@ -238,11 +239,31 @@ func GetReports(c *gin.Context) {
 		query = query.Where("target_type = ?", targetType)
 	}
 	if targetID != "" {
-		query = query.Where("target_id = ?", targetID)
+		// Try to parse as UUID first
+		if targetUUID, err := uuid.Parse(targetID); err == nil {
+			// It's a valid UUID, search exactly
+			query = query.Where("target_id = ?", targetUUID)
+		} else {
+			// Not a valid UUID, search by partial string (for user convenience)
+			query = query.Where("target_id::text LIKE ?", targetID+"%")
+		}
 	}
 	if userID != "" {
-		query = query.Where("user_id = ?", userID)
+		// Try to parse as UUID first
+		if userUUID, err := uuid.Parse(userID); err == nil {
+			// It's a valid UUID, search exactly
+			query = query.Where("user_id = ?", userUUID)
+		} else {
+			// Not a valid UUID, search by partial UUID string (for user convenience)
+			query = query.Where("user_id::text LIKE ?", userID+"%")
+		}
 	}
+	if reporterUsername != "" {
+		searchTerm := "%" + reporterUsername + "%"
+		query = query.Joins("JOIN users ON reports.user_id = users.id").Where("users.username ILIKE ?", searchTerm)
+	}
+	// Note: target_username search is not implemented yet due to complexity of target ownership across different types
+	// Users can search by target UUID using target_id field
 
 	// Get total count
 	var total int64

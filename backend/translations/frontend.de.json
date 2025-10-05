@@ -510,11 +510,11 @@
       "filters": "Filter",
       "status": "Status",
       "targetType": "Zieltyp",
-      "targetId": "Ziel-ID",
-      "userId": "Benutzer-ID",
+      "targetId": "Ziel-UUID",
+      "userId": "Benutzer-UUID",
       "allStatuses": "Alle Status",
       "allTypes": "Alle Typen",
-      "reporterUserId": "Meldender Benutzer-ID",
+      "reporterUserId": "Meldender Benutzer-UUID",
       "clear": "Löschen",
       "showingReports": "{{count}} von {{total}} Meldungen werden angezeigt",
       "created": "Erstellt",
@@ -539,7 +539,7 @@
       "errorLoading": "Fehler beim Laden der Meldungen",
       "errorUpdating": "Fehler beim Aktualisieren des Meldungsstatus",
       "errorDeleting": "Fehler beim Löschen der Meldung",
-      "targetIdPlaceholder": "Ziel-ID",
+      "targetIdPlaceholder": "Ziel-UUID",
       "statusPending": "Ausstehend",
       "statusReviewed": "Überprüft",
       "statusResolved": "Gelöst",
@@ -548,7 +548,12 @@
       "typeStation": "Station",
       "typeUser": "Benutzer",
       "typeComment": "Kommentar",
-      "reportContent": "Meldungsinhalt"
+      "reportContent": "Meldungsinhalt",
+      "reporterUsername": "Benutzername des Meldenden",
+      "reporterUsernamePlaceholder": "Nach Benutzername des Meldenden suchen",
+      "targetUsername": "Benutzername des Ziels",
+      "targetUsernamePlaceholder": "Nach Benutzername des Ziels suchen",
+      "search": "Suchen"
     }
   },
   "success": {

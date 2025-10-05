@@ -493,11 +493,11 @@
       "filters": "Filters",
       "status": "Status",
       "targetType": "Target Type",
-      "targetId": "Target ID",
-      "userId": "User ID",
+      "targetId": "Target UUID",
+      "userId": "User UUID",
       "allStatuses": "All Statuses",
       "allTypes": "All Types",
-      "reporterUserId": "Reporter User ID",
+      "reporterUserId": "Reporter User UUID",
       "clear": "Clear",
       "showingReports": "Showing {{count}} of {{total}} reports",
       "created": "Created",
@@ -523,7 +523,7 @@
       "errorLoading": "Failed to load reports",
       "errorUpdating": "Failed to update report status",
       "errorDeleting": "Failed to delete report",
-      "targetIdPlaceholder": "Target ID",
+      "targetIdPlaceholder": "Target UUID",
       "statusPending": "Pending",
       "statusReviewed": "Reviewed",
       "statusResolved": "Resolved",
@@ -532,7 +532,12 @@
       "typeStation": "Station",
       "typeUser": "User",
       "typeComment": "Comment",
-      "reportContent": "Report Content"
+      "reportContent": "Report Content",
+      "reporterUsername": "Reporter Username",
+      "reporterUsernamePlaceholder": "Search by reporter username",
+      "targetUsername": "Target Username",
+      "targetUsernamePlaceholder": "Search by target username",
+      "search": "Search"
     }
   },
   "reports": {

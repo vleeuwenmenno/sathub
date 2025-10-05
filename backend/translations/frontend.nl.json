@@ -493,11 +493,11 @@
       "filters": "Filters",
       "status": "Status",
       "targetType": "Doeltype",
-      "targetId": "Doel-ID",
-      "userId": "Gebruikers-ID",
+      "targetId": "Doel-UUID",
+      "userId": "Gebruikers-UUID",
       "allStatuses": "Alle statussen",
       "allTypes": "Alle typen",
-      "reporterUserId": "Melder gebruikers-ID",
+      "reporterUserId": "Melder gebruikers-UUID",
       "clear": "Wissen",
       "showingReports": "{{count}} van {{total}} meldingen weergeven",
       "created": "Aangemaakt",
@@ -522,7 +522,7 @@
       "errorLoading": "Fout bij laden meldingen",
       "errorUpdating": "Fout bij bijwerken meldingsstatus",
       "errorDeleting": "Fout bij verwijderen melding",
-      "targetIdPlaceholder": "Doel-ID",
+      "targetIdPlaceholder": "Doel-UUID",
       "statusPending": "In afwachting",
       "statusReviewed": "Beoordeeld",
       "statusResolved": "Opgelost",
@@ -531,7 +531,12 @@
       "typeStation": "Station",
       "typeUser": "Gebruiker",
       "typeComment": "Reactie",
-      "reportContent": "Meldingsinhoud"
+      "reportContent": "Meldingsinhoud",
+      "reporterUsername": "Gebruikersnaam melder",
+      "reporterUsernamePlaceholder": "Zoeken op gebruikersnaam melder",
+      "targetUsername": "Gebruikersnaam doel",
+      "targetUsernamePlaceholder": "Zoeken op gebruikersnaam doel",
+      "search": "Zoeken"
     }
   },
   "reports": {
