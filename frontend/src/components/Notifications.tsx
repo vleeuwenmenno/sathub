@@ -19,6 +19,7 @@ import {
   Favorite,
   CheckCircle,
   OpenInNew,
+  Report,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
@@ -121,6 +122,9 @@ const Notifications: React.FC = () => {
         case "like":
           navigate(`/post/${notification.related_id}`);
           break;
+        case "report":
+          navigate(`/admin/reports?reportId=${notification.related_id}`);
+          break;
         default:
           // No navigation for unknown types
           break;
@@ -145,6 +149,8 @@ const Notifications: React.FC = () => {
         return <Comment color="info" />;
       case "like":
         return <Favorite color="error" />;
+      case "report":
+        return <Report color="warning" />;
       case "test":
         return <NotificationsIcon color="warning" />;
       default:

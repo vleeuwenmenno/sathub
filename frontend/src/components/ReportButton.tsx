@@ -67,12 +67,6 @@ const ReportButton: React.FC<ReportButtonProps> = ({
       setSuccess(true);
       setTitle('');
       setMessage('');
-
-      // Close modal after a short delay
-      setTimeout(() => {
-        setOpen(false);
-        setSuccess(false);
-      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('reports.submitError'));
     } finally {
@@ -112,7 +106,7 @@ const ReportButton: React.FC<ReportButtonProps> = ({
       </Button>
 
       <Modal open={open} onClose={handleClose}>
-        <ModalDialog>
+        <ModalDialog size="lg" sx={{ minWidth: { xs: '95vw', sm: '80vw', md: 800 }, maxWidth: 800 }}>
           <ModalClose />
           <Typography level="h4">{t('reports.reportModalTitle', { type: targetType.charAt(0).toUpperCase() + targetType.slice(1) })}</Typography>
 
