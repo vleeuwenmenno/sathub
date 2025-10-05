@@ -570,8 +570,7 @@
     "titlePlaceholder": "Korte titel voor de melding",
     "messagePlaceholder": "Beschrijf het probleem in detail...",
     "cancel": "Annuleren",
-    "submitting": "Bezig met verzenden...",
-    "submitReport": "Melding verzenden"
+    "submitting": "Bezig met verzenden..."
   },
   "errors": {
     "generic": "Er is iets misgegaan. Probeer het opnieuw.",

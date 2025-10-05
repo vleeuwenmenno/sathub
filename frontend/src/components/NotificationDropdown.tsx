@@ -150,7 +150,7 @@ const NotificationDropdown: React.FC = () => {
         case "like":
           navigate(`/post/${notification.related_id}`);
           break;
-        case 'report':
+        case "report":
           // Navigate to admin reports page with specific report ID
           navigate(`/admin/reports?reportId=${notification.related_id}`);
           break;
@@ -176,7 +176,7 @@ const NotificationDropdown: React.FC = () => {
         return <Comment color="info" />;
       case "like":
         return <Favorite color="error" />;
-      case 'report':
+      case "report":
         return <Notifications color="warning" />;
       default:
         return <Notifications />;
@@ -198,6 +198,14 @@ const NotificationDropdown: React.FC = () => {
   const formatNotificationMessage = (message: string) => {
     if (message.startsWith("achievement_unlocked:")) {
       const achievementKey = message.substring("achievement_unlocked:".length);
+      // Extract achievement slug from key like "achievements.welcomeAboard.name"
+      const parts = achievementKey.split(".");
+      if (parts.length >= 3 && parts[0] === "achievements" && parts[2] === "name") {
+        const achievementSlug = parts[1];
+        const achievementName = t(`achievementData.${achievementSlug}.name`);
+        return `You unlocked the achievement: ${achievementName}`;
+      }
+      // Fallback to trying the key directly
       const achievementName = t(achievementKey);
       return `You unlocked the achievement: ${achievementName}`;
     }

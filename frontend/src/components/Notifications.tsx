@@ -31,8 +31,8 @@ import {
 import type { Notification, NotificationResponse } from "../types";
 
 const Notifications: React.FC = () => {
-  const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -173,6 +173,14 @@ const Notifications: React.FC = () => {
   const formatNotificationMessage = (message: string) => {
     if (message.startsWith("achievement_unlocked:")) {
       const achievementKey = message.substring("achievement_unlocked:".length);
+      // Extract achievement slug from key like "achievements.welcomeAboard.name"
+      const parts = achievementKey.split(".");
+      if (parts.length >= 3 && parts[0] === "achievements" && parts[2] === "name") {
+        const achievementSlug = parts[1];
+        const achievementName = t(`achievementData.${achievementSlug}.name`);
+        return `You unlocked the achievement: ${achievementName}`;
+      }
+      // Fallback to trying the key directly
       const achievementName = t(achievementKey);
       return `You unlocked the achievement: ${achievementName}`;
     }
