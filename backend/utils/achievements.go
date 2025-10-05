@@ -325,12 +325,84 @@ func GetUserAchievements(userID uuid.UUID) ([]models.UserAchievement, error) {
 	return userAchievements, err
 }
 
-// GetAllAchievements returns all available achievements
+// GetAllAchievements returns all available achievements (excluding hidden ones)
 func GetAllAchievements() ([]models.Achievement, error) {
 	db := config.GetDB()
 
 	var achievements []models.Achievement
-	err := db.Order("name_key").Find(&achievements).Error
+	err := db.Where("is_hidden = ?", false).Order("name_key").Find(&achievements).Error
 
 	return achievements, err
+}
+
+// UnlockAchievement manually unlocks an achievement for a user
+func UnlockAchievement(userID uuid.UUID, achievementNameKey string) error {
+	db := config.GetDB()
+
+	// Find the achievement
+	var achievement models.Achievement
+	if err := db.Where("name_key = ?", achievementNameKey).First(&achievement).Error; err != nil {
+		return err
+	}
+
+	// Check if user already has this achievement
+	var existing models.UserAchievement
+	if err := db.Where("user_id = ? AND achievement_id = ?", userID, achievement.ID).First(&existing).Error; err == nil {
+		// User already has this achievement
+		return nil
+	}
+
+	// Award the achievement
+	userAchievement := models.UserAchievement{
+		UserID:        userID,
+		AchievementID: achievement.ID,
+		UnlockedAt:    time.Now(),
+	}
+
+	if err := db.Create(&userAchievement).Error; err != nil {
+		return err
+	}
+
+	// Log the achievement unlock for audit purposes
+	if err := LogAchievementUnlock(userID, achievement.ID, achievement.NameKey); err != nil {
+		Logger.Error().Err(err).Str("achievement", achievement.NameKey).Msg("Failed to log achievement unlock")
+	}
+
+	// Create notification for the achievement
+	notification := models.Notification{
+		UserID:    userID,
+		Type:      "achievement",
+		Message:   "achievement_unlocked:" + achievement.NameKey,
+		RelatedID: achievement.ID.String(),
+		IsRead:    false,
+	}
+
+	if err := db.Create(&notification).Error; err != nil {
+		Logger.Error().Err(err).Str("achievement", achievement.NameKey).Msg("Failed to create notification for achievement")
+	}
+
+	// Get user for email notifications
+	var user models.User
+	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
+		Logger.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to fetch user for achievement notification")
+		return err
+	}
+
+	// Send email notification if user has email notifications enabled
+	if user.EmailNotifications {
+		// Translate achievement name and description for email
+		achievementName, achievementDesc, err := TranslateAchievement(achievement.NameKey, achievement.DescriptionKey, user.Language)
+		if err != nil {
+			Logger.Error().Err(err).Str("achievement_id", achievement.ID.String()).Msg("Failed to translate achievement for email, using keys as fallback")
+			achievementName = achievement.NameKey
+			achievementDesc = achievement.DescriptionKey
+		}
+		go func() {
+			if err := SendAchievementNotificationEmail(user.Email.String, user.Username, achievementName, achievementDesc, user.Language); err != nil {
+				Logger.Error().Err(err).Msg("Failed to send achievement email notification")
+			}
+		}()
+	}
+
+	return nil
 }

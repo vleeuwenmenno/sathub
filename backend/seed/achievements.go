@@ -174,6 +174,13 @@ func seedAchievements() error {
 			Icon:           "👑",
 			Criteria:       `{"type": "station_uptime_percent", "period_days": 30, "uptime_percent": 95}`,
 		},
+		{
+			NameKey:        "achievements.easterEgg.name",
+			DescriptionKey: "achievements.easterEgg.description",
+			Icon:           "🐱",
+			Criteria:       `{"type": "manual"}`, // This is a manually unlocked achievement
+			IsHidden:       true,
+		},
 	}
 
 	for _, achievement := range achievements {

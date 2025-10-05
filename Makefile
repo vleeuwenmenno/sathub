@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs clean seed build ps exec-backend exec-frontend exec-postgres shell-backend shell-frontend shell-postgres db-console dev prod stop-all cycle
+.PHONY: help up down restart logs clean seed migrate build ps exec-backend exec-frontend exec-postgres shell-backend shell-frontend shell-postgres db-console dev prod stop-all cycle
 
 # Default target
 help:
@@ -21,6 +21,7 @@ help:
 	@echo ""
 	@echo "Database:"
 	@echo "  make seed        - Reset and seed the database (requires backend running)"
+	@echo "  make migrate     - Run database migrations"
 	@echo "  make db-console  - Connect to PostgreSQL database console"
 	@echo ""
 	@echo "Maintenance:"
@@ -88,6 +89,10 @@ seed:
 	@echo "Seeding database..."
 	docker compose exec backend go run ./cmd/seed
 
+migrate:
+	@echo "Running database migrations..."
+	docker compose up migrate
+
 db-console:
 	@echo "Connecting to PostgreSQL database..."
 	docker compose exec postgres psql -U sathub -d sathub
@@ -104,13 +109,14 @@ shell-postgres:
 
 # Maintenance commands
 clean:
-	@echo "WARNING: This will remove all containers, volumes, and data!"
+	@echo "WARNING: This will remove all containers, volumes, and data (except Caddy certificates)!"
 	@printf "Are you sure? [y/N] "; \
 	read REPLY; \
 	case "$$REPLY" in \
 		[Yy]*) \
-			docker compose down -v --remove-orphans; \
-			echo "Cleanup complete!" ;; \
+			docker compose down --remove-orphans; \
+			docker volume rm development-sathub_postgres_data development-sathub_mailpit_data development-sathub_minio_data 2>/dev/null || true; \
+			echo "Cleanup complete! (Caddy volumes preserved)" ;; \
 		*) \
 			echo "Cleanup cancelled." ;; \
 	esac

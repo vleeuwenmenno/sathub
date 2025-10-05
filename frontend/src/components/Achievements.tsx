@@ -73,6 +73,14 @@ const Achievements: React.FC = () => {
     userAchievements.map((ua) => [ua.achievement.id, ua.unlocked_at])
   );
 
+  // Combine visible achievements with unlocked hidden achievements
+  const displayAchievements = [
+    ...allAchievements,
+    ...userAchievements
+      .filter((ua) => !allAchievements.some((a) => a.id === ua.achievement.id))
+      .map((ua) => ua.achievement),
+  ];
+
   // Handler to scroll to and highlight an achievement
   const handleAchievementClick = (achievementId: string) => {
     const element = document.getElementById(`achievement-${achievementId}`);
@@ -180,7 +188,7 @@ const Achievements: React.FC = () => {
       )}
 
       <Grid container spacing={3} sx={{ mt: 3 }}>
-        {allAchievements.map((achievement) => {
+        {displayAchievements.map((achievement) => {
           const isUnlocked = unlockedMap.has(achievement.id);
           const unlockedAt = unlockedMap.get(achievement.id);
 

@@ -316,6 +316,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		{
 			achievements.GET("", handlers.GetUserAchievements)
 			achievements.GET("/all", handlers.GetAllAchievements)
+			achievements.POST("/unlock-easter-egg", handlers.UnlockEasterEggAchievement)
 		}
 
 		// Notification routes (user authentication required)

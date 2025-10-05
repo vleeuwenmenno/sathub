@@ -118,3 +118,27 @@ func GetAllAchievements(c *gin.Context) {
 
 	utils.SuccessResponse(c, http.StatusOK, "Achievements retrieved successfully", response)
 }
+
+// UnlockEasterEggAchievement handles unlocking the easter egg achievement for the current user
+func UnlockEasterEggAchievement(c *gin.Context) {
+	userIDStr, exists := middleware.GetCurrentUserID(c)
+	if !exists {
+		utils.UnauthorizedResponse(c, "User not authenticated")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Invalid user ID")
+		return
+	}
+
+	// Only allow unlocking the easter egg achievement
+	easterEggNameKey := "achievements.easterEgg.name"
+	if err := utils.UnlockAchievement(userID, easterEggNameKey); err != nil {
+		utils.InternalErrorResponse(c, "Failed to unlock easter egg achievement")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Easter egg achievement unlocked successfully", nil)
+}

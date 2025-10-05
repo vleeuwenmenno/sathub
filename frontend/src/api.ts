@@ -845,6 +845,10 @@ export const getAllAchievements = async (): Promise<Achievement[]> => {
   return res.data.data;
 };
 
+export const unlockEasterEggAchievement = async (): Promise<void> => {
+  await api.post("/achievements/unlock-easter-egg");
+};
+
 // Notification API functions
 export const getNotifications = async (
   page: number = 1,
@@ -1000,13 +1004,15 @@ export interface ReportsResponse {
 }
 
 export interface CreateReportRequest {
-  target_type: 'post' | 'station' | 'user' | 'comment';
+  target_type: "post" | "station" | "user" | "comment";
   target_id: string;
   title: string;
   message: string;
 }
 
-export const createReport = async (reportData: CreateReportRequest): Promise<{ id: string }> => {
+export const createReport = async (
+  reportData: CreateReportRequest
+): Promise<{ id: string }> => {
   const res = await api.post("/reports", reportData);
   return res.data.data;
 };
@@ -1035,7 +1041,10 @@ export const getReports = async (
   return res.data.data;
 };
 
-export const updateReportStatus = async (reportId: string, status: string): Promise<void> => {
+export const updateReportStatus = async (
+  reportId: string,
+  status: string
+): Promise<void> => {
   await api.put(`/admin/reports/${reportId}/status`, { status });
 };
 

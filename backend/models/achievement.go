@@ -12,6 +12,7 @@ type Achievement struct {
 	DescriptionKey string    `gorm:"not null" json:"description_key"`
 	Icon           string    `gorm:"not null" json:"icon"`               // Emoji or icon name
 	Criteria       string    `gorm:"type:json;not null" json:"criteria"` // JSON string with conditions
+	IsHidden       bool      `gorm:"default:false" json:"is_hidden"`     // Whether this achievement is hidden until unlocked
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

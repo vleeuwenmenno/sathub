@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import fartSound from "../assets/Quick Reverb Fart - Sound Effect (HD).mp3";
+import { unlockEasterEggAchievement } from "../api";
 
 interface EasterEggContextType {
   showEasterEgg: boolean;
@@ -29,11 +30,19 @@ export const EasterEggProvider: React.FC<EasterEggProviderProps> = ({
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const fartAudioRef = useRef<HTMLAudioElement>(null);
 
-  const playFartSound = () => {
+  const playFartSound = async () => {
     if (fartAudioRef.current) {
+      fartAudioRef.current.volume = 0.1;
       fartAudioRef.current.play().catch((error) => {
         console.log("Fart sound play failed:", error);
       });
+    }
+
+    // Unlock the easter egg achievement
+    try {
+      await unlockEasterEggAchievement();
+    } catch (error) {
+      console.error("Failed to unlock easter egg achievement:", error);
     }
   };
 
@@ -42,8 +51,10 @@ export const EasterEggProvider: React.FC<EasterEggProviderProps> = ({
     // Auto hide after 10 seconds
     setTimeout(() => {
       playFartSound();
+    }, 7800);
+    setTimeout(() => {
       setShowEasterEgg(false);
-    }, 10000);
+    }, 8000);
   };
 
   return (
