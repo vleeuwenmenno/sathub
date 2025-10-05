@@ -48,6 +48,7 @@
         padding: 10px 15px;
         margin: 15px 0;
         font-style: italic;
+        white-space: pre-wrap;
       }
       .action-button {
         display: inline-block;
@@ -77,21 +78,23 @@
 
       <div class="report-details">
         <div class="report-field">
-          <span class="report-label">{{.t.emails.reportNotification.reporterInfo}}</span>
+          <span class="report-label">{{.t.emails.reportNotification.reporterLabel}}</span>
+          <span class="report-value">{{.ReporterUsername}}</span>
         </div>
         <div class="report-field">
-          <span class="report-label">{{.t.emails.reportNotification.targetInfo}}</span>
+          <span class="report-label">{{.t.emails.reportNotification.targetLabel}}</span>
+          <span class="report-value">{{.TargetType}}</span>
         </div>
         <div class="report-field">
-          <span class="report-label">{{.t.emails.reportNotification.reportTitle}}</span>
+          <span class="report-label">{{.t.emails.reportNotification.titleLabel}}</span>
+          <span class="report-value">{{.Title}}</span>
         </div>
         <div class="report-field">
-          <span class="report-label">{{.t.emails.reportNotification.reportMessage}}</span>
+          <span class="report-label">{{.t.emails.reportNotification.messageLabel}}</span>
         </div>
-      </div>
-
-      <div class="message-box">
-        {{.Message}}
+        <div class="message-box">
+          {{.Message}}
+        </div>
       </div>
 
       <p>
@@ -103,9 +106,6 @@
     <div class="footer">
       <p>
         {{.t.emails.reportNotification.footer}}
-      </p>
-      <p>
-        {{.t.emails.reportNotification.footerSettings}}
       </p>
     </div>
   </body>
