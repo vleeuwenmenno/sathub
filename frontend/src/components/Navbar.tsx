@@ -37,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
+import { useEasterEgg } from "../contexts/EasterEggContext";
 import { getSupportedLanguages, getLanguageFlag } from "../utils/translations";
 import { getProfilePictureUrl } from "../api";
 import NotificationDropdown from "./NotificationDropdown";
@@ -48,11 +49,13 @@ const Navbar: React.FC = () => {
   const { mode, setMode } = useColorScheme();
   const { isAuthenticated, user, logout } = useAuth();
   const { language, setLanguage, t } = useTranslation();
+  const { triggerEasterEgg } = useEasterEgg();
   const isDetailPage = location.pathname.includes("/post/");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
     null
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toggleTimestamps, setToggleTimestamps] = useState<number[]>([]);
 
   useEffect(() => {
     if (user?.has_profile_picture && user?.profile_picture_url) {
@@ -65,6 +68,18 @@ const Navbar: React.FC = () => {
 
   const toggleColorScheme = () => {
     setMode(mode === "dark" ? "light" : "dark");
+
+    // Easter egg logic
+    const now = Date.now();
+    const recentToggles = [...toggleTimestamps, now].filter(
+      (timestamp) => now - timestamp <= 4000
+    );
+    setToggleTimestamps(recentToggles);
+
+    if (recentToggles.length >= 5) {
+      triggerEasterEgg();
+      setToggleTimestamps([]); // Reset to prevent multiple triggers
+    }
   };
 
   const handleLogout = async () => {
