@@ -346,7 +346,7 @@ const AdminReports: React.FC = () => {
                   </td>
                   <td>
                     {report.username ? (
-                      <Link to={`/user/${report.user_id}`} style={{ textDecoration: 'none' }}>
+                      <Link to={`/admin/users/${report.user_id}`} style={{ textDecoration: 'none' }}>
                         <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
                           {report.username}
                         </Typography>
@@ -358,13 +358,30 @@ const AdminReports: React.FC = () => {
                     )}
                   </td>
                   <td>
-                    <Chip
-                      size="sm"
-                      color={getTargetTypeColor(report.target_type)}
-                      variant="soft"
-                    >
-                      {formatTargetType(report.target_type)}
-                    </Chip>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Chip
+                        size="sm"
+                        color={getTargetTypeColor(report.target_type)}
+                        variant="soft"
+                      >
+                        {formatTargetType(report.target_type)}
+                      </Chip>
+                      {report.target_type === 'station' ? (
+                        <Link to={`/station/${report.target_id}`} style={{ textDecoration: 'none' }}>
+                          <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                            {report.target_id.slice(0, 8)}...
+                          </Typography>
+                        </Link>
+                      ) : report.target_type === 'user' ? (
+                        <Link to={`/admin/users/${report.target_id}`} style={{ textDecoration: 'none' }}>
+                          <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                            {report.target_id.slice(0, 8)}...
+                          </Typography>
+                        </Link>
+                      ) : (
+                        <Typography fontFamily="monospace">{report.target_id.slice(0, 8)}...</Typography>
+                      )}
+                    </Stack>
                   </td>
                   <td style={{ maxWidth: 300 }}>
                     <Typography level="body-sm" sx={{
@@ -495,7 +512,7 @@ const AdminReports: React.FC = () => {
               <Box>
                 <Typography level="body-sm" color="neutral">{t("admin.reports.reporter")}</Typography>
                 {selectedReport.username ? (
-                  <Link to={`/user/${selectedReport.user_id}`} style={{ textDecoration: 'none' }}>
+                  <Link to={`/admin/users/${selectedReport.user_id}`} style={{ textDecoration: 'none' }}>
                     <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
                       {selectedReport.username} ({selectedReport.user_id})
                     </Typography>
@@ -511,7 +528,21 @@ const AdminReports: React.FC = () => {
                   <Chip color={getTargetTypeColor(selectedReport.target_type)} variant="soft">
                     {formatTargetType(selectedReport.target_type)}
                   </Chip>
-                  <Typography fontFamily="monospace">{selectedReport.target_id}</Typography>
+                  {selectedReport.target_type === 'station' ? (
+                    <Link to={`/station/${selectedReport.target_id}`} style={{ textDecoration: 'none' }}>
+                      <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                        {selectedReport.target_id}
+                      </Typography>
+                    </Link>
+                  ) : selectedReport.target_type === 'user' ? (
+                    <Link to={`/admin/users/${selectedReport.target_id}`} style={{ textDecoration: 'none' }}>
+                      <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                        {selectedReport.target_id}
+                      </Typography>
+                    </Link>
+                  ) : (
+                    <Typography fontFamily="monospace">{selectedReport.target_id}</Typography>
+                  )}
                 </Stack>
               </Box>
 
