@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -17,23 +17,30 @@ import {
   Option,
   FormControl,
   FormLabel,
-} from '@mui/joy';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { useAuth } from '../contexts/AuthContext';
-import { getCommentsForPost, createComment, updateComment, deleteComment, likeComment, getProfilePictureUrl } from '../api';
-import type { PostComment } from '../types';
-import ReportButton from './ReportButton';
+} from "@mui/joy";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  getCommentsForPost,
+  createComment,
+  updateComment,
+  deleteComment,
+  likeComment,
+  getProfilePictureUrl,
+} from "../api";
+import type { PostComment } from "../types";
+import ReportButton from "./ReportButton";
 
 const MAX_COMMENT_LENGTH = 2000;
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
 
   return `${day}.${month}.${year}`;
@@ -50,7 +57,11 @@ const CommentItem: React.FC<{
   onDelete: (commentId: string) => void;
   onSaveEdit: (commentId: string, content: string) => Promise<void>;
   onCancelEdit: () => void;
-  onLikeChange?: (commentId: string, liked: boolean, likesCount: number) => void;
+  onLikeChange?: (
+    commentId: string,
+    liked: boolean,
+    likesCount: number
+  ) => void;
   currentUserId?: string;
   isEditing?: boolean;
   editContent?: string;
@@ -67,7 +78,7 @@ const CommentItem: React.FC<{
   onLikeChange,
   currentUserId,
   isEditing = false,
-  editContent = '',
+  editContent = "",
   onEditContentChange,
   submitting = false,
   isNewlyPosted = false,
@@ -79,6 +90,28 @@ const CommentItem: React.FC<{
   const [isLikeLoading, setIsLikeLoading] = useState(false);
 
   const isOwner = currentUserId === comment.user_id;
+
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Close menu when clicking anywhere, but not on the menu button or menu itself
+      const target = event.target as Element;
+      const isMenuButton = target.closest("[data-menu-button]");
+      const isMenu = target.closest('[role="menu"]');
+
+      if (!isMenuButton && !isMenu) {
+        setMenuAnchor(null);
+      }
+    };
+
+    if (menuAnchor !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuAnchor]);
 
   const handleSaveEdit = async () => {
     if (editContent.trim()) {
@@ -106,10 +139,16 @@ const CommentItem: React.FC<{
       const result = await likeComment(comment.id);
       setIsLiked(result.liked);
       // Update count based on server response
-      setLikesCount(result.liked ? previousLikesCount + 1 : previousLikesCount - 1);
+      setLikesCount(
+        result.liked ? previousLikesCount + 1 : previousLikesCount - 1
+      );
 
       if (onLikeChange) {
-        onLikeChange(comment.id, result.liked, result.liked ? previousLikesCount + 1 : previousLikesCount - 1);
+        onLikeChange(
+          comment.id,
+          result.liked,
+          result.liked ? previousLikesCount + 1 : previousLikesCount - 1
+        );
       }
     } catch (error) {
       // Revert optimistic update on error
@@ -129,19 +168,21 @@ const CommentItem: React.FC<{
         sx={{
           mb: 2,
           ...(isNewlyPosted && {
-            backgroundColor: 'success.softBg',
-            borderColor: 'success.outlinedBorder',
-            transition: 'all 0.3s ease-out',
+            backgroundColor: "success.softBg",
+            borderColor: "success.outlinedBorder",
+            transition: "all 0.3s ease-out",
           }),
           ...(isHighlighted && {
             animation: "highlight-pulse 1.5s ease-in-out 2",
             "@keyframes highlight-pulse": {
               "0%, 100%": {
-                boxShadow: "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
+                boxShadow:
+                  "0 0 0 0 rgba(var(--joy-palette-primary-mainChannel) / 0)",
                 transform: "scale(1)",
               },
               "50%": {
-                boxShadow: "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
+                boxShadow:
+                  "0 0 0 8px rgba(var(--joy-palette-primary-mainChannel) / 0.4)",
                 transform: "scale(1.02)",
               },
             },
@@ -156,20 +197,27 @@ const CommentItem: React.FC<{
                   src={getProfilePictureUrl(comment.profile_picture_url)}
                   alt={`${comment.username}'s profile`}
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '50%'
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "50%",
                   }}
                 />
               ) : (
                 <Typography level="body-sm">
-                  {(comment.display_name || comment.username).charAt(0).toUpperCase()}
+                  {(comment.display_name || comment.username)
+                    .charAt(0)
+                    .toUpperCase()}
                 </Typography>
               )}
             </Avatar>
             <Box sx={{ flex: 1 }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ mb: 1 }}
+              >
                 <Typography level="body-sm" fontWeight="bold">
                   {comment.username}
                 </Typography>
@@ -180,8 +228,9 @@ const CommentItem: React.FC<{
                   <>
                     <IconButton
                       size="sm"
+                      data-menu-button
                       onClick={(e) => setMenuAnchor(e.currentTarget)}
-                      sx={{ ml: 'auto' }}
+                      sx={{ ml: "auto" }}
                     >
                       <MoreVertIcon />
                     </IconButton>
@@ -189,6 +238,7 @@ const CommentItem: React.FC<{
                       anchorEl={menuAnchor}
                       open={Boolean(menuAnchor)}
                       onClose={() => setMenuAnchor(null)}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <MenuItem
                         onClick={() => {
@@ -220,10 +270,10 @@ const CommentItem: React.FC<{
                     value={editContent}
                     onChange={(e) => onEditContentChange?.(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleSaveEdit();
-                      } else if (e.key === 'Escape') {
+                      } else if (e.key === "Escape") {
                         handleCancelEdit();
                       }
                     }}
@@ -233,10 +283,16 @@ const CommentItem: React.FC<{
                   <Typography
                     level="body-xs"
                     sx={{
-                      textAlign: 'right',
+                      textAlign: "right",
                       mb: 1,
-                      color: editContent.length > MAX_COMMENT_LENGTH * 0.9 ? 'warning.main' : 'neutral',
-                      fontWeight: editContent.length > MAX_COMMENT_LENGTH * 0.9 ? 'bold' : 'normal'
+                      color:
+                        editContent.length > MAX_COMMENT_LENGTH * 0.9
+                          ? "warning.main"
+                          : "neutral",
+                      fontWeight:
+                        editContent.length > MAX_COMMENT_LENGTH * 0.9
+                          ? "bold"
+                          : "normal",
                     }}
                   >
                     {editContent.length} / {MAX_COMMENT_LENGTH}
@@ -250,7 +306,11 @@ const CommentItem: React.FC<{
                     >
                       Save
                     </Button>
-                    <Button size="sm" variant="plain" onClick={handleCancelEdit}>
+                    <Button
+                      size="sm"
+                      variant="plain"
+                      onClick={handleCancelEdit}
+                    >
                       Cancel
                     </Button>
                   </Stack>
@@ -261,9 +321,11 @@ const CommentItem: React.FC<{
                     {comment.content}
                   </Typography>
                   {/* Like button and Report button */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {currentUserId && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                      >
                         <IconButton
                           size="sm"
                           onClick={handleLikeClick}
@@ -278,7 +340,11 @@ const CommentItem: React.FC<{
                             },
                           }}
                         >
-                          {isLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                          {isLiked ? (
+                            <FavoriteIcon fontSize="small" />
+                          ) : (
+                            <FavoriteBorderIcon fontSize="small" />
+                          )}
                         </IconButton>
                         <Typography
                           level="body-xs"
@@ -286,8 +352,8 @@ const CommentItem: React.FC<{
                             color: isLiked ? "#ef4444" : "neutral.500",
                             fontWeight: isLiked ? "bold" : "normal",
                             transition: "all 0.2s ease",
-                            minWidth: '20px',
-                            textAlign: 'center'
+                            minWidth: "20px",
+                            textAlign: "center",
                           }}
                         >
                           {likesCount}
@@ -312,27 +378,32 @@ const CommentItem: React.FC<{
   );
 };
 
-const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedCommentId }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({
+  postId,
+  highlightedCommentId,
+}) => {
   let user;
   try {
     const auth = useAuth();
     user = auth.user;
   } catch (error) {
-    console.warn('Auth context not available:', error);
+    console.warn("Auth context not available:", error);
     user = null;
   }
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState('');
+  const [editContent, setEditContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingSubmitting, setEditingSubmitting] = useState(false);
   const [isCommentFormExpanded, setIsCommentFormExpanded] = useState(false);
-  const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'newest' | 'most_liked'>('newest');
+  const [newlyPostedCommentId, setNewlyPostedCommentId] = useState<
+    string | null
+  >(null);
+  const [sortBy, setSortBy] = useState<"newest" | "most_liked">("newest");
 
   useEffect(() => {
     loadComments();
@@ -342,14 +413,21 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading comments for post:', postId, 'sort by:', sortBy);
+      console.log("Loading comments for post:", postId, "sort by:", sortBy);
       const data = await getCommentsForPost(postId, sortBy);
-      console.log('Comments loaded:', data, 'Type:', typeof data, 'Is array:', Array.isArray(data));
-      const commentsArray = Array.isArray(data) ? data : (data ? [data] : []);
+      console.log(
+        "Comments loaded:",
+        data,
+        "Type:",
+        typeof data,
+        "Is array:",
+        Array.isArray(data)
+      );
+      const commentsArray = Array.isArray(data) ? data : data ? [data] : [];
       setComments(commentsArray);
     } catch (err) {
-      console.error('Failed to load comments:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load comments');
+      console.error("Failed to load comments:", err);
+      setError(err instanceof Error ? err.message : "Failed to load comments");
       setComments([]); // Ensure comments is always an array
     } finally {
       setLoading(false);
@@ -367,7 +445,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
       };
 
       const response = await createComment(postId, commentData);
-      setNewComment('');
+      setNewComment("");
       setIsCommentFormExpanded(false); // Collapse form after posting
       await loadComments(); // Reload comments
 
@@ -379,7 +457,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
         }, 2000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post comment');
+      setError(err instanceof Error ? err.message : "Failed to post comment");
     } finally {
       setSubmitting(false);
     }
@@ -390,7 +468,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
   };
 
   const handleCancelCommentForm = () => {
-    setNewComment('');
+    setNewComment("");
     setIsCommentFormExpanded(false);
   };
 
@@ -399,10 +477,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
       setEditingSubmitting(true);
       await updateComment(commentId, { content });
       setEditingCommentId(null);
-      setEditContent('');
+      setEditContent("");
       await loadComments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update comment');
+      setError(err instanceof Error ? err.message : "Failed to update comment");
     } finally {
       setEditingSubmitting(false);
     }
@@ -410,7 +488,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
 
   const handleCancelEdit = () => {
     setEditingCommentId(null);
-    setEditContent('');
+    setEditContent("");
   };
 
   const startEdit = (comment: PostComment) => {
@@ -419,19 +497,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm("Are you sure you want to delete this comment?")) return;
 
     try {
       await deleteComment(commentId);
       await loadComments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete comment');
+      setError(err instanceof Error ? err.message : "Failed to delete comment");
     }
   };
 
   if (loading && !hasLoaded) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
         <CircularProgress />
       </Box>
     );
@@ -439,7 +517,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 3 }}
+      >
         <Typography level="h3">
           Comments ({comments ? comments.length : 0})
         </Typography>
@@ -447,7 +530,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
           <FormLabel>Sort by</FormLabel>
           <Select
             value={sortBy}
-            onChange={(_, value) => setSortBy(value as 'newest' | 'most_liked')}
+            onChange={(_, value) => setSortBy(value as "newest" | "most_liked")}
           >
             <Option value="newest">Newest first</Option>
             <Option value="most_liked">Most liked</Option>
@@ -468,21 +551,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
             <Button
               variant="outlined"
               onClick={handleExpandCommentForm}
-              sx={{ width: '100%' }}
+              sx={{ width: "100%" }}
             >
               Write a comment
             </Button>
           ) : (
             <Card variant="outlined">
               <CardContent>
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmitComment(); }}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmitComment();
+                  }}
+                >
                   <Stack spacing={2}>
                     <Textarea
                       placeholder="Write a comment..."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           handleSubmitComment();
                         }
@@ -493,9 +581,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
                     <Typography
                       level="body-xs"
                       sx={{
-                        textAlign: 'right',
-                        color: newComment.length > MAX_COMMENT_LENGTH * 0.9 ? 'warning.main' : 'neutral',
-                        fontWeight: newComment.length > MAX_COMMENT_LENGTH * 0.9 ? 'bold' : 'normal'
+                        textAlign: "right",
+                        color:
+                          newComment.length > MAX_COMMENT_LENGTH * 0.9
+                            ? "warning.main"
+                            : "neutral",
+                        fontWeight:
+                          newComment.length > MAX_COMMENT_LENGTH * 0.9
+                            ? "bold"
+                            : "normal",
                       }}
                     >
                       {newComment.length} / {MAX_COMMENT_LENGTH}
@@ -508,10 +602,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
                       >
                         Post
                       </Button>
-                      <Button
-                        variant="plain"
-                        onClick={handleCancelCommentForm}
-                      >
+                      <Button variant="plain" onClick={handleCancelCommentForm}>
                         Cancel
                       </Button>
                     </Stack>
@@ -532,7 +623,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
       {/* Comments List */}
       <Stack spacing={2}>
         {comments.length === 0 ? (
-          <Typography level="body-md" color="neutral" sx={{ textAlign: 'center', py: 4 }}>
+          <Typography
+            level="body-md"
+            color="neutral"
+            sx={{ textAlign: "center", py: 4 }}
+          >
             No comments yet. Be the first to comment!
           </Typography>
         ) : (
@@ -546,8 +641,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, highlightedComm
               onCancelEdit={handleCancelEdit}
               onLikeChange={(commentId, liked, likesCount) => {
                 // Update the comment in the local state
-                setComments(prevComments =>
-                  prevComments.map(c =>
+                setComments((prevComments) =>
+                  prevComments.map((c) =>
                     c.id === commentId
                       ? { ...c, is_liked: liked, likes_count: likesCount }
                       : c
