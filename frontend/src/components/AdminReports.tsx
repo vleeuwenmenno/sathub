@@ -23,7 +23,13 @@ import {
   MenuItem,
   ListItemDecorator,
 } from "@mui/joy";
-import { getReports, updateReportStatus, deleteReport, type Report, type ReportsResponse } from "../api";
+import {
+  getReports,
+  updateReportStatus,
+  deleteReport,
+  type Report,
+  type ReportsResponse,
+} from "../api";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -57,7 +63,9 @@ const AdminReports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-  const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLElement | null>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLElement | null>(
+    null
+  );
 
   const fetchReports = async () => {
     try {
@@ -82,9 +90,9 @@ const AdminReports: React.FC = () => {
 
   // Check for reportId URL parameter and open details modal
   useEffect(() => {
-    const reportId = searchParams.get('reportId');
+    const reportId = searchParams.get("reportId");
     if (reportId && reports.length > 0 && !loading) {
-      const report = reports.find(r => r.id === reportId);
+      const report = reports.find((r) => r.id === reportId);
       if (report) {
         setSelectedReport(report);
         setDetailsOpen(true);
@@ -98,7 +106,7 @@ const AdminReports: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       // Close menu when clicking anywhere, but not on the menu button or menu itself
       const target = event.target as Element;
-      const isMenuButton = target.closest('[data-menu-button]');
+      const isMenuButton = target.closest("[data-menu-button]");
       const isMenu = target.closest('[role="menu"]');
 
       if (!isMenuButton && !isMenu) {
@@ -107,16 +115,16 @@ const AdminReports: React.FC = () => {
     };
 
     if (actionMenuOpen !== null) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [actionMenuOpen]);
 
   const handleFilterChange = (field: string, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    setFilters((prev) => ({ ...prev, [field]: value }));
     setPage(1); // Reset to first page when filters change
   };
 
@@ -132,21 +140,31 @@ const AdminReports: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "warning";
-      case "reviewed": return "primary";
-      case "resolved": return "success";
-      case "dismissed": return "danger";
-      default: return "neutral";
+      case "pending":
+        return "warning";
+      case "reviewed":
+        return "primary";
+      case "resolved":
+        return "success";
+      case "dismissed":
+        return "danger";
+      default:
+        return "neutral";
     }
   };
 
   const getTargetTypeColor = (targetType: string) => {
     switch (targetType) {
-      case "post": return "primary";
-      case "station": return "success";
-      case "user": return "warning";
-      case "comment": return "neutral";
-      default: return "neutral";
+      case "post":
+        return "primary";
+      case "station":
+        return "success";
+      case "user":
+        return "warning";
+      case "comment":
+        return "neutral";
+      default:
+        return "neutral";
     }
   };
 
@@ -203,10 +221,14 @@ const AdminReports: React.FC = () => {
 
   const getLocaleFromLanguage = (lang: string) => {
     switch (lang) {
-      case 'de': return 'de-DE';
-      case 'nl': return 'nl-NL';
-      case 'en': return 'en-US';
-      default: return 'en-US';
+      case "de":
+        return "de-DE";
+      case "nl":
+        return "nl-NL";
+      case "en":
+        return "en-US";
+      default:
+        return "en-US";
     }
   };
 
@@ -217,7 +239,14 @@ const AdminReports: React.FC = () => {
   // Don't render until translations are loaded
   if (translationsLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "400px",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -225,7 +254,14 @@ const AdminReports: React.FC = () => {
 
   if (loading && reports.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "400px",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -236,7 +272,14 @@ const AdminReports: React.FC = () => {
       ref={componentRef}
       sx={{ py: { xs: 1, md: 2 }, px: 0, maxWidth: "1400px", mx: "auto" }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography level="h2">{t("admin.reports.title")}</Typography>
         <Stack direction="row" spacing={1}>
           <IconButton onClick={() => setShowFilters(!showFilters)}>
@@ -256,19 +299,35 @@ const AdminReports: React.FC = () => {
 
       {showFilters && (
         <Card sx={{ mb: 3 }}>
-          <Typography level="h4" sx={{ mb: 2 }}>{t("admin.reports.filters")}</Typography>
-          <Stack spacing={2} direction={{ xs: 'column', md: 'row' }} sx={{ flexWrap: 'wrap' }}>
+          <Typography level="h4" sx={{ mb: 2 }}>
+            {t("admin.reports.filters")}
+          </Typography>
+          <Stack
+            spacing={2}
+            direction={{ xs: "column", md: "row" }}
+            sx={{ flexWrap: "wrap" }}
+          >
             <FormControl size="sm" sx={{ minWidth: 150 }}>
               <FormLabel>{t("admin.reports.status")}</FormLabel>
               <Select
                 value={filters.status}
-                onChange={(_, value) => handleFilterChange("status", value as string)}
+                onChange={(_, value) =>
+                  handleFilterChange("status", value as string)
+                }
               >
                 <Option value="">{t("admin.reports.allStatuses")}</Option>
-                <Option value="pending">{t("admin.reports.statusPending")}</Option>
-                <Option value="reviewed">{t("admin.reports.statusReviewed")}</Option>
-                <Option value="resolved">{t("admin.reports.statusResolved")}</Option>
-                <Option value="dismissed">{t("admin.reports.statusDismissed")}</Option>
+                <Option value="pending">
+                  {t("admin.reports.statusPending")}
+                </Option>
+                <Option value="reviewed">
+                  {t("admin.reports.statusReviewed")}
+                </Option>
+                <Option value="resolved">
+                  {t("admin.reports.statusResolved")}
+                </Option>
+                <Option value="dismissed">
+                  {t("admin.reports.statusDismissed")}
+                </Option>
               </Select>
             </FormControl>
 
@@ -276,13 +335,19 @@ const AdminReports: React.FC = () => {
               <FormLabel>{t("admin.reports.targetType")}</FormLabel>
               <Select
                 value={filters.target_type}
-                onChange={(_, value) => handleFilterChange("target_type", value as string)}
+                onChange={(_, value) =>
+                  handleFilterChange("target_type", value as string)
+                }
               >
                 <Option value="">{t("admin.reports.allTypes")}</Option>
                 <Option value="post">{t("admin.reports.typePost")}</Option>
-                <Option value="station">{t("admin.reports.typeStation")}</Option>
+                <Option value="station">
+                  {t("admin.reports.typeStation")}
+                </Option>
                 <Option value="user">{t("admin.reports.typeUser")}</Option>
-                <Option value="comment">{t("admin.reports.typeComment")}</Option>
+                <Option value="comment">
+                  {t("admin.reports.typeComment")}
+                </Option>
               </Select>
             </FormControl>
 
@@ -291,7 +356,9 @@ const AdminReports: React.FC = () => {
               <Input
                 placeholder={t("admin.reports.targetIdPlaceholder")}
                 value={filters.target_id}
-                onChange={(e) => handleFilterChange("target_id", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("target_id", e.target.value)
+                }
               />
             </FormControl>
 
@@ -310,7 +377,7 @@ const AdminReports: React.FC = () => {
               onClick={clearFilters}
               startDecorator={<ClearIcon />}
               size="sm"
-              sx={{ alignSelf: 'flex-end' }}
+              sx={{ alignSelf: "flex-end" }}
             >
               {t("admin.reports.clear")}
             </Button>
@@ -319,14 +386,24 @@ const AdminReports: React.FC = () => {
       )}
 
       <Card>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            mb: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography level="body-sm" color="neutral">
-            {t("admin.reports.showingReports", { count: reports.length, total })}
+            {t("admin.reports.showingReports", {
+              count: reports.length,
+              total,
+            })}
           </Typography>
           {loading && <CircularProgress size="sm" />}
         </Box>
 
-        <Box sx={{ overflow: 'auto' }}>
+        <Box sx={{ overflow: "auto" }}>
           <Table stickyHeader>
             <thead>
               <tr>
@@ -341,13 +418,16 @@ const AdminReports: React.FC = () => {
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id}>
-                  <td>
-                    {formatDateTime(report.created_at)}
-                  </td>
+                  <td>{formatDateTime(report.created_at)}</td>
                   <td>
                     {report.username ? (
-                      <Link to={`/admin/users/${report.user_id}`} style={{ textDecoration: 'none' }}>
-                        <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
+                      <Link
+                        to={`/admin/users/${report.user_id}`}
+                        style={{ textDecoration: "none" }}
+                      >
+                        <Typography
+                          sx={{ cursor: "pointer", color: "primary.main" }}
+                        >
                           {report.username}
                         </Typography>
                       </Link>
@@ -366,29 +446,70 @@ const AdminReports: React.FC = () => {
                       >
                         {formatTargetType(report.target_type)}
                       </Chip>
-                      {report.target_type === 'station' ? (
-                        <Link to={`/station/${report.target_id}`} style={{ textDecoration: 'none' }}>
-                          <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                      {report.target_type === "station" ? (
+                        <Link
+                          to={`/station/${report.target_id}`}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <Typography
+                            sx={{ cursor: "pointer", color: "primary.main" }}
+                            fontFamily="monospace"
+                          >
                             {report.target_id.slice(0, 8)}...
                           </Typography>
                         </Link>
-                      ) : report.target_type === 'user' ? (
-                        <Link to={`/admin/users/${report.target_id}`} style={{ textDecoration: 'none' }}>
-                          <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                      ) : report.target_type === "user" ? (
+                        <Link
+                          to={`/admin/users/${report.target_id}`}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <Typography
+                            sx={{ cursor: "pointer", color: "primary.main" }}
+                            fontFamily="monospace"
+                          >
+                            {report.target_id.slice(0, 8)}...
+                          </Typography>
+                        </Link>
+                      ) : report.target_type === "post" ? (
+                        <Link
+                          to={`/post/${report.target_id}`}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <Typography
+                            sx={{ cursor: "pointer", color: "primary.main" }}
+                            fontFamily="monospace"
+                          >
+                            {report.target_id.slice(0, 8)}...
+                          </Typography>
+                        </Link>
+                      ) : report.target_type === "comment" ? (
+                        <Link
+                          to={`/post/${report.target_post_id}#comment-${report.target_id}`}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <Typography
+                            sx={{ cursor: "pointer", color: "primary.main" }}
+                            fontFamily="monospace"
+                          >
                             {report.target_id.slice(0, 8)}...
                           </Typography>
                         </Link>
                       ) : (
-                        <Typography fontFamily="monospace">{report.target_id.slice(0, 8)}...</Typography>
+                        <Typography fontFamily="monospace">
+                          {report.target_id.slice(0, 8)}...
+                        </Typography>
                       )}
                     </Stack>
                   </td>
                   <td style={{ maxWidth: 300 }}>
-                    <Typography level="body-sm" sx={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <Typography
+                      level="body-sm"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {report.title}
                     </Typography>
                   </td>
@@ -407,9 +528,9 @@ const AdminReports: React.FC = () => {
                         size="sm"
                         variant="outlined"
                         onClick={() => handleViewDetails(report)}
-                        >
-                          {t("admin.reports.view")}
-                        </Button>
+                      >
+                        {t("admin.reports.view")}
+                      </Button>
                       <IconButton
                         size="sm"
                         data-menu-button
@@ -426,8 +547,13 @@ const AdminReports: React.FC = () => {
               ))}
               {reports.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
-                    <Typography color="neutral">{t("admin.reports.noReports")}</Typography>
+                  <td
+                    colSpan={6}
+                    style={{ textAlign: "center", padding: "2rem" }}
+                  >
+                    <Typography color="neutral">
+                      {t("admin.reports.noReports")}
+                    </Typography>
                   </td>
                 </tr>
               )}
@@ -436,7 +562,9 @@ const AdminReports: React.FC = () => {
         </Box>
 
         {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 1 }}>
+          <Box
+            sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1 }}
+          >
             <Button
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
@@ -444,7 +572,7 @@ const AdminReports: React.FC = () => {
             >
               {t("admin.reports.previous")}
             </Button>
-            <Typography level="body-sm" sx={{ alignSelf: 'center' }}>
+            <Typography level="body-sm" sx={{ alignSelf: "center" }}>
               {t("admin.reports.pageOf", { page, total: totalPages })}
             </Typography>
             <Button
@@ -466,25 +594,34 @@ const AdminReports: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
         size="sm"
       >
-        <MenuItem onClick={() => handleStatusUpdate(actionMenuOpen || "", "reviewed")}>
+        <MenuItem
+          onClick={() => handleStatusUpdate(actionMenuOpen || "", "reviewed")}
+        >
           <ListItemDecorator>
             <CheckCircleIcon />
           </ListItemDecorator>
           {t("admin.reports.markAsReviewed")}
         </MenuItem>
-        <MenuItem onClick={() => handleStatusUpdate(actionMenuOpen || "", "resolved")}>
+        <MenuItem
+          onClick={() => handleStatusUpdate(actionMenuOpen || "", "resolved")}
+        >
           <ListItemDecorator>
             <CheckCircleIcon />
           </ListItemDecorator>
           {t("admin.reports.markAsResolved")}
         </MenuItem>
-        <MenuItem onClick={() => handleStatusUpdate(actionMenuOpen || "", "dismissed")}>
+        <MenuItem
+          onClick={() => handleStatusUpdate(actionMenuOpen || "", "dismissed")}
+        >
           <ListItemDecorator>
             <CancelIcon />
           </ListItemDecorator>
           {t("admin.reports.dismissReport")}
         </MenuItem>
-        <MenuItem onClick={() => handleDeleteReport(actionMenuOpen || "")} color="danger">
+        <MenuItem
+          onClick={() => handleDeleteReport(actionMenuOpen || "")}
+          color="danger"
+        >
           <ListItemDecorator>
             <DeleteIcon />
           </ListItemDecorator>
@@ -500,88 +637,175 @@ const AdminReports: React.FC = () => {
           {selectedReport && (
             <Stack spacing={2}>
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.reportId")}</Typography>
-                <Typography fontFamily="monospace">{selectedReport.id}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.reportId")}
+                </Typography>
+                <Typography fontFamily="monospace">
+                  {selectedReport.id}
+                </Typography>
               </Box>
 
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.created")}</Typography>
-                <Typography>{formatDateTime(selectedReport.created_at)}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.created")}
+                </Typography>
+                <Typography>
+                  {formatDateTime(selectedReport.created_at)}
+                </Typography>
               </Box>
 
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.reporter")}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.reporter")}
+                </Typography>
                 {selectedReport.username ? (
-                  <Link to={`/admin/users/${selectedReport.user_id}`} style={{ textDecoration: 'none' }}>
-                    <Typography sx={{ cursor: 'pointer', color: 'primary.main' }}>
+                  <Link
+                    to={`/admin/users/${selectedReport.user_id}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Typography
+                      sx={{ cursor: "pointer", color: "primary.main" }}
+                    >
                       {selectedReport.username} ({selectedReport.user_id})
                     </Typography>
                   </Link>
                 ) : (
-                  <Typography fontFamily="monospace">{selectedReport.user_id}</Typography>
+                  <Typography fontFamily="monospace">
+                    {selectedReport.user_id}
+                  </Typography>
                 )}
               </Box>
 
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.target")}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.target")}
+                </Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Chip color={getTargetTypeColor(selectedReport.target_type)} variant="soft">
+                  <Chip
+                    color={getTargetTypeColor(selectedReport.target_type)}
+                    variant="soft"
+                  >
                     {formatTargetType(selectedReport.target_type)}
                   </Chip>
-                  {selectedReport.target_type === 'station' ? (
-                    <Link to={`/station/${selectedReport.target_id}`} style={{ textDecoration: 'none' }}>
-                      <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                  {selectedReport.target_type === "station" ? (
+                    <Link
+                      to={`/station/${selectedReport.target_id}`}
+                      style={{ textDecoration: "none" }}
+                    >
+                      <Typography
+                        sx={{ cursor: "pointer", color: "primary.main" }}
+                        fontFamily="monospace"
+                      >
                         {selectedReport.target_id}
                       </Typography>
                     </Link>
-                  ) : selectedReport.target_type === 'user' ? (
-                    <Link to={`/admin/users/${selectedReport.target_id}`} style={{ textDecoration: 'none' }}>
-                      <Typography sx={{ cursor: 'pointer', color: 'primary.main' }} fontFamily="monospace">
+                  ) : selectedReport.target_type === "user" ? (
+                    <Link
+                      to={`/admin/users/${selectedReport.target_id}`}
+                      style={{ textDecoration: "none" }}
+                    >
+                      <Typography
+                        sx={{ cursor: "pointer", color: "primary.main" }}
+                        fontFamily="monospace"
+                      >
                         {selectedReport.target_id}
                       </Typography>
                     </Link>
                   ) : (
-                    <Typography fontFamily="monospace">{selectedReport.target_id}</Typography>
+                    <Typography fontFamily="monospace">
+                      {selectedReport.target_id}
+                    </Typography>
                   )}
                 </Stack>
               </Box>
 
+              {selectedReport.target_owner_username && (
+                <Box>
+                  <Typography level="body-sm" color="neutral">
+                    {t("admin.reports.targetOwner")}
+                  </Typography>
+                  <Link
+                    to={`/admin/users/${selectedReport.target_owner_id}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Typography
+                      sx={{ cursor: "pointer", color: "primary.main" }}
+                    >
+                      {selectedReport.target_owner_display_name ||
+                        selectedReport.target_owner_username}
+                      {selectedReport.target_owner_display_name &&
+                        selectedReport.target_owner_display_name !==
+                          selectedReport.target_owner_username && (
+                          <Typography
+                            component="span"
+                            fontFamily="monospace"
+                            sx={{ ml: 1, color: "text.secondary" }}
+                          >
+                            ({selectedReport.target_owner_username})
+                          </Typography>
+                        )}
+                    </Typography>
+                  </Link>
+                </Box>
+              )}
+
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.title_field")}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.title_field")}
+                </Typography>
                 <Typography>{selectedReport.title}</Typography>
               </Box>
 
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.reportContent")}</Typography>
-                <Box sx={{
-                  backgroundColor: 'background.level1',
-                  p: 2,
-                  borderRadius: 1,
-                  maxHeight: 200,
-                  overflow: 'auto'
-                }}>
-                  <Typography sx={{ whiteSpace: 'pre-wrap' }}>{selectedReport.message}</Typography>
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.reportContent")}
+                </Typography>
+                <Box
+                  sx={{
+                    backgroundColor: "background.level1",
+                    p: 2,
+                    borderRadius: 1,
+                    maxHeight: 200,
+                    overflow: "auto",
+                  }}
+                >
+                  <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                    {selectedReport.message}
+                  </Typography>
                 </Box>
               </Box>
 
               <Box>
-                <Typography level="body-sm" color="neutral">{t("admin.reports.status")}</Typography>
-                <Chip color={getStatusColor(selectedReport.status)} variant="soft">
+                <Typography level="body-sm" color="neutral">
+                  {t("admin.reports.status")}
+                </Typography>
+                <Chip
+                  color={getStatusColor(selectedReport.status)}
+                  variant="soft"
+                >
                   {formatStatus(selectedReport.status)}
                 </Chip>
               </Box>
 
               {selectedReport.reviewed_by && (
                 <Box>
-                  <Typography level="body-sm" color="neutral">{t("admin.reports.reviewedBy")}</Typography>
-                  <Typography fontFamily="monospace">{selectedReport.reviewed_by}</Typography>
+                  <Typography level="body-sm" color="neutral">
+                    {t("admin.reports.reviewedBy")}
+                  </Typography>
+                  <Typography fontFamily="monospace">
+                    {selectedReport.reviewed_by}
+                  </Typography>
                 </Box>
               )}
 
               {selectedReport.reviewed_at && (
                 <Box>
-                  <Typography level="body-sm" color="neutral">{t("admin.reports.reviewedAt")}</Typography>
-                  <Typography>{formatDateTime(selectedReport.reviewed_at)}</Typography>
+                  <Typography level="body-sm" color="neutral">
+                    {t("admin.reports.reviewedAt")}
+                  </Typography>
+                  <Typography>
+                    {formatDateTime(selectedReport.reviewed_at)}
+                  </Typography>
                 </Box>
               )}
             </Stack>

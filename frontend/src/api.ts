@@ -1007,6 +1007,10 @@ export interface Report {
   username?: string;
   target_type: string;
   target_id: string;
+  target_post_id?: string; // Post ID for comment reports
+  target_owner_id?: string; // Owner user ID
+  target_owner_username?: string; // Owner username
+  target_owner_display_name?: string; // Owner display name
   title: string;
   message: string;
   status: string;

@@ -498,6 +498,7 @@
       "created": "Created",
       "reporter": "Reporter",
       "target": "Target",
+      "targetOwner": "Target Owner",
       "title_field": "Title",
       "actions": "Actions",
       "view": "View",

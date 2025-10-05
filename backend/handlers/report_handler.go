@@ -24,18 +24,22 @@ type CreateReportRequest struct {
 
 // ReportResponse represents a report in responses
 type ReportResponse struct {
-	ID         string `json:"id"`
-	UserID     string `json:"user_id"`
-	Username   string `json:"username"`
-	TargetType string `json:"target_type"`
-	TargetID   string `json:"target_id"`
-	Title      string `json:"title"`
-	Message    string `json:"message"`
-	Status     string `json:"status"`
-	ReviewedBy string `json:"reviewed_by,omitempty"`
-	ReviewedAt string `json:"reviewed_at,omitempty"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID                     string `json:"id"`
+	UserID                 string `json:"user_id"`
+	Username               string `json:"username"`
+	TargetType             string `json:"target_type"`
+	TargetID               string `json:"target_id"`
+	TargetPostID           string `json:"target_post_id,omitempty"`            // Post ID for comment reports
+	TargetOwnerID          string `json:"target_owner_id,omitempty"`           // Owner user ID
+	TargetOwnerUsername    string `json:"target_owner_username,omitempty"`     // Owner username
+	TargetOwnerDisplayName string `json:"target_owner_display_name,omitempty"` // Owner display name
+	Title                  string `json:"title"`
+	Message                string `json:"message"`
+	Status                 string `json:"status"`
+	ReviewedBy             string `json:"reviewed_by,omitempty"`
+	ReviewedAt             string `json:"reviewed_at,omitempty"`
+	CreatedAt              string `json:"created_at"`
+	UpdatedAt              string `json:"updated_at"`
 }
 
 // ReportsResponse represents paginated report data
@@ -279,6 +283,63 @@ func GetReports(c *gin.Context) {
 
 		if report.ReviewedAt != nil {
 			response.ReviewedAt = report.ReviewedAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+
+		// For comment reports, get the post ID
+		if report.TargetType == "comment" {
+			var comment models.Comment
+			if err := db.Where("id = ?", report.TargetID).First(&comment).Error; err == nil {
+				response.TargetPostID = comment.PostID.String()
+			}
+		}
+
+		// For all reports, get the target owner information
+		var targetOwner models.User
+		switch report.TargetType {
+		case "post":
+			var post models.Post
+			if err := db.Where("id = ?", report.TargetID).First(&post).Error; err == nil {
+				// Get station from post
+				var station models.Station
+				if err := db.Where("id = ?", post.StationID).First(&station).Error; err == nil {
+					response.TargetOwnerID = station.UserID.String()
+					// Get owner username and display name
+					if err := db.Where("id = ?", station.UserID).First(&targetOwner).Error; err == nil {
+						response.TargetOwnerUsername = targetOwner.Username
+						if targetOwner.DisplayName != "" {
+							response.TargetOwnerDisplayName = targetOwner.DisplayName
+						}
+					}
+				}
+			}
+		case "station":
+			var station models.Station
+			if err := db.Where("id = ?", report.TargetID).First(&station).Error; err == nil {
+				response.TargetOwnerID = station.UserID.String()
+				// Get owner username and display name
+				if err := db.Where("id = ?", station.UserID).First(&targetOwner).Error; err == nil {
+					response.TargetOwnerUsername = targetOwner.Username
+					if targetOwner.DisplayName != "" {
+						response.TargetOwnerDisplayName = targetOwner.DisplayName
+					}
+				}
+			}
+		case "user":
+			response.TargetOwnerID = report.TargetID // Target is the user themselves
+			response.TargetOwnerUsername = response.Username
+			response.TargetOwnerDisplayName = response.Username
+		case "comment":
+			var comment models.Comment
+			if err := db.Where("id = ?", report.TargetID).First(&comment).Error; err == nil {
+				response.TargetOwnerID = comment.UserID.String()
+				// Get owner username and display name
+				if err := db.Where("id = ?", comment.UserID).First(&targetOwner).Error; err == nil {
+					response.TargetOwnerUsername = targetOwner.Username
+					if targetOwner.DisplayName != "" {
+						response.TargetOwnerDisplayName = targetOwner.DisplayName
+					}
+				}
+			}
 		}
 
 		reportResponses[i] = response
