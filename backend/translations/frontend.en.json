@@ -418,13 +418,25 @@
       "publicPosts": "Public Posts",
       "recentPosts": "Recent Posts",
       "showingPosts": "Showing {{count}} of {{total}} posts",
-      "publicStationsTitle": "Public Stations",
+      "publicStationsTitle": "Stations",
       "noPublicStations": "No public stations available",
       "likedPosts": "Liked Posts",
       "noLikedPosts": "No liked posts yet",
       "showingLikedPosts": "Showing {{count}} of {{total}} liked posts",
+      "recentActivities": "Recent Activities",
+      "noActivities": "No recent activities",
+      "achievements": "Achievements",
+      "noAchievements": "No achievements unlocked yet",
       "noContent": "This user has no public content available",
       "noContentDescription": "No public stations or posts to display."
+    },
+    "activity": {
+      "posted": "Posted",
+      "likedPost": "Liked Post",
+      "likedComment": "Liked Comment",
+      "commented": "Commented",
+      "unlockedAchievement": "Unlocked Achievement",
+      "createdStation": "Created Station"
     }
   },
   "achievements": {

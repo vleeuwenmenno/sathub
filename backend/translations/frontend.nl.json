@@ -418,13 +418,25 @@
       "publicPosts": "Openbare Berichten",
       "recentPosts": "Recente berichten",
       "showingPosts": "{{count}} van {{total}} berichten weergeven",
-      "publicStationsTitle": "Openbare Stations",
+      "publicStationsTitle": "Stations",
       "noPublicStations": "Geen openbare stations beschikbaar",
       "likedPosts": "Vind ik leuk berichten",
       "noLikedPosts": "Nog geen liked berichten",
       "showingLikedPosts": "{{count}} van {{total}} liked berichten weergeven",
+      "recentActivities": "Recente activiteiten",
+      "noActivities": "Geen recente activiteiten",
+      "achievements": "Prestaties",
+      "noAchievements": "Nog geen prestaties ontgrendeld",
       "noContent": "Deze gebruiker heeft geen openbare inhoud beschikbaar",
       "noContentDescription": "Geen openbare stations of berichten om weer te geven."
+    },
+    "activity": {
+      "posted": "Bericht geplaatst",
+      "likedPost": "Bericht geliked",
+      "likedComment": "Reactie geliked",
+      "commented": "Gereageerd",
+      "unlockedAchievement": "Prestatie ontgrendeld",
+      "createdStation": "Station aangemaakt"
     }
   },
   "achievements": {

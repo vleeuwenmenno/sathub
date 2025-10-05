@@ -6,10 +6,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { useAuth } from "./AuthContext";
-import {
-  detectBrowserLanguage,
-  getSupportedLanguages,
-} from "../utils/translations";
+import { detectBrowserLanguage } from "../utils/translations";
 import { updateProfile, getTranslations } from "../api";
 
 type TranslationFunction = (

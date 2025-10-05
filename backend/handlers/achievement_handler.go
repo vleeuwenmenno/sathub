@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/middleware"
@@ -71,7 +72,7 @@ func GetUserAchievements(c *gin.Context) {
 				Description: description,
 				Icon:        ua.Achievement.Icon,
 			},
-			UnlockedAt: ua.UnlockedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UnlockedAt: ua.UnlockedAt.Format(time.RFC3339),
 		}
 	}
 
@@ -141,4 +142,60 @@ func UnlockEasterEggAchievement(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, "Easter egg achievement unlocked successfully", nil)
+}
+
+// GetUserAchievementsByID handles fetching all achievements for a specific user (public endpoint)
+func GetUserAchievementsByID(c *gin.Context) {
+	userIDStr := c.Param("id")
+	if userIDStr == "" {
+		utils.ValidationErrorResponse(c, "User ID is required")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		utils.ValidationErrorResponse(c, "Invalid user ID")
+		return
+	}
+
+	userAchievements, err := utils.GetUserAchievements(userID)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch user achievements")
+		return
+	}
+
+	// Get viewer language for translations (default to 'en')
+	language := "en"
+	if viewerIDStr, exists := middleware.GetCurrentUserID(c); exists {
+		if viewerID, err := uuid.Parse(viewerIDStr); err == nil {
+			var viewer models.User
+			if err := config.GetDB().Where("id = ?", viewerID).First(&viewer).Error; err == nil {
+				language = viewer.Language
+			}
+		}
+	}
+
+	response := make([]UserAchievementResponse, len(userAchievements))
+	for i, ua := range userAchievements {
+		// Translate achievement name and description
+		name, description, err := utils.TranslateAchievement(ua.Achievement.NameKey, ua.Achievement.DescriptionKey, language)
+		if err != nil {
+			utils.Logger.Error().Err(err).Str("achievement_id", ua.Achievement.ID.String()).Msg("Failed to translate achievement")
+			// Fallback to keys if translation fails
+			name = ua.Achievement.NameKey
+			description = ua.Achievement.DescriptionKey
+		}
+
+		response[i] = UserAchievementResponse{
+			Achievement: AchievementResponse{
+				ID:          ua.Achievement.ID.String(),
+				Name:        name,
+				Description: description,
+				Icon:        ua.Achievement.Icon,
+			},
+			UnlockedAt: ua.UnlockedAt.Format(time.RFC3339),
+		}
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "User achievements retrieved successfully", response)
 }

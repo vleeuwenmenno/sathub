@@ -237,6 +237,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		publicUsers := api.Group("/users")
 		{
 			publicUsers.GET("/:id/profile-picture", handlers.GetProfilePicture)
+			publicUsers.GET("/:id/activities", handlers.GetUserActivities)
 		}
 
 		// Station details (authentication required)
@@ -248,6 +249,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		protectedGlobalUsers.Use(middleware.AuthRequired())
 		{
 			protectedGlobalUsers.GET("/global", handlers.GetGlobalUsers)
+			protectedGlobalUsers.GET("/:id/achievements", handlers.GetUserAchievementsByID)
 		}
 
 		// Public post routes (no authentication required)

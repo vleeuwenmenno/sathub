@@ -10,6 +10,7 @@ import type {
   Achievement,
   UserAchievement,
   NotificationResponse,
+  UserActivity,
 } from "./types";
 import { getApiBaseUrl } from "./config";
 
@@ -332,6 +333,16 @@ export const getGlobalStations = async (
 
 export const getUserStations = async (userId: string): Promise<Station[]> => {
   const res = await axios.get(`${API_BASE}/stations/user/${userId}`);
+  return res.data.data;
+};
+
+export const getUserActivities = async (
+  userId: string,
+  limit: number = 10
+): Promise<UserActivity[]> => {
+  const res = await axios.get(
+    `${API_BASE}/users/${userId}/activities?limit=${limit}`
+  );
   return res.data.data;
 };
 
@@ -837,6 +848,13 @@ export const getAdminPosts = async (
 // Achievement API functions
 export const getUserAchievements = async (): Promise<UserAchievement[]> => {
   const res = await api.get("/achievements");
+  return res.data.data;
+};
+
+export const getUserAchievementsByID = async (
+  userId: string
+): Promise<UserAchievement[]> => {
+  const res = await api.get(`/users/${userId}/achievements`);
   return res.data.data;
 };
 

@@ -17,11 +17,13 @@ import {
   getUserStations,
   getStationPictureBlob,
   getUserLikedPosts,
+  getUserActivities,
   getProfilePictureUrl,
+  getUserAchievementsByID,
   type Station,
 } from "../api";
 import { useTranslation } from "../contexts/TranslationContext";
-import type { Post } from "../types";
+import type { Post, UserActivity, UserAchievement } from "../types";
 import ReportButton from "./ReportButton";
 
 const formatDate = (dateString: string): string => {
@@ -80,7 +82,9 @@ const UserOverview: React.FC = () => {
   const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  const [activities, setActivities] = useState<UserActivity[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
+  const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
     null
@@ -97,15 +101,20 @@ const UserOverview: React.FC = () => {
 
       try {
         setLoading(true);
-        const [postsData, stationsData, likedPostsData] = await Promise.all([
-          getUserPosts(id),
-          getUserStations(id),
-          getUserLikedPosts(id, 1, 20),
-        ]);
+        const [postsData, stationsData, likedPostsData, activitiesData, achievementsData] =
+          await Promise.all([
+            getUserPosts(id),
+            getUserStations(id),
+            getUserLikedPosts(id, 1, 20),
+            getUserActivities(id),
+            getUserAchievementsByID(id),
+          ]);
 
         setPosts(postsData);
         setStations(stationsData);
         setLikedPosts(likedPostsData.posts);
+        setActivities(activitiesData);
+        setAchievements(achievementsData);
       } catch (err) {
         setError("Failed to load user data");
         console.error(err);
@@ -208,7 +217,7 @@ const UserOverview: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Left Column: User Profile and Stations */}
+        {/* Left Column: User Profile and Recent Posts */}
         <Grid xs={12} md={8}>
           <Stack spacing={3}>
             {/* User Profile Card */}
@@ -225,7 +234,14 @@ const UserOverview: React.FC = () => {
                         .toUpperCase()}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 0.5,
+                        }}
+                      >
                         <Typography level="h3">
                           {userInfo.display_name || userInfo.username}
                         </Typography>
@@ -337,6 +353,183 @@ const UserOverview: React.FC = () => {
               </Card>
             )}
 
+            {/* Recent Activities Section */}
+            <Card sx={{ height: "fit-content" }}>
+              <CardContent>
+                <Typography level="h4" sx={{ mb: 3 }}>
+                  {t("user.overview.recentActivities")}
+                </Typography>
+                {activities.length === 0 ? (
+                  <Box sx={{ textAlign: "center", py: 4 }}>
+                    <Typography level="body-md" color="neutral">
+                      {t("user.overview.noActivities")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={1}>
+                    {activities.map((activity) => (
+                      <Card
+                        key={activity.id}
+                        variant="outlined"
+                        sx={{
+                          cursor:
+                            activity.data?.post_id ||
+                            activity.data?.station_id ||
+                            (activity.data?.comment_id && activity.data?.post_id)
+                              ? "pointer"
+                              : "default",
+                          transition: "all 0.2s ease",
+                          "&:hover":
+                            activity.data?.post_id ||
+                            activity.data?.station_id ||
+                            (activity.data?.comment_id && activity.data?.post_id)
+                              ? {
+                                  backgroundColor: "neutral.softHoverBg",
+                                  borderColor: "neutral.outlinedHoverBorder",
+                                  transform: "translateY(-1px)",
+                                }
+                              : {},
+                        }}
+                        onClick={() => {
+                          if (activity.data?.comment_id && activity.data?.post_id) {
+                            navigate(`/post/${activity.data.post_id}#comment-${activity.data.comment_id}`);
+                          } else if (activity.data?.post_id) {
+                            navigate(`/post/${activity.data.post_id}`);
+                          } else if (activity.data?.station_id) {
+                            navigate(`/station/${activity.data.station_id}`);
+                          }
+                        }}
+                      >
+                        <CardContent sx={{ py: 1, px: 1.5 }}>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ mb: 0.5 }}
+                          >
+                            <Typography
+                              level="title-sm"
+                              sx={{ flex: 1, minWidth: 0 }}
+                            >
+                              {activity.type === "posted" &&
+                                `📡 ${t("user.activity.posted")}`}
+                              {activity.type === "liked_post" &&
+                                `❤️ ${t("user.activity.likedPost")}`}
+                              {activity.type === "liked_comment" &&
+                                `💬 ${t("user.activity.likedComment")}`}
+                              {activity.type === "commented" &&
+                                `💬 ${t("user.activity.commented")}`}
+                              {activity.type === "achievement" &&
+                                `🏆 ${t("user.activity.unlockedAchievement")}`}
+                              {activity.type === "station" &&
+                                `📡 ${t("user.activity.createdStation")}`}
+                            </Typography>
+                          </Stack>
+                          <Typography
+                            level="body-xs"
+                            color="neutral"
+                            sx={{ mb: 0.25 }}
+                          >
+                            {activity.type === "achievement"
+                              ? activity.data?.achievement_name
+                              : activity.data?.post_title ||
+                                activity.data?.post_title_for_comment ||
+                                activity.data?.station_name}
+                          </Typography>
+                          <Typography level="body-xs" color="neutral">
+                            📅 {formatDate(activity.timestamp)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+          </Stack>
+        </Grid>
+
+        {/* Right Column: Liked Posts and Stations */}
+        <Grid xs={12} md={4}>
+          <Stack spacing={3}>
+            {/* Liked Posts Section */}
+            <Card sx={{ height: "fit-content" }}>
+              <CardContent>
+                <Typography level="h4" sx={{ mb: 3 }}>
+                  {t("user.overview.likedPosts")} ({likedPosts.length})
+                </Typography>
+                {likedPosts.length === 0 ? (
+                  <Box sx={{ textAlign: "center", py: 4 }}>
+                    <Typography level="body-md" color="neutral">
+                      {t("user.overview.noLikedPosts")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={1}>
+                    {likedPosts.slice(0, 10).map((post) => (
+                      <Card
+                        key={post.id}
+                        variant="outlined"
+                        onClick={() => navigate(`/post/${post.id}`)}
+                        sx={{
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            backgroundColor: "neutral.softHoverBg",
+                            borderColor: "neutral.outlinedHoverBorder",
+                            transform: "translateY(-1px)",
+                          },
+                        }}
+                      >
+                        <CardContent sx={{ py: 1, px: 1.5 }}>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ mb: 0.5 }}
+                          >
+                            <Typography
+                              level="title-sm"
+                              sx={{ flex: 1, minWidth: 0 }}
+                            >
+                              {post.satellite_name}
+                            </Typography>
+                            {post.images.length > 0 && (
+                              <Chip size="sm" variant="soft" color="primary">
+                                {post.images.length}
+                              </Chip>
+                            )}
+                          </Stack>
+                          <Typography
+                            level="body-xs"
+                            color="neutral"
+                            sx={{ mb: 0.25 }}
+                          >
+                            � {post.station_name}
+                          </Typography>
+                          <Typography level="body-xs" color="neutral">
+                            � {formatDate(post.timestamp)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {likedPosts.length > 10 && (
+                      <Typography
+                        level="body-xs"
+                        color="neutral"
+                        sx={{ textAlign: "center", mt: 1 }}
+                      >
+                        {t("user.overview.showingLikedPosts", {
+                          count: 10,
+                          total: likedPosts.length,
+                        })}
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Stations Section - Main Content */}
             <Card>
               <CardContent>
@@ -348,7 +541,7 @@ const UserOverview: React.FC = () => {
                 ) : (
                   <Grid container spacing={2}>
                     {stations.map((station) => (
-                      <Grid key={station.id} xs={12} sm={6}>
+                      <Grid key={station.id} xs={12}>
                         <Card
                           variant="outlined"
                           onClick={() => navigate(`/station/${station.id}`)}
@@ -426,87 +619,64 @@ const UserOverview: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </Stack>
-        </Grid>
 
-        {/* Right Column: Liked Posts */}
-        <Grid xs={12} md={4}>
-          <Card sx={{ height: "fit-content" }}>
-            <CardContent>
-              <Typography level="h4" sx={{ mb: 3 }}>
-                {t("user.overview.likedPosts")} ({likedPosts.length})
-              </Typography>
-              {likedPosts.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  <Typography level="body-md" color="neutral">
-                    {t("user.overview.noLikedPosts")}
-                  </Typography>
-                </Box>
-              ) : (
-                <Stack spacing={1}>
-                  {likedPosts.slice(0, 10).map((post) => (
-                    <Card
-                      key={post.id}
-                      variant="outlined"
-                      onClick={() => navigate(`/post/${post.id}`)}
-                      sx={{
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          backgroundColor: "neutral.softHoverBg",
-                          borderColor: "neutral.outlinedHoverBorder",
-                          transform: "translateY(-1px)",
-                        },
-                      }}
-                    >
-                      <CardContent sx={{ py: 1, px: 1.5 }}>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          sx={{ mb: 0.5 }}
-                        >
-                          <Typography
-                            level="title-sm"
-                            sx={{ flex: 1, minWidth: 0 }}
-                          >
-                            {post.satellite_name}
-                          </Typography>
-                          {post.images.length > 0 && (
-                            <Chip size="sm" variant="soft" color="primary">
-                              {post.images.length}
-                            </Chip>
-                          )}
-                        </Stack>
-                        <Typography
-                          level="body-xs"
-                          color="neutral"
-                          sx={{ mb: 0.25 }}
-                        >
-                          � {post.station_name}
-                        </Typography>
-                        <Typography level="body-xs" color="neutral">
-                          � {formatDate(post.timestamp)}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {likedPosts.length > 10 && (
-                    <Typography
-                      level="body-xs"
-                      color="neutral"
-                      sx={{ textAlign: "center", mt: 1 }}
-                    >
-                      {t("user.overview.showingLikedPosts", {
-                        count: 10,
-                        total: likedPosts.length,
-                      })}
+            {/* Achievements Section */}
+            <Card sx={{ height: "fit-content" }}>
+              <CardContent>
+                <Typography level="h4" sx={{ mb: 3 }}>
+                  {t("user.overview.achievements")} ({achievements.length})
+                </Typography>
+                {achievements.length === 0 ? (
+                  <Box sx={{ textAlign: "center", py: 4 }}>
+                    <Typography level="body-md" color="neutral">
+                      {t("user.overview.noAchievements")}
                     </Typography>
-                  )}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
+                  </Box>
+                ) : (
+                  <Stack spacing={1}>
+                    {achievements.map((achievement) => (
+                      <Card
+                        key={achievement.achievement.id}
+                        variant="outlined"
+                        sx={{
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <CardContent sx={{ py: 1, px: 1.5 }}>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ mb: 0.5 }}
+                          >
+                            <Typography sx={{ fontSize: "1.2em" }}>
+                              {achievement.achievement.icon}
+                            </Typography>
+                            <Typography
+                              level="title-sm"
+                              sx={{ flex: 1, minWidth: 0 }}
+                            >
+                              {achievement.achievement.name}
+                            </Typography>
+                          </Stack>
+                          <Typography
+                            level="body-xs"
+                            color="neutral"
+                            sx={{ mb: 0.25 }}
+                          >
+                            {achievement.achievement.description}
+                          </Typography>
+                          <Typography level="body-xs" color="neutral">
+                            🏆 {formatDate(achievement.unlocked_at)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+          </Stack>
         </Grid>
       </Grid>
     </Box>

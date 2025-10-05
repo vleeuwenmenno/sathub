@@ -129,7 +129,14 @@ export interface UserAchievement {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'achievement' | 'comment' | 'like' | 'station_down' | 'station_online' | 'station_low_uptime' | 'report';
+  type:
+    | "achievement"
+    | "comment"
+    | "like"
+    | "station_down"
+    | "station_online"
+    | "station_low_uptime"
+    | "report";
   message: string;
   related_id: string | null;
   is_read: boolean;
@@ -143,6 +150,22 @@ export interface NotificationResponse {
     limit: number;
     total: number;
     pages: number;
+  };
+}
+
+export interface UserActivity {
+  id: string;
+  type: "liked_post" | "liked_comment" | "commented" | "posted" | "achievement" | "station";
+  timestamp: string;
+  data: {
+    post_id?: string;
+    post_title?: string;
+    comment_id?: string;
+    post_title_for_comment?: string;
+    achievement_id?: string;
+    achievement_name?: string;
+    station_id?: string;
+    station_name?: string;
   };
 }
 

@@ -423,13 +423,25 @@
       "publicPosts": "Öffentliche Beiträge",
       "recentPosts": "Aktuelle Beiträge",
       "showingPosts": "{{count}} von {{total}} Beiträgen anzeigen",
-      "publicStationsTitle": "Öffentliche Stationen",
+      "publicStationsTitle": "Stationen",
       "noPublicStations": "Keine öffentlichen Stationen verfügbar",
       "likedPosts": "Gelikte Beiträge",
       "noLikedPosts": "Noch keine Gelikten Beiträge",
       "showingLikedPosts": "{{count}} von {{total}} Gelikten Beiträgen anzeigen",
+      "recentActivities": "Aktuelle Aktivitäten",
+      "noActivities": "Keine aktuellen Aktivitäten",
+      "achievements": "Erfolge",
+      "noAchievements": "Noch keine Erfolge freigeschaltet",
       "noContent": "Dieser Benutzer hat keine öffentlichen Inhalte verfügbar",
       "noContentDescription": "Keine öffentlichen Stationen oder Beiträge zum Anzeigen."
+    },
+    "activity": {
+      "posted": "Beitrag erstellt",
+      "likedPost": "Beitrag geliked",
+      "likedComment": "Kommentar geliked",
+      "commented": "Kommentiert",
+      "unlockedAchievement": "Erfolg freigeschaltet",
+      "createdStation": "Station erstellt"
     }
   },
   "achievements": {
