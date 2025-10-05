@@ -107,6 +107,10 @@
     "longTermReliability": {
       "name": "Langzeit-Zuverlässigkeit",
       "description": "Halte 95% Verfügbarkeit auf einer Station für 30 Tage"
+    },
+    "easterEgg": {
+      "name": "OI IA OI IA",
+      "description": "Du hast die versteckte Katze gefunden!!! 🐱"
     }
   }
 }

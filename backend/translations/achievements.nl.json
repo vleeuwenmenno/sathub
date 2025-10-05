@@ -107,6 +107,10 @@
     "longTermReliability": {
       "name": "Langetermijn Betrouwbaarheid",
       "description": "Behoud 95% uptime op een station voor 30 dagen"
+    },
+    "easterEgg": {
+      "name": "OI IA OI IA",
+      "description": "Je hebt de geheime kat gevonden!!! 🐱"
     }
   }
 }
