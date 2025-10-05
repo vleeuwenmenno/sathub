@@ -12,19 +12,25 @@ import {
   Box,
 } from "@mui/joy";
 import type { Post } from "../types";
-import { getStationPosts, getPostImageUrl, getStationDetails, getProfilePictureUrl } from "../api";
+import {
+  getStationPosts,
+  getPostImageUrl,
+  getStationDetails,
+  getProfilePictureUrl,
+} from "../api";
 import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
 import DeletePostButton from "./DeletePostButton";
 import ReportButton from "./ReportButton";
 import StationHealthGraph from "./StationHealthGraph";
+import ImageViewer from "./ImageViewer";
 import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
 
   return `${day}.${month}.${year}`;
@@ -39,6 +45,12 @@ const StationPosts: React.FC = () => {
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    alt: string;
+    filename: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!stationId) return;
@@ -65,9 +77,23 @@ const StationPosts: React.FC = () => {
   }, [stationId]);
 
   const handleDeletePost = (postId: string) => {
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
   };
 
+  const handleImageClick = (post: Post, imageIndex: number) => {
+    const image = post.images[imageIndex];
+    setSelectedImage({
+      url: getPostImageUrl(post.id, image.id),
+      alt: `${post.satellite_name} - ${image.filename}`,
+      filename: image.filename,
+    });
+    setImageViewerOpen(true);
+  };
+
+  const handleCloseImageViewer = () => {
+    setImageViewerOpen(false);
+    setSelectedImage(null);
+  };
 
   if (loading) {
     return (
@@ -101,25 +127,36 @@ const StationPosts: React.FC = () => {
             <Box sx={{ mb: 3 }}>
               <Card>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography level="h3">
-                      {station.name}
-                    </Typography>
-                    <ReportButton
-                      targetType="station"
-                      targetId={station.id}
-                    />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography level="h3">{station.name}</Typography>
+                    <ReportButton targetType="station" targetId={station.id} />
                   </Box>
                   <Stack spacing={1}>
-                    <Typography level="body-md" startDecorator={<span>📍</span>}>
+                    <Typography
+                      level="body-md"
+                      startDecorator={<span>📍</span>}
+                    >
                       {station.location}
                     </Typography>
                     {station.equipment && (
-                      <Typography level="body-md" startDecorator={<span>🔧</span>}>
+                      <Typography
+                        level="body-md"
+                        startDecorator={<span>🔧</span>}
+                      >
                         {station.equipment}
                       </Typography>
                     )}
-                    <Typography level="body-md" startDecorator={<span>📅</span>}>
+                    <Typography
+                      level="body-md"
+                      startDecorator={<span>📅</span>}
+                    >
                       Created {formatDate(station.created_at)}
                     </Typography>
                     <Typography
@@ -175,9 +212,14 @@ const StationPosts: React.FC = () => {
                               overflow: "hidden",
                             }}
                           >
-                            <Skeleton loading={!loadedImages[`${post.id}-image`]}>
+                            <Skeleton
+                              loading={!loadedImages[`${post.id}-image`]}
+                            >
                               <img
-                                src={getPostImageUrl(post.id, post.images[0].id)}
+                                src={getPostImageUrl(
+                                  post.id,
+                                  post.images[0].id
+                                )}
                                 alt={post.satellite_name}
                                 style={{
                                   width: "100%",
@@ -186,29 +228,38 @@ const StationPosts: React.FC = () => {
                                   transition: "transform 0.3s",
                                 }}
                                 onLoad={() => {
-                                  setLoadedImages(prev => ({
+                                  setLoadedImages((prev) => ({
                                     ...prev,
-                                    [`${post.id}-image`]: true
+                                    [`${post.id}-image`]: true,
                                   }));
                                 }}
                                 onError={() => {
-                                  setLoadedImages(prev => ({
+                                  setLoadedImages((prev) => ({
                                     ...prev,
-                                    [`${post.id}-image`]: true
+                                    [`${post.id}-image`]: true,
                                   }));
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform = "scale(1.05)")
+                                  (e.currentTarget.style.transform =
+                                    "scale(1.05)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
                                 }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleImageClick(post, 0);
+                                }}
                               />
                             </Skeleton>
                           </Box>
                         )}
                         <CardContent
-                          sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                          sx={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                          }}
                         >
                           <Typography level="h4" sx={{ mb: 1 }}>
                             {post.satellite_name}
@@ -234,7 +285,14 @@ const StationPosts: React.FC = () => {
                               {formatDate(post.created_at)}
                             </Typography>
                           </Stack>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: "auto" }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              mt: "auto",
+                            }}
+                          >
                             <Box onClick={(e) => e.stopPropagation()}>
                               <DeletePostButton
                                 postId={post.id}
@@ -257,7 +315,7 @@ const StationPosts: React.FC = () => {
               </>
             )}
           </Grid>
-          
+
           {/* Right Column: Map and Owner */}
           <Grid xs={12} md={4}>
             <Stack spacing={3}>
@@ -268,7 +326,7 @@ const StationPosts: React.FC = () => {
                 longitude={station.longitude}
                 height={280}
               />
-              
+
               {/* Station Owner */}
               {station.user && (
                 <Card
@@ -302,9 +360,12 @@ const StationPosts: React.FC = () => {
                           justifyContent: "center",
                         }}
                       >
-                        {station.user.has_profile_picture && station.user.profile_picture_url ? (
+                        {station.user.has_profile_picture &&
+                        station.user.profile_picture_url ? (
                           <img
-                            src={getProfilePictureUrl(station.user.profile_picture_url)}
+                            src={getProfilePictureUrl(
+                              station.user.profile_picture_url
+                            )}
                             alt={`${station.user.username}'s profile`}
                             style={{
                               width: "100%",
@@ -332,12 +393,26 @@ const StationPosts: React.FC = () => {
                   </CardContent>
                 </Card>
               )}
-              
+
               {/* Station Health */}
-              <StationHealthGraph stationId={stationId!} stationName={station.name} />
+              <StationHealthGraph
+                stationId={stationId!}
+                stationName={station.name}
+              />
             </Stack>
           </Grid>
         </Grid>
+      )}
+
+      {/* Image Viewer */}
+      {selectedImage && (
+        <ImageViewer
+          open={imageViewerOpen}
+          onClose={handleCloseImageViewer}
+          imageUrl={selectedImage.url}
+          altText={selectedImage.alt}
+          filename={selectedImage.filename}
+        />
       )}
     </Box>
   );

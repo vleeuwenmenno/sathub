@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Typography,
   Box,
@@ -11,25 +11,33 @@ import {
   Alert,
   IconButton,
   Chip,
-} from '@mui/joy';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import type { DatabasePostDetail } from '../types';
-import type { Station } from '../api';
-import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob, getProfilePictureUrl, getPostCBOR } from '../api';
-import LikeButton from './LikeButton';
-import DeletePostButton from './DeletePostButton';
-import ReportButton from './ReportButton';
-import CommentSection from './CommentSection';
-import { useAuth } from '../contexts/AuthContext';
+} from "@mui/joy";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import type { DatabasePostDetail } from "../types";
+import type { Station } from "../api";
+import {
+  getDatabasePostDetail,
+  getPostImageBlob,
+  getStationDetails,
+  getStationPictureBlob,
+  getProfilePictureUrl,
+  getPostCBOR,
+} from "../api";
+import LikeButton from "./LikeButton";
+import DeletePostButton from "./DeletePostButton";
+import ReportButton from "./ReportButton";
+import CommentSection from "./CommentSection";
+import ImageViewer from "./ImageViewer";
+import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
 
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 };
@@ -37,46 +45,58 @@ const formatDate = (dateString: string): string => {
 const getImageCategory = (filename: string): string => {
   const lower = filename.toLowerCase();
 
-  if (lower.includes('msu-mr')) {
-    if (lower.includes('rgb')) {
-      return 'MSU-MR RGB';
-    } else if (lower.includes('ir') || lower.includes('infrared')) {
-      return 'MSU-MR IR';
+  if (lower.includes("msu-mr")) {
+    if (lower.includes("rgb")) {
+      return "MSU-MR RGB";
+    } else if (lower.includes("ir") || lower.includes("infrared")) {
+      return "MSU-MR IR";
     } else {
-      return 'MSU-MR';
+      return "MSU-MR";
     }
   }
-  if (lower.includes('avhrr')) {
-    return 'AVHRR';
+  if (lower.includes("avhrr")) {
+    return "AVHRR";
   }
-  if (lower.includes('msa')) {
-    return 'MSA';
+  if (lower.includes("msa")) {
+    return "MSA";
   }
-  if (lower.includes('projected')) {
-    return 'Projected';
+  if (lower.includes("projected")) {
+    return "Projected";
   }
-  if (lower.includes('rgb')) {
-    return 'RGB';
+  if (lower.includes("rgb")) {
+    return "RGB";
   }
-  if (lower.includes('ir') || lower.includes('infrared')) {
-    return 'IR';
+  if (lower.includes("ir") || lower.includes("infrared")) {
+    return "IR";
   }
 
-  return 'Other';
+  return "Other";
 };
 
-const categorizeImages = (images: DatabasePostDetail['images']): string[] => {
+const categorizeImages = (images: DatabasePostDetail["images"]): string[] => {
   const categories = new Set<string>();
 
-  images.forEach(image => {
+  images.forEach((image) => {
     categories.add(getImageCategory(image.filename));
   });
 
   return Array.from(categories).sort();
 };
 
-const sortImagesByCategory = (images: DatabasePostDetail['images']): DatabasePostDetail['images'] => {
-  const categoryOrder = ['MSU-MR RGB', 'MSU-MR IR', 'MSU-MR', 'AVHRR', 'MSA', 'Projected', 'RGB', 'IR', 'Other'];
+const sortImagesByCategory = (
+  images: DatabasePostDetail["images"]
+): DatabasePostDetail["images"] => {
+  const categoryOrder = [
+    "MSU-MR RGB",
+    "MSU-MR IR",
+    "MSU-MR",
+    "AVHRR",
+    "MSA",
+    "Projected",
+    "RGB",
+    "IR",
+    "Other",
+  ];
 
   return [...images].sort((a, b) => {
     const catA = getImageCategory(a.filename);
@@ -94,10 +114,12 @@ const sortImagesByCategory = (images: DatabasePostDetail['images']): DatabasePos
   });
 };
 
-const groupImagesByCategory = (images: DatabasePostDetail['images']): Record<string, DatabasePostDetail['images']> => {
-  const groups: Record<string, DatabasePostDetail['images']> = {};
+const groupImagesByCategory = (
+  images: DatabasePostDetail["images"]
+): Record<string, DatabasePostDetail["images"]> => {
+  const groups: Record<string, DatabasePostDetail["images"]> = {};
 
-  images.forEach(image => {
+  images.forEach((image) => {
     const category = getImageCategory(image.filename);
     if (!groups[category]) {
       groups[category] = [];
@@ -117,14 +139,25 @@ const Detail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedImageInCategory, setSelectedImageInCategory] = useState<number>(0);
+  const [selectedImageInCategory, setSelectedImageInCategory] =
+    useState<number>(0);
   const [imageBlobs, setImageBlobs] = useState<Record<number, string>>({});
-  const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>(
+    {}
+  );
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [stationImageBlob, setStationImageBlob] = useState<string | null>(null);
-  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<
+    string | null
+  >(null);
   const [cborData, setCborData] = useState<any>(null);
   const [loadingCBOR, setLoadingCBOR] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedImageForViewer, setSelectedImageForViewer] = useState<{
+    url: string;
+    alt: string;
+    filename: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -142,10 +175,12 @@ const Detail: React.FC = () => {
           const stationData = await getStationDetails(data.station_id);
           setStation(stationData);
         } catch (stationErr) {
-          console.warn('Could not load station details:', stationErr);
+          console.warn("Could not load station details:", stationErr);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load post details');
+        setError(
+          err instanceof Error ? err.message : "Failed to load post details"
+        );
       } finally {
         setLoading(false);
       }
@@ -155,14 +190,20 @@ const Detail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (detail?.images && detail.images.length > 0 && selectedCategory === null) {
+    if (
+      detail?.images &&
+      detail.images.length > 0 &&
+      selectedCategory === null
+    ) {
       // Start with the first available category
       const categories = categorizeImages(detail.images);
       if (categories.length > 0) {
         setSelectedCategory(categories[0]);
-        
+
         // Load the first image of the first category
-        const firstCategoryImages = groupImagesByCategory(detail.images)[categories[0]];
+        const firstCategoryImages = groupImagesByCategory(detail.images)[
+          categories[0]
+        ];
         if (firstCategoryImages && firstCategoryImages.length > 0) {
           loadImage(firstCategoryImages[0].id);
         }
@@ -179,17 +220,17 @@ const Detail: React.FC = () => {
 
       if (!images || images.length <= 1) return;
 
-      if (event.key === 'ArrowLeft') {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
-        setSelectedImageInCategory(prev => {
+        setSelectedImageInCategory((prev) => {
           const newIndex = prev > 0 ? prev - 1 : images.length - 1;
           // Load the new image
           loadImage(images[newIndex].id);
           return Math.min(newIndex, images.length - 1); // Safety check
         });
-      } else if (event.key === 'ArrowRight') {
+      } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        setSelectedImageInCategory(prev => {
+        setSelectedImageInCategory((prev) => {
           const newIndex = prev < images.length - 1 ? prev + 1 : 0;
           // Load the new image
           loadImage(images[newIndex].id);
@@ -198,8 +239,8 @@ const Detail: React.FC = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [selectedCategory, detail?.images]);
 
   // Function to load a single image on-demand
@@ -208,17 +249,17 @@ const Detail: React.FC = () => {
       return; // Already loaded or currently loading
     }
 
-    setLoadingImages(prev => ({ ...prev, [imageId]: true }));
+    setLoadingImages((prev) => ({ ...prev, [imageId]: true }));
     // Clear any previous error for this image
-    setImageErrors(prev => ({ ...prev, [imageId]: false }));
+    setImageErrors((prev) => ({ ...prev, [imageId]: false }));
     try {
       const blobUrl = await getPostImageBlob(detail.id, imageId);
-      setImageBlobs(prev => ({ ...prev, [imageId]: blobUrl }));
+      setImageBlobs((prev) => ({ ...prev, [imageId]: blobUrl }));
     } catch (error) {
-      console.error('Failed to load image:', imageId, error);
-      setImageErrors(prev => ({ ...prev, [imageId]: true }));
+      console.error("Failed to load image:", imageId, error);
+      setImageErrors((prev) => ({ ...prev, [imageId]: true }));
     } finally {
-      setLoadingImages(prev => ({ ...prev, [imageId]: false }));
+      setLoadingImages((prev) => ({ ...prev, [imageId]: false }));
     }
   };
 
@@ -229,7 +270,7 @@ const Detail: React.FC = () => {
     const images = groupImagesByCategory(detail.images)[selectedCategory];
     if (!images || images.length <= 1) return;
 
-    const currentIndex = images.findIndex(img => img.id === currentImageId);
+    const currentIndex = images.findIndex((img) => img.id === currentImageId);
     if (currentIndex === -1) return;
 
     // Preload next image
@@ -264,7 +305,7 @@ const Detail: React.FC = () => {
         const blobUrl = await getStationPictureBlob(station.picture_url!);
         setStationImageBlob(blobUrl);
       } catch (error) {
-        console.error('Failed to load station picture:', error);
+        console.error("Failed to load station picture:", error);
       }
     };
 
@@ -280,7 +321,7 @@ const Detail: React.FC = () => {
         const cborJson = await getPostCBOR(detail.id);
         setCborData(cborJson);
       } catch (error) {
-        console.error('Failed to load CBOR data:', error);
+        console.error("Failed to load CBOR data:", error);
         // CBOR might not exist for this post, which is fine
       } finally {
         setLoadingCBOR(false);
@@ -294,18 +335,18 @@ const Detail: React.FC = () => {
   useEffect(() => {
     if (window.location.hash) {
       const hash = window.location.hash.substring(1); // Remove #
-      if (hash.startsWith('comment-')) {
-        const commentId = hash.replace('comment-', '');
-        
+      if (hash.startsWith("comment-")) {
+        const commentId = hash.replace("comment-", "");
+
         // Function to scroll and highlight when element is found
         const scrollToComment = () => {
           const element = document.getElementById(hash);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+
             // Set highlighted comment
             setHighlightedCommentId(commentId);
-            
+
             // Remove highlight after 3 seconds
             setTimeout(() => {
               setHighlightedCommentId(null);
@@ -336,17 +377,33 @@ const Detail: React.FC = () => {
   }, []);
 
   const handleDeletePost = () => {
-    navigate('/');
+    navigate("/");
+  };
+
+  const handleImageClick = (imageId: number, filename: string) => {
+    if (detail) {
+      setSelectedImageForViewer({
+        url: imageBlobs[imageId] || "",
+        alt: `${detail.satellite_name} - ${filename}`,
+        filename: filename,
+      });
+      setImageViewerOpen(true);
+    }
+  };
+
+  const handleCloseImageViewer = () => {
+    setImageViewerOpen(false);
+    setSelectedImageForViewer(null);
   };
 
   if (loading) {
     return (
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '50vh',
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
         }}
       >
         <CircularProgress />
@@ -357,15 +414,13 @@ const Detail: React.FC = () => {
   if (error || !detail) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert color="danger">
-          {error || 'Post not found'}
-        </Alert>
+        <Alert color="danger">{error || "Post not found"}</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1400px', mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1400px", mx: "auto" }}>
       <Typography level="h2" sx={{ mb: 3 }}>
         {detail.satellite_name}
       </Typography>
@@ -375,25 +430,34 @@ const Detail: React.FC = () => {
         <Grid xs={12} lg={8}>
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 2,
+                }}
+              >
                 <Typography level="h3">
                   Image Gallery ({detail.images.length} images)
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {categorizeImages(detail.images).map((category) => (
                     <Chip
                       key={category}
                       size="sm"
                       variant={selectedCategory === category ? "solid" : "soft"}
                       color="primary"
-                      sx={{ cursor: 'pointer' }}
+                      sx={{ cursor: "pointer" }}
                       onClick={() => {
                         setSelectedCategory(category);
                         setSelectedImageInCategory(0); // Reset to first image when switching categories
-                        
+
                         // Load the first image of the new category
                         if (detail?.images) {
-                          const categoryImages = groupImagesByCategory(detail.images)[category];
+                          const categoryImages = groupImagesByCategory(
+                            detail.images
+                          )[category];
                           if (categoryImages && categoryImages.length > 0) {
                             loadImage(categoryImages[0].id);
                           }
@@ -408,211 +472,293 @@ const Detail: React.FC = () => {
 
               {/* Selected Category Carousel */}
               <Box>
-                {selectedCategory && (() => {
-                  const images = groupImagesByCategory(detail.images)[selectedCategory];
+                {selectedCategory &&
+                  (() => {
+                    const images = groupImagesByCategory(detail.images)[
+                      selectedCategory
+                    ];
 
-                  if (!images) return null;
+                    if (!images) return null;
 
-                  return (
-                    <Box key={selectedCategory} sx={{ mb: 4 }}>
-                      <Typography level="h4" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {selectedCategory}
-                        <Chip size="sm" variant="soft" color="primary">
-                          {images.length} image{images.length !== 1 ? 's' : ''}
-                        </Chip>
-                      </Typography>
-
-                    {/* Carousel for this category */}
-                    <Box sx={{ position: 'relative' }}>
-                      {/* Main image */}
-                      <Card sx={{ overflow: 'hidden', mb: 2 }}>
-                        <Box
+                    return (
+                      <Box key={selectedCategory} sx={{ mb: 4 }}>
+                        <Typography
+                          level="h4"
                           sx={{
-                            position: 'relative',
-                            height: { xs: '300px', sm: '400px', lg: '500px' },
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: 'neutral.softBg'
+                            mb: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
                           }}
                         >
-                          {images[selectedImageInCategory] && (
-                            loadingImages[images[selectedImageInCategory].id] || !imageBlobs[images[selectedImageInCategory].id] ? (
-                              <Box sx={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: 'neutral.softBg'
-                              }}>
-                                <CircularProgress />
-                              </Box>
-                            ) : imageErrors[images[selectedImageInCategory].id] ? (
-                              <Box sx={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: 'neutral.softBg',
-                                p: 2,
-                                textAlign: 'center'
-                              }}>
-                                <Typography level="body-sm" color="danger">
-                                  Failed to load image
-                                </Typography>
-                                <Typography level="body-xs" color="neutral" sx={{ mt: 1 }}>
-                                  {images[selectedImageInCategory].filename}
-                                </Typography>
-                              </Box>
-                            ) : (
-                              <img
-                                src={imageBlobs[images[selectedImageInCategory].id] || ''}
-                                alt={images[selectedImageInCategory].filename}
-                                style={{
-                                  maxWidth: '100%',
-                                  maxHeight: '100%',
-                                  objectFit: 'contain'
-                                }}
-                                onError={() => {
-                                  setImageErrors(prev => ({
-                                    ...prev,
-                                    [images[selectedImageInCategory].id]: true
-                                  }));
-                                }}
-                              />
-                            )
-                          )}
+                          {selectedCategory}
+                          <Chip size="sm" variant="soft" color="primary">
+                            {images.length} image
+                            {images.length !== 1 ? "s" : ""}
+                          </Chip>
+                        </Typography>
 
-                          {/* Navigation arrows */}
-                          {images.length > 1 && (
-                            <>
-                              <IconButton
-                                onClick={() => {
-                                  const newIndex = selectedImageInCategory > 0 ? selectedImageInCategory - 1 : images.length - 1;
-                                  setSelectedImageInCategory(newIndex);
-                                  // Load the new image
-                                  loadImage(images[newIndex].id);
-                                }}
-                                sx={{
-                                  position: 'absolute',
-                                  left: 8,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  bgcolor: 'rgba(0, 0, 0, 0.5)',
-                                  color: 'white',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(0, 0, 0, 0.7)'
-                                  }
-                                }}
-                              >
-                                <KeyboardArrowLeftIcon />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => {
-                                  const newIndex = selectedImageInCategory < images.length - 1 ? selectedImageInCategory + 1 : 0;
-                                  setSelectedImageInCategory(newIndex);
-                                  // Load the new image
-                                  loadImage(images[newIndex].id);
-                                }}
-                                sx={{
-                                  position: 'absolute',
-                                  right: 8,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  bgcolor: 'rgba(0, 0, 0, 0.5)',
-                                  color: 'white',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(0, 0, 0, 0.7)'
-                                  }
-                                }}
-                              >
-                                <KeyboardArrowRightIcon />
-                              </IconButton>
-                            </>
-                          )}
-                        </Box>
-                        <CardContent>
-                          <Typography level="body-lg" sx={{ textAlign: 'center' }}>
-                            {images[selectedImageInCategory]?.filename || ''}
-                          </Typography>
-                          <Typography level="body-sm" sx={{ textAlign: 'center', color: 'neutral.500' }}>
-                            {selectedImageInCategory + 1} of {images.length}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-
-                      {/* Thumbnail previews as dots */}
-                      {images.length > 1 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                          {images.map((image, index) => (
+                        {/* Carousel for this category */}
+                        <Box sx={{ position: "relative" }}>
+                          {/* Main image */}
+                          <Card sx={{ overflow: "hidden", mb: 2 }}>
                             <Box
-                              key={image.id}
-                              onClick={() => {
-                                setSelectedImageInCategory(index);
-                                // Load the image if not already loaded
-                                loadImage(image.id);
-                              }}
                               sx={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                overflow: 'hidden',
-                                border: selectedImageInCategory === index ? '2px solid var(--joy-palette-primary-main)' : '2px solid transparent',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: loadingImages[image.id] ? 'neutral.softBg' : 'transparent',
-                                '&:hover': {
-                                  borderColor: 'var(--joy-palette-primary-main)',
-                                  transform: 'scale(1.1)'
-                                }
+                                position: "relative",
+                                height: {
+                                  xs: "300px",
+                                  sm: "400px",
+                                  lg: "500px",
+                                },
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                bgcolor: "neutral.softBg",
                               }}
                             >
-                              {loadingImages[image.id] || !imageBlobs[image.id] ? (
-                                <CircularProgress size="sm" />
-                              ) : imageErrors[image.id] ? (
-                                <Box sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  bgcolor: 'danger.softBg'
-                                }}>
-                                  <Typography level="body-xs" color="danger" sx={{ p: 1, textAlign: 'center' }}>
-                                    Error
-                                  </Typography>
-                                </Box>
-                              ) : (
-                                <img
-                                  src={imageBlobs[image.id]}
-                                  alt={image.filename}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                  onError={() => {
-                                    setImageErrors(prev => ({
-                                      ...prev,
-                                      [image.id]: true
-                                    }));
-                                  }}
-                                />
+                              {images[selectedImageInCategory] &&
+                                (loadingImages[
+                                  images[selectedImageInCategory].id
+                                ] ||
+                                !imageBlobs[
+                                  images[selectedImageInCategory].id
+                                ] ? (
+                                  <Box
+                                    sx={{
+                                      width: "100%",
+                                      height: "100%",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      bgcolor: "neutral.softBg",
+                                    }}
+                                  >
+                                    <CircularProgress />
+                                  </Box>
+                                ) : imageErrors[
+                                    images[selectedImageInCategory].id
+                                  ] ? (
+                                  <Box
+                                    sx={{
+                                      width: "100%",
+                                      height: "100%",
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      bgcolor: "neutral.softBg",
+                                      p: 2,
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    <Typography level="body-sm" color="danger">
+                                      Failed to load image
+                                    </Typography>
+                                    <Typography
+                                      level="body-xs"
+                                      color="neutral"
+                                      sx={{ mt: 1 }}
+                                    >
+                                      {images[selectedImageInCategory].filename}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <img
+                                    src={
+                                      imageBlobs[
+                                        images[selectedImageInCategory].id
+                                      ] || ""
+                                    }
+                                    alt={
+                                      images[selectedImageInCategory].filename
+                                    }
+                                    style={{
+                                      maxWidth: "100%",
+                                      maxHeight: "100%",
+                                      objectFit: "contain",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() =>
+                                      handleImageClick(
+                                        images[selectedImageInCategory].id,
+                                        images[selectedImageInCategory].filename
+                                      )
+                                    }
+                                    onError={() => {
+                                      setImageErrors((prev) => ({
+                                        ...prev,
+                                        [images[selectedImageInCategory].id]:
+                                          true,
+                                      }));
+                                    }}
+                                  />
+                                ))}
+
+                              {/* Navigation arrows */}
+                              {images.length > 1 && (
+                                <>
+                                  <IconButton
+                                    onClick={() => {
+                                      const newIndex =
+                                        selectedImageInCategory > 0
+                                          ? selectedImageInCategory - 1
+                                          : images.length - 1;
+                                      setSelectedImageInCategory(newIndex);
+                                      // Load the new image
+                                      loadImage(images[newIndex].id);
+                                    }}
+                                    sx={{
+                                      position: "absolute",
+                                      left: 8,
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      bgcolor: "rgba(0, 0, 0, 0.5)",
+                                      color: "white",
+                                      "&:hover": {
+                                        bgcolor: "rgba(0, 0, 0, 0.7)",
+                                      },
+                                    }}
+                                  >
+                                    <KeyboardArrowLeftIcon />
+                                  </IconButton>
+                                  <IconButton
+                                    onClick={() => {
+                                      const newIndex =
+                                        selectedImageInCategory <
+                                        images.length - 1
+                                          ? selectedImageInCategory + 1
+                                          : 0;
+                                      setSelectedImageInCategory(newIndex);
+                                      // Load the new image
+                                      loadImage(images[newIndex].id);
+                                    }}
+                                    sx={{
+                                      position: "absolute",
+                                      right: 8,
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      bgcolor: "rgba(0, 0, 0, 0.5)",
+                                      color: "white",
+                                      "&:hover": {
+                                        bgcolor: "rgba(0, 0, 0, 0.7)",
+                                      },
+                                    }}
+                                  >
+                                    <KeyboardArrowRightIcon />
+                                  </IconButton>
+                                </>
                               )}
                             </Box>
-                          ))}
+                            <CardContent>
+                              <Typography
+                                level="body-lg"
+                                sx={{ textAlign: "center" }}
+                              >
+                                {images[selectedImageInCategory]?.filename ||
+                                  ""}
+                              </Typography>
+                              <Typography
+                                level="body-sm"
+                                sx={{
+                                  textAlign: "center",
+                                  color: "neutral.500",
+                                }}
+                              >
+                                {selectedImageInCategory + 1} of {images.length}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+
+                          {/* Thumbnail previews as dots */}
+                          {images.length > 1 && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                gap: 1,
+                                mb: 2,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              {images.map((image, index) => (
+                                <Box
+                                  key={image.id}
+                                  onClick={() => {
+                                    setSelectedImageInCategory(index);
+                                    // Load the image if not already loaded
+                                    loadImage(image.id);
+                                  }}
+                                  sx={{
+                                    width: "40px",
+                                    height: "40px",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                    overflow: "hidden",
+                                    border:
+                                      selectedImageInCategory === index
+                                        ? "2px solid var(--joy-palette-primary-main)"
+                                        : "2px solid transparent",
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    bgcolor: loadingImages[image.id]
+                                      ? "neutral.softBg"
+                                      : "transparent",
+                                    "&:hover": {
+                                      borderColor:
+                                        "var(--joy-palette-primary-main)",
+                                      transform: "scale(1.1)",
+                                    },
+                                  }}
+                                >
+                                  {loadingImages[image.id] ||
+                                  !imageBlobs[image.id] ? (
+                                    <CircularProgress size="sm" />
+                                  ) : imageErrors[image.id] ? (
+                                    <Box
+                                      sx={{
+                                        width: "100%",
+                                        height: "100%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        bgcolor: "danger.softBg",
+                                      }}
+                                    >
+                                      <Typography
+                                        level="body-xs"
+                                        color="danger"
+                                        sx={{ p: 1, textAlign: "center" }}
+                                      >
+                                        Error
+                                      </Typography>
+                                    </Box>
+                                  ) : (
+                                    <img
+                                      src={imageBlobs[image.id]}
+                                      alt={image.filename}
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                      }}
+                                      onError={() => {
+                                        setImageErrors((prev) => ({
+                                          ...prev,
+                                          [image.id]: true,
+                                        }));
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
                         </Box>
-                      )}
-                    </Box>
-                  </Box>
-                  );
-                })()}
+                      </Box>
+                    );
+                  })()}
               </Box>
             </CardContent>
           </Card>
@@ -633,20 +779,20 @@ const Detail: React.FC = () => {
                   <Box sx={{ mb: 2 }}>
                     <Box
                       sx={{
-                        width: '100%',
+                        width: "100%",
                         height: 200,
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        bgcolor: 'neutral.softBg'
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        bgcolor: "neutral.softBg",
                       }}
                     >
                       <img
                         src={stationImageBlob}
                         alt={`${detail.station_name} station`}
                         style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
                         }}
                       />
                     </Box>
@@ -658,7 +804,10 @@ const Detail: React.FC = () => {
                     Location: {detail.station_name}
                   </Typography>
                   {station && (
-                    <Typography level="body-md" startDecorator={<span>📅</span>}>
+                    <Typography
+                      level="body-md"
+                      startDecorator={<span>📅</span>}
+                    >
                       Created: {formatDate(station.created_at)}
                     </Typography>
                   )}
@@ -699,9 +848,12 @@ const Detail: React.FC = () => {
                         justifyContent: "center",
                       }}
                     >
-                      {detail.station_user.has_profile_picture && detail.station_user.profile_picture_url ? (
+                      {detail.station_user.has_profile_picture &&
+                      detail.station_user.profile_picture_url ? (
                         <img
-                          src={getProfilePictureUrl(detail.station_user.profile_picture_url)}
+                          src={getProfilePictureUrl(
+                            detail.station_user.profile_picture_url
+                          )}
                           alt={`${detail.station_user.username}'s profile`}
                           style={{
                             width: "100%",
@@ -717,7 +869,8 @@ const Detail: React.FC = () => {
                     </Box>
                     <Box>
                       <Typography level="body-lg" fontWeight="bold">
-                        {detail.station_user.display_name || detail.station_user.username}
+                        {detail.station_user.display_name ||
+                          detail.station_user.username}
                       </Typography>
                       {detail.station_user.display_name && (
                         <Typography level="body-sm" color="neutral">
@@ -733,14 +886,21 @@ const Detail: React.FC = () => {
             {/* Post Info */}
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    mb: 2,
+                  }}
+                >
                   <Typography level="h3">Post Details</Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: "flex", gap: 1 }}>
                     <DeletePostButton
                       postId={detail.id}
                       postName={detail.satellite_name}
                       isOwner={user?.id === detail.station_user?.id}
-                      isAdmin={user?.role === 'admin'}
+                      isAdmin={user?.role === "admin"}
                       onDelete={handleDeletePost}
                     />
                     <LikeButton
@@ -748,24 +908,33 @@ const Detail: React.FC = () => {
                       initialLikesCount={detail.likes_count}
                       initialIsLiked={detail.is_liked}
                     />
-                    <ReportButton
-                      targetType="post"
-                      targetId={detail.id}
-                    />
+                    <ReportButton targetType="post" targetId={detail.id} />
                   </Box>
                 </Box>
                 <Stack spacing={1}>
                   <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Satellite:</Typography>
-                    <Typography level="body-sm">{detail.satellite_name}</Typography>
+                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                      Satellite:
+                    </Typography>
+                    <Typography level="body-sm">
+                      {detail.satellite_name}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Created:</Typography>
-                    <Typography level="body-sm">{formatDate(detail.created_at)}</Typography>
+                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                      Created:
+                    </Typography>
+                    <Typography level="body-sm">
+                      {formatDate(detail.created_at)}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: 'bold' }}>Images:</Typography>
-                    <Typography level="body-sm">{detail.images.length}</Typography>
+                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                      Images:
+                    </Typography>
+                    <Typography level="body-sm">
+                      {detail.images.length}
+                    </Typography>
                   </Box>
                 </Stack>
               </CardContent>
@@ -775,15 +944,25 @@ const Detail: React.FC = () => {
             {detail.metadata && (
               <Card>
                 <CardContent>
-                  <Typography level="h3" sx={{ mb: 2 }}>Metadata</Typography>
-                  <Box sx={{
-                    maxHeight: '200px',
-                    overflow: 'auto',
-                    bgcolor: 'neutral.softBg',
-                    p: 1,
-                    borderRadius: 'sm'
-                  }}>
-                    <pre style={{ fontSize: '0.7rem', margin: 0, whiteSpace: 'pre-wrap' }}>
+                  <Typography level="h3" sx={{ mb: 2 }}>
+                    Metadata
+                  </Typography>
+                  <Box
+                    sx={{
+                      maxHeight: "200px",
+                      overflow: "auto",
+                      bgcolor: "neutral.softBg",
+                      p: 1,
+                      borderRadius: "sm",
+                    }}
+                  >
+                    <pre
+                      style={{
+                        fontSize: "0.7rem",
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
                       {detail.metadata}
                     </pre>
                   </Box>
@@ -794,20 +973,30 @@ const Detail: React.FC = () => {
             {/* CBOR Data */}
             <Card>
               <CardContent>
-                <Typography level="h3" sx={{ mb: 2 }}>CBOR Data</Typography>
+                <Typography level="h3" sx={{ mb: 2 }}>
+                  CBOR Data
+                </Typography>
                 {loadingCBOR ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
                     <CircularProgress size="sm" />
                   </Box>
                 ) : cborData ? (
-                  <Box sx={{
-                    maxHeight: '300px',
-                    overflow: 'auto',
-                    bgcolor: 'neutral.softBg',
-                    p: 1,
-                    borderRadius: 'sm'
-                  }}>
-                    <pre style={{ fontSize: '0.7rem', margin: 0, whiteSpace: 'pre-wrap' }}>
+                  <Box
+                    sx={{
+                      maxHeight: "300px",
+                      overflow: "auto",
+                      bgcolor: "neutral.softBg",
+                      p: 1,
+                      borderRadius: "sm",
+                    }}
+                  >
+                    <pre
+                      style={{
+                        fontSize: "0.7rem",
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
                       {JSON.stringify(cborData, null, 2)}
                     </pre>
                   </Box>
@@ -823,7 +1012,20 @@ const Detail: React.FC = () => {
       </Grid>
 
       {/* Comments Section */}
-                  <CommentSection postId={id!} highlightedCommentId={highlightedCommentId} />
+      <CommentSection
+        postId={id!}
+        highlightedCommentId={highlightedCommentId}
+      />
+      {/* Image Viewer */}
+      {selectedImageForViewer && (
+        <ImageViewer
+          open={imageViewerOpen}
+          onClose={handleCloseImageViewer}
+          imageUrl={selectedImageForViewer.url}
+          altText={selectedImageForViewer.alt}
+          filename={selectedImageForViewer.filename}
+        />
+      )}
     </Box>
   );
 };
