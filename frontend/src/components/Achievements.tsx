@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -8,8 +8,13 @@ import {
   Chip,
   Skeleton,
   Alert,
+  FormControl,
+  FormLabel,
+  Checkbox,
+  Select,
+  Option,
 } from "@mui/joy";
-import { EmojiEvents, Lock } from "@mui/icons-material";
+import { EmojiEvents, Lock, FilterList } from "@mui/icons-material";
 import { getUserAchievements, getAllAchievements } from "../api";
 import { useTranslation } from "../contexts/TranslationContext";
 import type { UserAchievement, Achievement } from "../types";
@@ -23,6 +28,11 @@ const Achievements: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  // Filter states
+  const [showUnlocked, setShowUnlocked] = useState(true);
+  const [showLocked, setShowLocked] = useState(true);
+  const [sortBy, setSortBy] = useState<"latest" | "alphabetical">("latest");
 
   useEffect(() => {
     const fetchAchievements = async () => {
@@ -69,17 +79,54 @@ const Achievements: React.FC = () => {
   }, [loading, allAchievements]);
 
   // Create a map of unlocked achievements for quick lookup
-  const unlockedMap = new Map(
-    userAchievements.map((ua) => [ua.achievement.id, ua.unlocked_at])
+  const unlockedMap = useMemo(
+    () =>
+      new Map(
+        userAchievements.map((ua) => [ua.achievement.id, ua.unlocked_at])
+      ),
+    [userAchievements]
   );
 
   // Combine visible achievements with unlocked hidden achievements
-  const displayAchievements = [
-    ...allAchievements,
-    ...userAchievements
-      .filter((ua) => !allAchievements.some((a) => a.id === ua.achievement.id))
-      .map((ua) => ua.achievement),
-  ];
+  const allDisplayAchievements = useMemo(
+    () => [
+      ...allAchievements,
+      ...userAchievements
+        .filter(
+          (ua) => !allAchievements.some((a) => a.id === ua.achievement.id)
+        )
+        .map((ua) => ua.achievement),
+    ],
+    [allAchievements, userAchievements]
+  );
+
+  // Filtered and sorted achievements
+  const displayAchievements = useMemo(() => {
+    let filtered = allDisplayAchievements.filter((achievement) => {
+      const isUnlocked = unlockedMap.has(achievement.id);
+      if (showUnlocked && showLocked) return true;
+      if (showUnlocked && isUnlocked) return true;
+      if (showLocked && !isUnlocked) return true;
+      return false;
+    });
+
+    if (sortBy === "latest") {
+      filtered.sort((a, b) => {
+        const aUnlocked = unlockedMap.get(a.id);
+        const bUnlocked = unlockedMap.get(b.id);
+        if (aUnlocked && bUnlocked) {
+          return new Date(bUnlocked).getTime() - new Date(aUnlocked).getTime();
+        }
+        if (aUnlocked) return -1;
+        if (bUnlocked) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    } else {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return filtered;
+  }, [allDisplayAchievements, unlockedMap, showUnlocked, showLocked, sortBy]);
 
   // Handler to scroll to and highlight an achievement
   const handleAchievementClick = (achievementId: string) => {
@@ -151,10 +198,63 @@ const Achievements: React.FC = () => {
         {t("achievements.subtitle")}
       </Typography>
 
+      {/* Filters Section */}
+      <Box
+        sx={{
+          mb: 4,
+          p: 3,
+          bgcolor: "background.surface",
+          borderRadius: "lg",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 3,
+          alignItems: "center",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <FilterList />
+          <Typography level="h4">
+            {t("achievements.filters") || "Filters"}
+          </Typography>
+        </Box>
+        <FormControl>
+          <FormLabel>{t("achievements.show") || "Show"}</FormLabel>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Checkbox
+              label={t("achievements.unlocked") || "Unlocked"}
+              checked={showUnlocked}
+              onChange={(e) => setShowUnlocked(e.target.checked)}
+            />
+            <Checkbox
+              label={t("achievements.locked") || "Locked"}
+              checked={showLocked}
+              onChange={(e) => setShowLocked(e.target.checked)}
+            />
+          </Box>
+        </FormControl>
+        <FormControl>
+          <FormLabel>{t("achievements.sortBy") || "Sort by"}</FormLabel>
+          <Select
+            value={sortBy}
+            onChange={(_, value) =>
+              setSortBy(value as "latest" | "alphabetical")
+            }
+            sx={{ minWidth: 150 }}
+          >
+            <Option value="latest">
+              {t("achievements.latestUnlocked") || "Latest Unlocked"}
+            </Option>
+            <Option value="alphabetical">
+              {t("achievements.alphabetical") || "Alphabetical"}
+            </Option>
+          </Select>
+        </FormControl>
+      </Box>
+
       {userAchievements.length > 0 && (
         <Box
           sx={{
-            mt: 4,
+            mb: 4,
             p: 3,
             bgcolor: "background.surface",
             borderRadius: "lg",

@@ -446,6 +446,11 @@
     "unlocked": "Unlocked",
     "locked": "Locked",
     "unlockedOn": "Unlocked on",
+    "filters": "Filters",
+    "show": "Show",
+    "sortBy": "Sort by",
+    "latestUnlocked": "Latest Unlocked",
+    "alphabetical": "Alphabetical",
     "time": {
       "justNow": "Just now",
       "minutesAgo": "{{count}}m ago",
@@ -583,8 +588,7 @@
     "titlePlaceholder": "Brief title for the report",
     "messagePlaceholder": "Please describe the issue in detail...",
     "cancel": "Cancel",
-    "submitting": "Submitting...",
-    "submitReport": "Submit Report"
+    "submitting": "Submitting..."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

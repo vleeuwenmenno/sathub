@@ -446,6 +446,11 @@
     "unlocked": "Ontgrendeld",
     "locked": "Vergrendeld",
     "unlockedOn": "Ontgrendeld op",
+    "filters": "Filters",
+    "show": "Toon",
+    "sortBy": "Sorteren op",
+    "latestUnlocked": "Laatst ontgrendeld",
+    "alphabetical": "Alfabetisch",
     "time": {
       "justNow": "Net nu",
       "minutesAgo": "{{count}} min geleden",

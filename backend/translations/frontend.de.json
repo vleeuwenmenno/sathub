@@ -451,6 +451,11 @@
     "unlocked": "Freigeschaltet",
     "locked": "Gesperrt",
     "unlockedOn": "Freigeschaltet am",
+    "filters": "Filter",
+    "show": "Anzeigen",
+    "sortBy": "Sortieren nach",
+    "latestUnlocked": "Zuletzt freigeschaltet",
+    "alphabetical": "Alphabetisch",
     "time": {
       "justNow": "Gerade eben",
       "minutesAgo": "{{count}} Min. her",
