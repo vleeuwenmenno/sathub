@@ -269,6 +269,13 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			protectedPosts.DELETE("/:id", handlers.DeletePost)
 		}
 
+		// Report routes (user authentication required)
+		reports := api.Group("/reports")
+		reports.Use(middleware.AuthRequired())
+		{
+			reports.POST("", handlers.CreateReport)
+		}
+
 		// Station post routes (station token authentication required)
 		stationPosts := api.Group("/posts")
 		stationPosts.Use(middleware.StationTokenAuth())
@@ -346,6 +353,9 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			admin.GET("/posts", handlers.GetAllPosts)
 			admin.PUT("/posts/:id/hide", handlers.AdminHidePost)
 			admin.DELETE("/posts/:id", handlers.AdminDeletePost)
+			admin.GET("/reports", handlers.GetReports)
+			admin.PUT("/reports/:id/status", handlers.UpdateReportStatus)
+			admin.DELETE("/reports/:id", handlers.DeleteReport)
 			admin.GET("/settings/registration", handlers.GetRegistrationSettings)
 			admin.PUT("/settings/registration", handlers.UpdateRegistrationSettings)
 			admin.GET("/settings/approval", handlers.GetApprovalSettings)

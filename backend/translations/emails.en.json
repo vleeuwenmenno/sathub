@@ -119,6 +119,21 @@
       "footer": "Welcome to the SatHub community!",
       "footerHelp": "If you have any questions, please contact our support team."
     },
+    "reportNotification": {
+      "subject": "New Report Submitted - SatHub",
+      "title": "🚨 New Report Submitted",
+      "greeting": "Hello Admin",
+      "reportAlert": "A new report has been submitted on SatHub that requires your attention.",
+      "reporterLabel": "Reported by:",
+      "targetLabel": "Target type:",
+      "titleLabel": "Title:",
+      "messageLabel": "Message:",
+      "reviewButton": "Review Report",
+      "regards": "Best regards,",
+      "team": "The SatHub Team",
+      "footer": "This is an automated notification for administrators.",
+      "footerSettings": "You can manage your notification preferences in your account settings."
+    },
     "profilePictureCleared": {
       "subject": "Your Profile Picture Has Been Removed - SatHub",
       "title": "Profile Picture Removed",

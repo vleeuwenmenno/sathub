@@ -119,6 +119,21 @@
       "footer": "Welkom bij de SatHub-gemeenschap!",
       "footerHelp": "Als u vragen heeft, neem dan contact op met ons ondersteuningsteam."
     },
+    "reportNotification": {
+      "subject": "Nieuwe melding ingediend - SatHub",
+      "title": "🚨 Nieuwe melding ingediend",
+      "greeting": "Hallo beheerder",
+      "reportAlert": "Er is een nieuwe melding ingediend op SatHub die uw aandacht vereist.",
+      "reporterLabel": "Gemeld door:",
+      "targetLabel": "Doeltype:",
+      "titleLabel": "Titel:",
+      "messageLabel": "Bericht:",
+      "reviewButton": "Melding beoordelen",
+      "regards": "Met vriendelijke groet,",
+      "team": "Het SatHub-team",
+      "footer": "Dit is een automatische melding voor beheerders.",
+      "footerSettings": "U kunt uw meldingsvoorkeuren beheren in uw accountinstellingen."
+    },
     "profilePictureCleared": {
       "subject": "Uw profielfoto is verwijderd - SatHub",
       "title": "Profielfoto verwijderd",

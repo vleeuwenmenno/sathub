@@ -19,6 +19,7 @@ import {
   Favorite,
   CheckCircle,
   OpenInNew,
+  Report,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../contexts/TranslationContext";
@@ -30,8 +31,8 @@ import {
 import type { Notification, NotificationResponse } from "../types";
 
 const Notifications: React.FC = () => {
-  const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -121,6 +122,9 @@ const Notifications: React.FC = () => {
         case "like":
           navigate(`/post/${notification.related_id}`);
           break;
+        case "report":
+          navigate(`/admin/reports?reportId=${notification.related_id}`);
+          break;
         default:
           // No navigation for unknown types
           break;
@@ -145,6 +149,8 @@ const Notifications: React.FC = () => {
         return <Comment color="info" />;
       case "like":
         return <Favorite color="error" />;
+      case "report":
+        return <Report color="warning" />;
       case "test":
         return <NotificationsIcon color="warning" />;
       default:
@@ -167,6 +173,14 @@ const Notifications: React.FC = () => {
   const formatNotificationMessage = (message: string) => {
     if (message.startsWith("achievement_unlocked:")) {
       const achievementKey = message.substring("achievement_unlocked:".length);
+      // Extract achievement slug from key like "achievements.welcomeAboard.name"
+      const parts = achievementKey.split(".");
+      if (parts.length >= 3 && parts[0] === "achievements" && parts[2] === "name") {
+        const achievementSlug = parts[1];
+        const achievementName = t(`achievementData.${achievementSlug}.name`);
+        return `You unlocked the achievement: ${achievementName}`;
+      }
+      // Fallback to trying the key directly
       const achievementName = t(achievementKey);
       return `You unlocked the achievement: ${achievementName}`;
     }

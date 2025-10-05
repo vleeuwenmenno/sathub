@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs clean seed build ps exec-backend exec-frontend exec-postgres shell-backend shell-frontend shell-postgres db-console dev prod stop-all
+.PHONY: help up down restart logs clean seed build ps exec-backend exec-frontend exec-postgres shell-backend shell-frontend shell-postgres db-console dev prod stop-all cycle
 
 # Default target
 help:
@@ -26,6 +26,7 @@ help:
 	@echo "Maintenance:"
 	@echo "  make build       - Build or rebuild services"
 	@echo "  make clean       - Stop containers and remove volumes (DESTRUCTIVE)"
+	@echo "  make cycle       - Run clean, up, wait 15s, then seed"
 	@echo "  make stop-all    - Stop all containers without removing them"
 	@echo ""
 	@echo "Shell Access:"
@@ -117,3 +118,10 @@ clean:
 stop-all:
 	@echo "Stopping all containers..."
 	docker compose stop
+
+cycle:
+	make clean
+	make up
+	@echo "Waiting 15 seconds for services to start..."
+	sleep 15
+	make seed

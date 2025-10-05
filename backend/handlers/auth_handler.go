@@ -257,10 +257,10 @@ func Login(c *gin.Context) {
 	}
 
 	// Generate UUID for the refresh token record
-	tokenID := uuid.New().String()
+	tokenID := uuid.New()
 
 	// Generate the refresh token with the predetermined ID
-	refreshToken, err := utils.GenerateRefreshToken(tokenID, user.ID.String())
+	refreshToken, err := utils.GenerateRefreshToken(tokenID.String(), user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -353,10 +353,10 @@ func RefreshTokens(c *gin.Context) {
 	db.Delete(&refreshTokenRecord)
 
 	// Generate UUID for the new refresh token record
-	newTokenID := uuid.New().String()
+	newTokenID := uuid.New()
 
 	// Generate the refresh token with the predetermined ID
-	newRefreshToken, err := utils.GenerateRefreshToken(newTokenID, user.ID.String())
+	newRefreshToken, err := utils.GenerateRefreshToken(newTokenID.String(), user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return

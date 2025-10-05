@@ -83,23 +83,6 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 				Logger.Error().Err(err).Str("achievement", achievement.NameKey).Msg("Failed to log achievement unlock")
 			}
 
-			// Get user for language and email notifications
-			var user models.User
-			if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
-				Logger.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to fetch user for achievement notification")
-				continue
-			}
-
-			newAchievements = append(newAchievements, AchievementResult{
-				AchievementID:  achievement.ID,
-				NameKey:        achievement.NameKey,
-				DescriptionKey: achievement.DescriptionKey,
-				Name:           achievement.NameKey,        // Will be translated later if needed
-				Description:    achievement.DescriptionKey, // Will be translated later if needed
-				Icon:           achievement.Icon,
-				UnlockedAt:     userAchievement.UnlockedAt,
-			})
-
 			// Create notification for the achievement (store translation key for frontend translation)
 			notification := models.Notification{
 				UserID:    userID,
@@ -111,6 +94,13 @@ func CheckAchievements(userID uuid.UUID) ([]AchievementResult, error) {
 
 			if err := db.Create(&notification).Error; err != nil {
 				Logger.Error().Err(err).Str("achievement", achievement.NameKey).Msg("Failed to create notification for achievement")
+			}
+
+			// Get user for language and email notifications
+			var user models.User
+			if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
+				Logger.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to fetch user for achievement notification")
+				continue
 			}
 
 			// Send email notification if user has email notifications enabled

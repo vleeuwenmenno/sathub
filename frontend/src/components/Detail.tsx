@@ -19,6 +19,7 @@ import type { Station } from '../api';
 import { getDatabasePostDetail, getPostImageBlob, getStationDetails, getStationPictureBlob, getProfilePictureUrl, getPostCBOR } from '../api';
 import LikeButton from './LikeButton';
 import DeletePostButton from './DeletePostButton';
+import ReportButton from './ReportButton';
 import CommentSection from './CommentSection';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -746,6 +747,10 @@ const Detail: React.FC = () => {
                       postId={detail.id}
                       initialLikesCount={detail.likes_count}
                       initialIsLiked={detail.is_liked}
+                    />
+                    <ReportButton
+                      targetType="post"
+                      targetId={detail.id}
                     />
                   </Box>
                 </Box>

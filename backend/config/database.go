@@ -86,7 +86,6 @@ func InitDatabase() {
 func RunMigrations() error {
 	log.Println("Running database migrations...")
 
-
 	// Run all migrations
 	err := DB.AutoMigrate(
 		&models.User{},
@@ -107,6 +106,7 @@ func RunMigrations() error {
 		&models.Notification{},
 		&models.Setting{},
 		&models.AuditLog{},
+		&models.Report{},
 		&models.StationUptime{},
 		&models.StationNotificationSettings{},
 		&models.StationNotificationRule{},

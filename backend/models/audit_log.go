@@ -35,6 +35,10 @@ const (
 	ActionAdminPostDelete              AuditAction = "admin_post_delete"
 	ActionAdminPostHide                AuditAction = "admin_post_hide"
 
+	// Admin report management actions
+	ActionAdminReportUpdate AuditAction = "admin_report_update"
+	ActionAdminReportDelete AuditAction = "admin_report_delete"
+
 	// Comment actions
 	ActionCommentCreate AuditAction = "comment_create"
 	ActionCommentUpdate AuditAction = "comment_update"
@@ -70,6 +74,7 @@ const (
 	TargetTypeStation AuditTargetType = "station"
 	TargetTypePost    AuditTargetType = "post"
 	TargetTypeComment AuditTargetType = "comment"
+	TargetTypeReport  AuditTargetType = "report"
 	TargetTypeSystem  AuditTargetType = "system"
 )
 

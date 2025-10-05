@@ -17,6 +17,7 @@ import type { Station } from "../api";
 import StationMap from "./StationMap";
 import LikeButton from "./LikeButton";
 import DeletePostButton from "./DeletePostButton";
+import ReportButton from "./ReportButton";
 import StationHealthGraph from "./StationHealthGraph";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -100,9 +101,15 @@ const StationPosts: React.FC = () => {
             <Box sx={{ mb: 3 }}>
               <Card>
                 <CardContent>
-                  <Typography level="h3" sx={{ mb: 2 }}>
-                    {station.name}
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Typography level="h3">
+                      {station.name}
+                    </Typography>
+                    <ReportButton
+                      targetType="station"
+                      targetId={station.id}
+                    />
+                  </Box>
                   <Stack spacing={1}>
                     <Typography level="body-md" startDecorator={<span>📍</span>}>
                       {station.location}

@@ -29,6 +29,7 @@ import AdminPostDetail from "./components/AdminPostDetail";
 import Achievements from "./components/Achievements";
 import Notifications from "./components/Notifications";
 import AdminAuditLogs from "./components/AdminAuditLogs";
+import AdminReports from "./components/AdminReports";
 import AdminStationsMap from "./components/AdminStationsMap";
 import AdminDebug from "./components/AdminDebug";
 import { isDebugMode } from "./utils/debug";
@@ -96,6 +97,7 @@ function App() {
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/posts" element={<AdminPosts />} />
                 <Route path="/admin/posts/:id" element={<AdminPostDetail />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
                 <Route path="/admin/stations" element={<AdminStationsMap />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
                 {isDebugMode() && <Route path="/admin/debug" element={<AdminDebug />} />}

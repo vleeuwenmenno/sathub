@@ -87,8 +87,16 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
       if (value && typeof value === "object" && k in value) {
         value = value[k];
       } else {
+        console.warn(`Translation key not found: ${key}, missing at: ${k}`);
         return key; // Return key if translation not found
       }
+    }
+
+    if (typeof value !== "string") {
+      console.warn(
+        `Translation value is not a string for key: ${key}, value:`,
+        value
+      );
     }
 
     if (typeof value !== "string") {

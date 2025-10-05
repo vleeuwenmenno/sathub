@@ -159,10 +159,7 @@ const StationNotificationSettingsDialog: React.FC<
         }
       );
 
-      const updatedSettings = await updateStationNotificationSettings(
-        stationId,
-        cleanRules
-      );
+      const updatedSettings = await updateStationNotificationSettings(stationId, cleanRules);
       setRules(updatedSettings.rules);
       setHasChanges(false);
     } catch (err: any) {
