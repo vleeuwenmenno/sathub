@@ -364,10 +364,10 @@ func VerifyTwoFactorCode(c *gin.Context) {
 	}
 
 	// Generate UUID for the refresh token record
-	tokenID := uuid.New().String()
+	tokenID := uuid.New()
 
 	// Generate the refresh token with the predetermined ID
-	refreshToken, err := utils.GenerateRefreshToken(tokenID, user.ID.String())
+	refreshToken, err := utils.GenerateRefreshToken(tokenID.String(), user.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
@@ -603,10 +603,10 @@ func VerifyRecoveryCode(c *gin.Context) {
 	}
 
 	// Generate UUID for the refresh token record
-	tokenID := uuid.New().String()
+	tokenID := uuid.New()
 
 	// Generate the refresh token with the predetermined ID
-	refreshToken, err := utils.GenerateRefreshToken(tokenID, validUser.ID.String())
+	refreshToken, err := utils.GenerateRefreshToken(tokenID.String(), validUser.ID.String())
 	if err != nil {
 		utils.InternalErrorResponse(c, "Failed to generate refresh token")
 		return
