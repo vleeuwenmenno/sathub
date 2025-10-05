@@ -296,16 +296,11 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			likes.GET("/user/:userId", handlers.GetUserLikedPosts)
 		}
 
-		// Public comment routes (no authentication required for viewing)
-		publicComments := api.Group("/comments")
-		{
-			publicComments.GET("/post/:postId", middleware.OptionalAuth(), handlers.GetCommentsForPost)
-		}
-
 		// Protected comment routes (user authentication required)
 		protectedComments := api.Group("/comments")
 		protectedComments.Use(middleware.AuthRequired())
 		{
+			protectedComments.GET("/post/:postId", middleware.OptionalAuth(), handlers.GetCommentsForPost)
 			protectedComments.POST("/post/:postId", handlers.CreateComment)
 			protectedComments.PUT("/:commentId", handlers.UpdateComment)
 			protectedComments.DELETE("/:commentId", handlers.DeleteComment)
