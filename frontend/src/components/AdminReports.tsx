@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Card,
+  CardContent,
   Typography,
   Box,
   Chip,
@@ -23,6 +24,7 @@ import {
   MenuItem,
   ListItemDecorator,
 } from "@mui/joy";
+import { useMediaQuery, useTheme } from "@mui/material";
 import {
   getReports,
   updateReportStatus,
@@ -37,9 +39,13 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { Tooltip } from "@mui/joy";
 import { useTranslation } from "../contexts/TranslationContext";
 
 const AdminReports: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchParams, setSearchParams] = useSearchParams();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +56,8 @@ const AdminReports: React.FC = () => {
   const [limit] = useState(20);
   const { t, language, isLoading: translationsLoading } = useTranslation();
   const componentRef = useRef<HTMLDivElement>(null);
+  const isMdUp = useMediaQuery('(min-width:900px)');
+  const isSmUp = useMediaQuery('(min-width:600px)');
 
   // Filters - current filter values (what user is typing)
   const [currentFilters, setCurrentFilters] = useState({
@@ -443,163 +451,320 @@ const AdminReports: React.FC = () => {
           {loading && <CircularProgress size="sm" />}
         </Box>
 
-        <Box sx={{ overflow: "auto" }}>
-          <Table stickyHeader>
-            <thead>
-              <tr>
-                <th>{t("admin.reports.created")}</th>
-                <th>{t("admin.reports.reporter")}</th>
-                <th>{t("admin.reports.target")}</th>
-                <th>{t("admin.reports.title_field")}</th>
-                <th>{t("admin.reports.status")}</th>
-                <th>{t("admin.reports.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td>{formatDateTime(report.created_at)}</td>
-                  <td>
-                    {report.username ? (
-                      <Link
-                        to={`/admin/users/${report.user_id}`}
-                        style={{ textDecoration: "none" }}
-                      >
-                        <Typography
-                          sx={{ cursor: "pointer", color: "primary.main" }}
-                        >
-                          {report.username}
-                        </Typography>
-                      </Link>
-                    ) : (
-                      <Typography fontFamily="monospace">
-                        {report.user_id.slice(0, 8)}...
+        {isMobile ? (
+          // Mobile card layout
+          <Stack spacing={2}>
+            {reports.map((report) => (
+              <Card key={report.id} variant="outlined">
+                <CardContent sx={{ p: 2, position: 'relative', pb: 5 }}>
+                  <IconButton
+                    size="sm"
+                    data-menu-button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleActionMenuOpen(report.id, e);
+                    }}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                  <IconButton
+                    size="sm"
+                    onClick={() => handleViewDetails(report)}
+                    sx={{ position: 'absolute', bottom: 8, right: 8 }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                  <Stack spacing={2}>
+                    {/* Header with title and status */}
+                    <Box>
+                      <Typography level="body-lg" fontWeight="bold">
+                        {report.title}
                       </Typography>
-                    )}
-                  </td>
-                  <td>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Chip
-                        size="sm"
-                        color={getTargetTypeColor(report.target_type)}
-                        variant="soft"
-                      >
-                        {formatTargetType(report.target_type)}
-                      </Chip>
-                      {report.target_type === "station" ? (
-                        <Link
-                          to={`/station/${report.target_id}`}
-                          style={{ textDecoration: "none" }}
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+                        <Chip
+                          size="sm"
+                          color={getStatusColor(report.status)}
+                          variant="soft"
                         >
-                          <Typography
-                            sx={{ cursor: "pointer", color: "primary.main" }}
-                            fontFamily="monospace"
+                          {formatStatus(report.status)}
+                        </Chip>
+                        <Typography level="body-xs" color="neutral">
+                          {formatDateTime(report.created_at)}
+                        </Typography>
+                      </Stack>
+                    </Box>
+
+                    {/* Reporter info */}
+                    <Box>
+                      <Typography level="body-sm">
+                        <strong>{t("admin.reports.reporter")}:</strong>{' '}
+                        {report.username ? (
+                          <Link
+                            to={`/admin/users/${report.user_id}`}
+                            style={{ textDecoration: "none" }}
                           >
+                            <Typography
+                              component="span"
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                            >
+                              {report.username}
+                            </Typography>
+                          </Link>
+                        ) : (
+                          <Typography component="span" fontFamily="monospace">
+                            {report.user_id.slice(0, 8)}...
+                          </Typography>
+                        )}
+                      </Typography>
+                    </Box>
+
+                    {/* Target info */}
+                    <Box>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography level="body-sm">
+                          <strong>{t("admin.reports.target")}:</strong>
+                        </Typography>
+                        <Chip
+                          size="sm"
+                          color={getTargetTypeColor(report.target_type)}
+                          variant="soft"
+                        >
+                          {formatTargetType(report.target_type)}
+                        </Chip>
+                        {report.target_type === "station" ? (
+                          <Link
+                            to={`/station/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              level="body-sm"
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "user" ? (
+                          <Link
+                            to={`/admin/users/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              level="body-sm"
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "post" ? (
+                          <Link
+                            to={`/post/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              level="body-sm"
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "comment" ? (
+                          <Link
+                            to={`/post/${report.target_post_id}#comment-${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              level="body-sm"
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : (
+                          <Typography level="body-sm" fontFamily="monospace">
                             {report.target_id.slice(0, 8)}...
                           </Typography>
-                        </Link>
-                      ) : report.target_type === "user" ? (
+                        )}
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+            {reports.length === 0 && !loading && (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography color="neutral">
+                  {t("admin.reports.noReports")}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        ) : (
+          // Desktop table layout
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table stickyHeader>
+              <thead>
+                <tr>
+                  {isMdUp && <th>{t("admin.reports.created")}</th>}
+                  <th>{t("admin.reports.reporter")}</th>
+                  {isSmUp && <th>{t("admin.reports.target")}</th>}
+                  <th>{t("admin.reports.title_field")}</th>
+                  <th>{t("admin.reports.status")}</th>
+                  <th>{t("admin.reports.actions")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((report) => (
+                  <tr key={report.id}>
+                    {isMdUp && <td>{formatDateTime(report.created_at)}</td>}
+                    <td>
+                      {report.username ? (
                         <Link
-                          to={`/admin/users/${report.target_id}`}
+                          to={`/admin/users/${report.user_id}`}
                           style={{ textDecoration: "none" }}
                         >
                           <Typography
                             sx={{ cursor: "pointer", color: "primary.main" }}
-                            fontFamily="monospace"
                           >
-                            {report.target_id.slice(0, 8)}...
-                          </Typography>
-                        </Link>
-                      ) : report.target_type === "post" ? (
-                        <Link
-                          to={`/post/${report.target_id}`}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <Typography
-                            sx={{ cursor: "pointer", color: "primary.main" }}
-                            fontFamily="monospace"
-                          >
-                            {report.target_id.slice(0, 8)}...
-                          </Typography>
-                        </Link>
-                      ) : report.target_type === "comment" ? (
-                        <Link
-                          to={`/post/${report.target_post_id}#comment-${report.target_id}`}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <Typography
-                            sx={{ cursor: "pointer", color: "primary.main" }}
-                            fontFamily="monospace"
-                          >
-                            {report.target_id.slice(0, 8)}...
+                            {report.username}
                           </Typography>
                         </Link>
                       ) : (
                         <Typography fontFamily="monospace">
-                          {report.target_id.slice(0, 8)}...
+                          {report.user_id.slice(0, 8)}...
                         </Typography>
                       )}
-                    </Stack>
-                  </td>
-                  <td style={{ maxWidth: 300 }}>
-                    <Typography
-                      level="body-sm"
-                      sx={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {report.title}
-                    </Typography>
-                  </td>
-                  <td>
-                    <Chip
-                      size="sm"
-                      color={getStatusColor(report.status)}
-                      variant="soft"
-                    >
-                      {formatStatus(report.status)}
-                    </Chip>
-                  </td>
-                  <td>
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        size="sm"
-                        variant="outlined"
-                        onClick={() => handleViewDetails(report)}
-                      >
-                        {t("admin.reports.view")}
-                      </Button>
-                      <IconButton
-                        size="sm"
-                        data-menu-button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleActionMenuOpen(report.id, e);
+                    </td>
+                    {isSmUp && <td>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Chip
+                          size="sm"
+                          color={getTargetTypeColor(report.target_type)}
+                          variant="soft"
+                        >
+                          {formatTargetType(report.target_type)}
+                        </Chip>
+                        {report.target_type === "station" ? (
+                          <Link
+                            to={`/station/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "user" ? (
+                          <Link
+                            to={`/admin/users/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "post" ? (
+                          <Link
+                            to={`/post/${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : report.target_type === "comment" ? (
+                          <Link
+                            to={`/post/${report.target_post_id}#comment-${report.target_id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <Typography
+                              sx={{ cursor: "pointer", color: "primary.main" }}
+                              fontFamily="monospace"
+                            >
+                              {report.target_id.slice(0, 8)}...
+                            </Typography>
+                          </Link>
+                        ) : (
+                          <Typography fontFamily="monospace">
+                            {report.target_id.slice(0, 8)}...
+                          </Typography>
+                        )}
+                      </Stack>
+                    </td>}
+                    <td style={{ maxWidth: 300 }}>
+                      <Typography
+                        level="body-sm"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Stack>
-                  </td>
-                </tr>
-              ))}
-              {reports.length === 0 && !loading && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{ textAlign: "center", padding: "2rem" }}
-                  >
-                    <Typography color="neutral">
-                      {t("admin.reports.noReports")}
-                    </Typography>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </Box>
+                        {report.title}
+                      </Typography>
+                    </td>
+                    <td>
+                      <Chip
+                        size="sm"
+                        color={getStatusColor(report.status)}
+                        variant="soft"
+                      >
+                        {formatStatus(report.status)}
+                      </Chip>
+                    </td>
+                    <td>
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title={t("admin.reports.view")}>
+                          <IconButton
+                            size="sm"
+                            variant="outlined"
+                            onClick={() => handleViewDetails(report)}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <IconButton
+                          size="sm"
+                          data-menu-button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleActionMenuOpen(report.id, e);
+                          }}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </Stack>
+                    </td>
+                  </tr>
+                ))}
+                {reports.length === 0 && !loading && (
+                  <tr>
+                    <td
+                      colSpan={isMdUp ? 6 : isSmUp ? 5 : 4}
+                      style={{ textAlign: "center", padding: "2rem" }}
+                    >
+                      <Typography color="neutral">
+                        {t("admin.reports.noReports")}
+                      </Typography>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </Box>
+        )}
 
         {totalPages > 1 && (
           <Box
