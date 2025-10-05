@@ -475,25 +475,6 @@ const Navbar: React.FC = () => {
               >
                 Admin
               </Typography>
-              <List sx={{ gap: 1, mb: 2 }}>
-                <ListItem>
-                  <ListItemButton
-                    onClick={() => handleNavigate("/admin")}
-                    selected={isActive("/admin")}
-                    sx={{
-                      borderRadius: "lg",
-                      "&:hover": {
-                        backgroundColor: "primary.softHoverBg",
-                      },
-                    }}
-                  >
-                    <ListItemDecorator>
-                      <AdminPanelSettings />
-                    </ListItemDecorator>
-                    {t("admin.title")}
-                  </ListItemButton>
-                </ListItem>
-              </List>
             </>
           )}
 

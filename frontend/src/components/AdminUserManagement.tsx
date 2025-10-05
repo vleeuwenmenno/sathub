@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -19,9 +19,21 @@ import {
   Input,
   IconButton,
   Avatar,
+  Tooltip,
+  Menu,
+  MenuItem,
 } from "@mui/joy";
-import { useMediaQuery, useTheme } from "@mui/material";
-import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
+import { useMediaQuery, useTheme, ClickAwayListener } from "@mui/material";
+import {
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Visibility as ViewIcon,
+  MoreVert as MoreVertIcon,
+  Person as PersonIcon,
+  Block as BlockIcon,
+  CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 import {
   getAllUsers,
   updateUserRole,
@@ -69,6 +81,8 @@ const AdminUserManagement: React.FC = () => {
     open: false,
     user: null,
   });
+  const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
+  const menuButtonRef = useRef<{ [key: string]: HTMLElement | null }>({});
 
   const fetchUsers = async (
     page: number = 1,
@@ -345,13 +359,45 @@ const AdminUserManagement: React.FC = () => {
             <Stack spacing={2}>
               {users &&
                 users.map((user) => (
-                  <Card
-                    key={user.id}
-                    variant="outlined"
-                    sx={{ cursor: "pointer" }}
-                    onClick={() => handleViewUserDetails(user.id)}
-                  >
-                    <CardContent sx={{ p: 2 }}>
+                  <Card key={user.id} variant="outlined">
+                    <CardContent sx={{ p: 2, position: "relative" }}>
+                      {/* Menu button */}
+                      <IconButton
+                        ref={(el) => {
+                          menuButtonRef.current[user.id] = el;
+                        }}
+                        size="sm"
+                        variant="plain"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          zIndex: 1,
+                        }}
+                        onClick={() =>
+                          setOpenMenuUserId(
+                            openMenuUserId === user.id ? null : user.id
+                          )
+                        }
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+
+                      {/* View button */}
+                      <IconButton
+                        size="sm"
+                        variant="plain"
+                        sx={{
+                          position: "absolute",
+                          bottom: 8,
+                          right: 8,
+                          zIndex: 1,
+                        }}
+                        onClick={() => handleViewUserDetails(user.id)}
+                      >
+                        <ViewIcon />
+                      </IconButton>
+
                       <Stack spacing={2}>
                         {/* Header with username and ID */}
                         <Box
@@ -359,6 +405,7 @@ const AdminUserManagement: React.FC = () => {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "flex-start",
+                            pr: 5, // Add padding to avoid overlap with menu button
                           }}
                         >
                           <Box>
@@ -461,86 +508,96 @@ const AdminUserManagement: React.FC = () => {
                             "de-DE"
                           )}
                         </Typography>
-
-                        {/* Action buttons */}
-                        <Box onClick={(e) => e.stopPropagation()}>
-                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                            {!user.approved && (
-                              <Button
-                                size="sm"
-                                color="success"
-                                variant="soft"
-                                onClick={() => handleApproveUser(user.id, true)}
-                                fullWidth
-                              >
-                                Approve
-                              </Button>
-                            )}
-                            {user.approved && (
-                              <Button
-                                size="sm"
-                                color="warning"
-                                variant="soft"
-                                onClick={() =>
-                                  handleApproveUser(user.id, false)
-                                }
-                                fullWidth
-                              >
-                                Reject
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              color={user.banned ? "success" : "warning"}
-                              variant="soft"
-                              onClick={() =>
-                                handleBanUser(user.id, !user.banned)
-                              }
-                              fullWidth
-                            >
-                              {user.banned ? "Unban" : "Ban"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              color="danger"
-                              variant="soft"
-                              onClick={() =>
-                                setDeleteDialog({ open: true, user })
-                              }
-                              fullWidth
-                            >
-                              Delete
-                            </Button>
-                          </Stack>
-                        </Box>
                       </Stack>
                     </CardContent>
+
+                    {/* Mobile menu */}
+                    {isMobile && openMenuUserId === user.id && (
+                      <ClickAwayListener
+                        onClickAway={() => setOpenMenuUserId(null)}
+                        mouseEvent="onMouseDown"
+                        touchEvent="onTouchStart"
+                      >
+                        <Menu
+                          anchorEl={menuButtonRef.current[user.id]}
+                          open={openMenuUserId === user.id}
+                          onClose={() => setOpenMenuUserId(null)}
+                          placement="bottom-end"
+                        >
+                          <MenuItem
+                            onClick={() => {
+                              handleApproveUser(user.id, !user.approved);
+                              setOpenMenuUserId(null);
+                            }}
+                            disabled={updatingUserId === user.id}
+                          >
+                            {user.approved ? (
+                              <>
+                                <BlockIcon sx={{ mr: 1 }} />
+                                Reject User
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircleIcon sx={{ mr: 1 }} />
+                                Approve User
+                              </>
+                            )}
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              handleBanUser(user.id, !user.banned);
+                              setOpenMenuUserId(null);
+                            }}
+                            disabled={updatingUserId === user.id}
+                          >
+                            {user.banned ? (
+                              <>
+                                <CheckCircleIcon sx={{ mr: 1 }} />
+                                Unban User
+                              </>
+                            ) : (
+                              <>
+                                <BlockIcon sx={{ mr: 1 }} />
+                                Ban User
+                              </>
+                            )}
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              setDeleteDialog({ open: true, user });
+                              setOpenMenuUserId(null);
+                            }}
+                            sx={{ color: "danger.plainColor" }}
+                          >
+                            <DeleteIcon sx={{ mr: 1 }} />
+                            Delete User
+                          </MenuItem>
+                        </Menu>
+                      </ClickAwayListener>
+                    )}
                   </Card>
                 ))}
             </Stack>
           ) : (
             // Desktop table layout
-            <Table>
+            <Table sx={{ width: "100%" }}>
               <thead>
                 <tr>
-                  <th style={{ width: "80px" }}>Profile</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Approval</th>
-                  <th>Status</th>
-                  <th>Created</th>
+                  <th style={{ width: "8%" }}>Profile</th>
+                  <th style={{ width: "16%" }}>Username</th>
+                  <th style={{ width: "20%" }}>Email</th>
+                  <th style={{ width: "10%" }}>Role</th>
+                  <th style={{ width: "10%" }}>Approval</th>
+                  <th style={{ width: "12%" }}>Status</th>
+                  <th style={{ width: "10%" }}>Created</th>
+                  <th style={{ width: "14%" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users &&
                   users.map((user) => (
-                    <tr
-                      key={user.id}
-                      onClick={() => handleViewUserDetails(user.id)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <td style={{ width: "80px" }}>
+                    <tr key={user.id}>
+                      <td style={{ width: "8%" }}>
                         <Avatar
                           size="sm"
                           src={
@@ -554,9 +611,16 @@ const AdminUserManagement: React.FC = () => {
                             user.username.charAt(0)}
                         </Avatar>
                       </td>
-                      <td>
+                      <td style={{ width: "16%" }}>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography level="body-sm">
+                          <Typography
+                            level="body-sm"
+                            sx={{
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                            onClick={() => handleViewUserDetails(user.id)}
+                          >
                             {user.username}
                           </Typography>
                           {user.display_name && (
@@ -566,7 +630,7 @@ const AdminUserManagement: React.FC = () => {
                           )}
                         </Stack>
                       </td>
-                      <td>
+                      <td style={{ width: "20%" }}>
                         {user.email ? (
                           <Stack spacing={0.5}>
                             <Typography level="body-sm">
@@ -588,7 +652,10 @@ const AdminUserManagement: React.FC = () => {
                           </Typography>
                         )}
                       </td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td
+                        style={{ width: "10%" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Select
                           size="sm"
                           value={user.role}
@@ -602,7 +669,7 @@ const AdminUserManagement: React.FC = () => {
                           <Option value="admin">Admin</Option>
                         </Select>
                       </td>
-                      <td>
+                      <td style={{ width: "10%" }}>
                         <Chip
                           size="sm"
                           color={user.approved ? "success" : "warning"}
@@ -611,7 +678,7 @@ const AdminUserManagement: React.FC = () => {
                           {user.approved ? "Approved" : "Pending"}
                         </Chip>
                       </td>
-                      <td>
+                      <td style={{ width: "12%" }}>
                         <Stack spacing={0.5}>
                           {user.two_factor_enabled && (
                             <Chip size="sm" color="success" variant="outlined">
@@ -627,12 +694,104 @@ const AdminUserManagement: React.FC = () => {
                           </Chip>
                         </Stack>
                       </td>
-                      <td>
+                      <td style={{ width: "10%" }}>
                         <Typography level="body-sm">
                           {new Date(user.created_at).toLocaleDateString(
                             "de-DE"
                           )}
                         </Typography>
+                      </td>
+                      <td style={{ width: "14%" }}>
+                        <Stack direction="row" spacing={1}>
+                          <Tooltip title="View User Details">
+                            <IconButton
+                              size="sm"
+                              variant="outlined"
+                              onClick={() => handleViewUserDetails(user.id)}
+                            >
+                              <ViewIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <IconButton
+                            ref={(el) => {
+                              menuButtonRef.current[user.id] = el;
+                            }}
+                            size="sm"
+                            variant="plain"
+                            onClick={() =>
+                              setOpenMenuUserId(
+                                openMenuUserId === user.id ? null : user.id
+                              )
+                            }
+                          >
+                            <MoreVertIcon />
+                          </IconButton>
+                        </Stack>
+
+                        {/* Desktop menu */}
+                        {!isMobile && openMenuUserId === user.id && (
+                          <ClickAwayListener
+                            onClickAway={() => setOpenMenuUserId(null)}
+                            mouseEvent="onMouseDown"
+                            touchEvent="onTouchStart"
+                          >
+                            <Menu
+                              anchorEl={menuButtonRef.current[user.id]}
+                              open={openMenuUserId === user.id}
+                              onClose={() => setOpenMenuUserId(null)}
+                              placement="bottom-end"
+                            >
+                              <MenuItem
+                                onClick={() => {
+                                  handleApproveUser(user.id, !user.approved);
+                                  setOpenMenuUserId(null);
+                                }}
+                                disabled={updatingUserId === user.id}
+                              >
+                                {user.approved ? (
+                                  <>
+                                    <BlockIcon sx={{ mr: 1 }} />
+                                    Reject User
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircleIcon sx={{ mr: 1 }} />
+                                    Approve User
+                                  </>
+                                )}
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  handleBanUser(user.id, !user.banned);
+                                  setOpenMenuUserId(null);
+                                }}
+                                disabled={updatingUserId === user.id}
+                              >
+                                {user.banned ? (
+                                  <>
+                                    <CheckCircleIcon sx={{ mr: 1 }} />
+                                    Unban User
+                                  </>
+                                ) : (
+                                  <>
+                                    <BlockIcon sx={{ mr: 1 }} />
+                                    Ban User
+                                  </>
+                                )}
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  setDeleteDialog({ open: true, user });
+                                  setOpenMenuUserId(null);
+                                }}
+                                sx={{ color: "danger.plainColor" }}
+                              >
+                                <DeleteIcon sx={{ mr: 1 }} />
+                                Delete User
+                              </MenuItem>
+                            </Menu>
+                          </ClickAwayListener>
+                        )}
                       </td>
                     </tr>
                   ))}

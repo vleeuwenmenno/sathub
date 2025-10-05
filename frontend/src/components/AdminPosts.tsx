@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -17,19 +17,35 @@ import {
   IconButton,
   Chip,
   Tooltip,
+  Menu,
+  MenuItem,
 } from "@mui/joy";
-import { useMediaQuery, useTheme } from "@mui/material";
-import { Search as SearchIcon, Clear as ClearIcon, Delete as DeleteIcon, Visibility as ViewIcon, VisibilityOff as VisibilityOffIcon, Refresh as RefreshIcon, OpenInNew as OpenInNewIcon } from "@mui/icons-material";
+import { useMediaQuery, useTheme, ClickAwayListener } from "@mui/material";
+import {
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Refresh as RefreshIcon,
+  OpenInNew as OpenInNewIcon,
+  MoreVert as MoreVertIcon,
+} from "@mui/icons-material";
 import { getAdminPosts, adminDeletePost, adminHidePost } from "../api";
 import type { AdminPost } from "../api";
 
 const AdminPosts: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState<AdminPost[]>([]);
-  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number }>({
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  }>({
     page: 1,
     limit: 20,
     total: 0,
@@ -37,15 +53,20 @@ const AdminPosts: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; post: AdminPost | null }>({
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    post: AdminPost | null;
+  }>({
     open: false,
     post: null,
   });
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
   const [hidingPostId, setHidingPostId] = useState<number | null>(null);
+  const [openMenuPostId, setOpenMenuPostId] = useState<number | null>(null);
+  const menuButtonRef = useRef<{ [key: number]: HTMLElement | null }>({});
 
-  const fetchPosts = async (page: number = 1, search: string = '') => {
+  const fetchPosts = async (page: number = 1, search: string = "") => {
     try {
       setLoading(true);
       const response = await getAdminPosts(page, pagination.limit, search);
@@ -66,7 +87,7 @@ const AdminPosts: React.FC = () => {
   }, []);
 
   const handleSearch = () => {
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when searching
+    setPagination((prev) => ({ ...prev, page: 1 })); // Reset to first page when searching
     fetchPosts(1, searchQuery);
   };
 
@@ -75,7 +96,7 @@ const AdminPosts: React.FC = () => {
   };
 
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
     fetchPosts(newPage, searchQuery);
   };
 
@@ -86,7 +107,7 @@ const AdminPosts: React.FC = () => {
       setDeleteDialog({ open: false, post: null });
 
       // Check if we need to adjust pagination after deletion
-      const remainingPosts = posts.filter(post => post.id !== postId);
+      const remainingPosts = posts.filter((post) => post.id !== postId);
       if (remainingPosts.length === 0 && pagination.page > 1) {
         // If this was the last post on the page and we're not on page 1, go to previous page
         handlePageChange(pagination.page - 1);
@@ -109,8 +130,8 @@ const AdminPosts: React.FC = () => {
       // Refresh the current page to get updated data from server
       await fetchPosts(pagination.page, searchQuery);
     } catch (err) {
-      setError(`Failed to ${hidden ? 'hide' : 'unhide'} post`);
-      console.error(`Error ${hidden ? 'hiding' : 'unhiding'} post:`, err);
+      setError(`Failed to ${hidden ? "hide" : "unhide"} post`);
+      console.error(`Error ${hidden ? "hiding" : "unhiding"} post:`, err);
     } finally {
       setHidingPostId(null);
     }
@@ -126,7 +147,14 @@ const AdminPosts: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "200px",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -147,24 +175,25 @@ const AdminPosts: React.FC = () => {
       {/* Search */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
+          <Stack
+            direction={isMobile ? "column" : "row"}
+            spacing={2}
+            alignItems={isMobile ? "stretch" : "center"}
+          >
             <Input
               key="search-input" // Stable key to prevent recreation
               placeholder="Search by satellite name, station name, owner username, post UUID, or owner UUID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleSearch();
                 }
               }}
               startDecorator={<SearchIcon />}
               endDecorator={
                 searchQuery && (
-                  <IconButton
-                    size="sm"
-                    onClick={() => setSearchQuery('')}
-                  >
+                  <IconButton size="sm" onClick={() => setSearchQuery("")}>
                     <ClearIcon />
                   </IconButton>
                 )
@@ -175,7 +204,7 @@ const AdminPosts: React.FC = () => {
               variant="solid"
               onClick={handleSearch}
               startDecorator={<SearchIcon />}
-              sx={{ minWidth: isMobile ? '100%' : 'auto' }}
+              sx={{ minWidth: isMobile ? "100%" : "auto" }}
             >
               Search
             </Button>
@@ -183,7 +212,7 @@ const AdminPosts: React.FC = () => {
               variant="outlined"
               onClick={handleRefresh}
               startDecorator={<RefreshIcon />}
-              sx={{ minWidth: isMobile ? '100%' : 'auto' }}
+              sx={{ minWidth: isMobile ? "100%" : "auto" }}
             >
               Refresh
             </Button>
@@ -196,204 +225,322 @@ const AdminPosts: React.FC = () => {
           {isMobile ? (
             // Mobile card layout
             <Stack spacing={2}>
-              {posts && posts.map((post) => (
-                <Card key={post.id} variant="outlined">
-                  <CardContent sx={{ p: 2 }}>
-                    <Stack spacing={2}>
-                      {/* Header with satellite and station */}
-                      <Box>
-                        <Typography level="body-lg" fontWeight="bold">
-                          {post.satellite_name}
-                        </Typography>
-                        <Typography level="body-sm" color="neutral">
-                          Station: {post.station_name}
-                        </Typography>
-                      </Box>
+              {posts &&
+                posts.map((post) => (
+                  <Card key={post.id} variant="outlined">
+                    <CardContent sx={{ p: 2, position: "relative" }}>
+                      {/* Menu button */}
+                      <IconButton
+                        ref={(el) => {
+                          menuButtonRef.current[post.id] = el;
+                        }}
+                        size="sm"
+                        variant="plain"
+                        sx={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          zIndex: 1,
+                        }}
+                        onClick={() =>
+                          setOpenMenuPostId(
+                            openMenuPostId === post.id ? null : post.id
+                          )
+                        }
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
 
-                      {/* Owner info */}
-                      <Box>
-                        <Typography level="body-sm">
-                          <strong>Owner:</strong>{' '}
-                          <Typography
-                            component="span"
-                            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-                            onClick={() => navigate(`/admin/users/${post.owner_uuid}`, { state: { from: 'posts' } })}
-                          >
-                            {post.owner_username}
+                      {/* View button */}
+                      <IconButton
+                        size="sm"
+                        variant="plain"
+                        sx={{
+                          position: "absolute",
+                          bottom: 8,
+                          right: 8,
+                          zIndex: 1,
+                        }}
+                        onClick={() => handleViewPost(post.id)}
+                      >
+                        <ViewIcon />
+                      </IconButton>
+
+                      <Stack spacing={2}>
+                        {/* Header with satellite and station */}
+                        <Box>
+                          <Typography level="body-lg" fontWeight="bold">
+                            {post.satellite_name}
                           </Typography>
-                        </Typography>
-                        <Typography level="body-xs" sx={{ fontFamily: 'monospace', color: 'neutral.600' }}>
-                          {post.owner_uuid}
-                        </Typography>
-                        <Typography level="body-sm">
-                          <strong>UUID:</strong> {post.uuid}
-                        </Typography>
-                      </Box>
+                          <Typography level="body-sm" color="neutral">
+                            Station: {post.station_name}
+                          </Typography>
+                        </Box>
 
-                      {/* Status and created date */}
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip
-                          size="sm"
-                          color={post.hidden ? "warning" : "success"}
-                          variant="soft"
-                        >
-                          {post.hidden ? "Hidden" : "Visible"}
-                        </Chip>
-                        <Typography level="body-xs" color="neutral">
-                          {new Date(post.created_at).toLocaleDateString('de-DE')}
-                        </Typography>
-                      </Stack>
+                        {/* Owner info */}
+                        <Box>
+                          <Typography level="body-sm">
+                            <strong>Owner:</strong>{" "}
+                            <Typography
+                              component="span"
+                              sx={{
+                                cursor: "pointer",
+                                "&:hover": { textDecoration: "underline" },
+                              }}
+                              onClick={() =>
+                                navigate(`/admin/users/${post.owner_uuid}`, {
+                                  state: { from: "posts" },
+                                })
+                              }
+                            >
+                              {post.owner_username}
+                            </Typography>
+                          </Typography>
+                          <Typography
+                            level="body-xs"
+                            sx={{
+                              fontFamily: "monospace",
+                              color: "neutral.600",
+                            }}
+                          >
+                            {post.owner_uuid}
+                          </Typography>
+                          <Typography level="body-sm">
+                            <strong>UUID:</strong> {post.uuid}
+                          </Typography>
+                        </Box>
 
-                      {/* Action buttons */}
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          size="sm"
-                          variant="outlined"
-                          startDecorator={<ViewIcon />}
-                          onClick={() => handleViewPost(post.id)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outlined"
-                          startDecorator={<OpenInNewIcon />}
-                          onClick={() => handleViewPostPublic(post.id)}
-                        >
-                          Post
-                        </Button>
-                        <Button
-                          size="sm"
-                          color={post.hidden ? "success" : "warning"}
-                          variant="soft"
-                          onClick={() => handleHidePost(post.id, !post.hidden)}
-                          disabled={hidingPostId === post.id}
-                        >
-                          {post.hidden ? "Unhide" : "Hide"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="danger"
-                          variant="soft"
-                          startDecorator={<DeleteIcon />}
-                          onClick={() => setDeleteDialog({ open: true, post })}
-                          disabled={deletingPostId === post.id}
-                        >
-                          Delete
-                        </Button>
+                        {/* Status and created date */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Chip
+                            size="sm"
+                            color={post.hidden ? "warning" : "success"}
+                            variant="soft"
+                          >
+                            {post.hidden ? "Hidden" : "Visible"}
+                          </Chip>
+                          <Typography level="body-xs" color="neutral">
+                            {new Date(post.created_at).toLocaleDateString(
+                              "de-DE"
+                            )}
+                          </Typography>
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+
+                    {/* Mobile menu */}
+                    {isMobile && openMenuPostId === post.id && (
+                      <ClickAwayListener
+                        onClickAway={() => setOpenMenuPostId(null)}
+                        mouseEvent="onMouseDown"
+                        touchEvent="onTouchStart"
+                      >
+                        <Menu
+                          anchorEl={menuButtonRef.current[post.id]}
+                          open={openMenuPostId === post.id}
+                          onClose={() => setOpenMenuPostId(null)}
+                          placement="bottom-end"
+                        >
+                          <MenuItem
+                            onClick={() => {
+                              handleViewPostPublic(post.id);
+                              setOpenMenuPostId(null);
+                            }}
+                          >
+                            <OpenInNewIcon sx={{ mr: 1 }} />
+                            View Public Post
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              handleHidePost(post.id, !post.hidden);
+                              setOpenMenuPostId(null);
+                            }}
+                            disabled={hidingPostId === post.id}
+                          >
+                            {post.hidden ? (
+                              <ViewIcon sx={{ mr: 1 }} />
+                            ) : (
+                              <VisibilityOffIcon sx={{ mr: 1 }} />
+                            )}
+                            {post.hidden ? "Unhide" : "Hide"} Post
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              setDeleteDialog({ open: true, post });
+                              setOpenMenuPostId(null);
+                            }}
+                            disabled={deletingPostId === post.id}
+                            sx={{ color: "danger.plainColor" }}
+                          >
+                            <DeleteIcon sx={{ mr: 1 }} />
+                            Delete Post
+                          </MenuItem>
+                        </Menu>
+                      </ClickAwayListener>
+                    )}
+                  </Card>
+                ))}
             </Stack>
           ) : (
             // Desktop table layout
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table sx={{ minWidth: '800px' }}>
+            <Box sx={{ overflowX: "auto" }}>
+              <Table sx={{ width: "100%" }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '120px' }}>UUID</th>
-                    <th style={{ width: '150px' }}>Owner</th>
-                    <th style={{ width: '150px' }}>Station</th>
-                    <th style={{ width: '150px' }}>Satellite</th>
-                    <th style={{ width: '100px' }}>Status</th>
-                    <th style={{ width: '120px' }}>Created</th>
-                    <th style={{ width: '250px' }}>Actions</th>
+                    <th style={{ width: "14%" }}>UUID</th>
+                    <th style={{ width: "18%" }}>Owner</th>
+                    <th style={{ width: "16%" }}>Station</th>
+                    <th style={{ width: "16%" }}>Satellite</th>
+                    <th style={{ width: "10%" }}>Status</th>
+                    <th style={{ width: "12%" }}>Created</th>
+                    <th style={{ width: "14%" }}>Actions</th>
                   </tr>
                 </thead>
-              <tbody>
-                {posts && posts.map((post) => (
-                  <tr key={post.id}>
-                    <td>
-                      <Typography level="body-sm" sx={{ fontFamily: 'monospace' }}>
-                        {post.uuid}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Typography
-                        level="body-sm"
-                        sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-                        onClick={() => navigate(`/admin/users/${post.owner_uuid}`, { state: { from: 'posts' } })}
-                      >
-                        {post.owner_username}
-                      </Typography>
-                      <Typography level="body-xs" sx={{ fontFamily: 'monospace', color: 'neutral.600' }}>
-                        {post.owner_uuid}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Typography level="body-sm">
-                        {post.station_name}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Typography level="body-sm">
-                        {post.satellite_name}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Chip
-                        size="sm"
-                        color={post.hidden ? "warning" : "success"}
-                        variant="soft"
-                      >
-                        {post.hidden ? "Hidden" : "Visible"}
-                      </Chip>
-                    </td>
-                    <td>
-                      <Typography level="body-sm">
-                        {new Date(post.created_at).toLocaleDateString('de-DE')}
-                      </Typography>
-                    </td>
-                    <td>
-                      <Stack direction="row" spacing={1}>
-                        <Tooltip title="View Admin Details">
-                          <IconButton
-                            size="sm"
-                            variant="outlined"
-                            onClick={() => handleViewPost(post.id)}
+                <tbody>
+                  {posts &&
+                    posts.map((post) => (
+                      <tr key={post.id}>
+                        <td>
+                          <Typography
+                            level="body-sm"
+                            sx={{ fontFamily: "monospace" }}
                           >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="View Public Post">
-                          <IconButton
-                            size="sm"
-                            variant="outlined"
-                            onClick={() => handleViewPostPublic(post.id)}
+                            {post.uuid}
+                          </Typography>
+                        </td>
+                        <td>
+                          <Typography
+                            level="body-sm"
+                            sx={{
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                            onClick={() =>
+                              navigate(`/admin/users/${post.owner_uuid}`, {
+                                state: { from: "posts" },
+                              })
+                            }
                           >
-                            <OpenInNewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={post.hidden ? "Unhide Post" : "Hide Post"}>
-                          <IconButton
+                            {post.owner_username}
+                          </Typography>
+                          <Typography
+                            level="body-xs"
+                            sx={{
+                              fontFamily: "monospace",
+                              color: "neutral.600",
+                            }}
+                          >
+                            {post.owner_uuid}
+                          </Typography>
+                        </td>
+                        <td>
+                          <Typography level="body-sm">
+                            {post.station_name}
+                          </Typography>
+                        </td>
+                        <td>
+                          <Typography level="body-sm">
+                            {post.satellite_name}
+                          </Typography>
+                        </td>
+                        <td>
+                          <Chip
                             size="sm"
-                            color={post.hidden ? "success" : "warning"}
+                            color={post.hidden ? "warning" : "success"}
                             variant="soft"
-                            onClick={() => handleHidePost(post.id, !post.hidden)}
-                            disabled={hidingPostId === post.id}
                           >
-                            {post.hidden ? <ViewIcon /> : <VisibilityOffIcon />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Post">
-                          <IconButton
-                            size="sm"
-                            color="danger"
-                            variant="soft"
-                            onClick={() => setDeleteDialog({ open: true, post })}
-                            disabled={deletingPostId === post.id}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                            {post.hidden ? "Hidden" : "Visible"}
+                          </Chip>
+                        </td>
+                        <td>
+                          <Typography level="body-sm">
+                            {new Date(post.created_at).toLocaleDateString(
+                              "de-DE"
+                            )}
+                          </Typography>
+                        </td>
+                        <td>
+                          <Stack direction="row" spacing={1}>
+                            <Tooltip title="View Admin Details">
+                              <IconButton
+                                size="sm"
+                                variant="outlined"
+                                onClick={() => handleViewPost(post.id)}
+                              >
+                                <ViewIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <IconButton
+                              ref={(el) => {
+                                menuButtonRef.current[post.id] = el;
+                              }}
+                              size="sm"
+                              variant="plain"
+                              onClick={() =>
+                                setOpenMenuPostId(
+                                  openMenuPostId === post.id ? null : post.id
+                                )
+                              }
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </Stack>
+
+                          {/* Desktop menu */}
+                          {!isMobile && openMenuPostId === post.id && (
+                            <ClickAwayListener
+                              onClickAway={() => setOpenMenuPostId(null)}
+                              mouseEvent="onMouseDown"
+                              touchEvent="onTouchStart"
+                            >
+                              <Menu
+                                anchorEl={menuButtonRef.current[post.id]}
+                                open={openMenuPostId === post.id}
+                                onClose={() => setOpenMenuPostId(null)}
+                                placement="bottom-end"
+                              >
+                                <MenuItem
+                                  onClick={() => {
+                                    handleViewPostPublic(post.id);
+                                    setOpenMenuPostId(null);
+                                  }}
+                                >
+                                  <OpenInNewIcon sx={{ mr: 1 }} />
+                                  View Public Post
+                                </MenuItem>
+                                <MenuItem
+                                  onClick={() => {
+                                    handleHidePost(post.id, !post.hidden);
+                                    setOpenMenuPostId(null);
+                                  }}
+                                  disabled={hidingPostId === post.id}
+                                >
+                                  {post.hidden ? (
+                                    <ViewIcon sx={{ mr: 1 }} />
+                                  ) : (
+                                    <VisibilityOffIcon sx={{ mr: 1 }} />
+                                  )}
+                                  {post.hidden ? "Unhide" : "Hide"} Post
+                                </MenuItem>
+                                <MenuItem
+                                  onClick={() => {
+                                    setDeleteDialog({ open: true, post });
+                                    setOpenMenuPostId(null);
+                                  }}
+                                  disabled={deletingPostId === post.id}
+                                  sx={{ color: "danger.plainColor" }}
+                                >
+                                  <DeleteIcon sx={{ mr: 1 }} />
+                                  Delete Post
+                                </MenuItem>
+                              </Menu>
+                            </ClickAwayListener>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </Table>
             </Box>
           )}
         </CardContent>
@@ -401,7 +548,15 @@ const AdminPosts: React.FC = () => {
 
       {/* Pagination */}
       {pagination.pages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2, gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mt: 3,
+            mb: 2,
+            gap: 1,
+          }}
+        >
           <Button
             variant="outlined"
             disabled={pagination.page === 1}
@@ -409,7 +564,7 @@ const AdminPosts: React.FC = () => {
           >
             Previous
           </Button>
-          <Typography sx={{ alignSelf: 'center', mx: 2 }}>
+          <Typography sx={{ alignSelf: "center", mx: 2 }}>
             Page {pagination.page} of {pagination.pages}
           </Typography>
           <Button
@@ -423,7 +578,11 @@ const AdminPosts: React.FC = () => {
       )}
 
       {/* Results summary */}
-      <Typography level="body-sm" color="neutral" sx={{ textAlign: 'center', mb: 3 }}>
+      <Typography
+        level="body-sm"
+        color="neutral"
+        sx={{ textAlign: "center", mb: 3 }}
+      >
         Showing {posts ? posts.length : 0} of {pagination.total} posts
         {searchQuery && ` matching "${searchQuery}"`}
       </Typography>
@@ -439,10 +598,10 @@ const AdminPosts: React.FC = () => {
             Confirm Post Deletion
           </Typography>
           <Typography sx={{ mb: 3 }}>
-            Are you sure you want to delete the post "{deleteDialog.post?.satellite_name}"?
-            This action cannot be undone.
+            Are you sure you want to delete the post "
+            {deleteDialog.post?.satellite_name}"? This action cannot be undone.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
             <Button
               variant="plain"
               color="neutral"
@@ -452,7 +611,9 @@ const AdminPosts: React.FC = () => {
             </Button>
             <Button
               color="danger"
-              onClick={() => deleteDialog.post && handleDeletePost(deleteDialog.post.id)}
+              onClick={() =>
+                deleteDialog.post && handleDeletePost(deleteDialog.post.id)
+              }
               disabled={deletingPostId !== null}
             >
               Delete Post

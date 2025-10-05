@@ -8,7 +8,6 @@ import (
 	"sathub-ui-backend/middleware"
 	"sathub-ui-backend/models"
 	"sathub-ui-backend/utils"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -667,7 +666,8 @@ func BanUser(c *gin.Context) {
 
 // AdminDeletePost handles deleting any post (admin only)
 func AdminDeletePost(c *gin.Context) {
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -677,7 +677,7 @@ func AdminDeletePost(c *gin.Context) {
 
 	// Find post to verify it exists
 	var post models.Post
-	if err := db.First(&post, uint(postID)).Error; err != nil {
+	if err := db.First(&post, postID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found")
 			return
@@ -687,37 +687,37 @@ func AdminDeletePost(c *gin.Context) {
 	}
 
 	// Delete associated comment likes first (for comments on this post)
-	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", uint(postID)).Delete(&models.CommentLike{}).Error; err != nil {
+	if err := db.Where("comment_id IN (SELECT id FROM comments WHERE post_id = ?)", postID).Delete(&models.CommentLike{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete comment likes")
 		return
 	}
 
 	// Delete associated comments
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Comment{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.Comment{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post comments")
 		return
 	}
 
 	// Delete associated likes
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.Like{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.Like{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post likes")
 		return
 	}
 
 	// Delete associated images
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostImage{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostImage{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post images")
 		return
 	}
 
 	// Delete associated CBOR records from database
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCBOR{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostCBOR{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post CBOR")
 		return
 	}
 
 	// Delete associated CADU records from database
-	if err := db.Where("post_id = ?", uint(postID)).Delete(&models.PostCADU{}).Error; err != nil {
+	if err := db.Where("post_id = ?", postID).Delete(&models.PostCADU{}).Error; err != nil {
 		utils.InternalErrorResponse(c, "Failed to delete post CADU")
 		return
 	}
@@ -729,7 +729,7 @@ func AdminDeletePost(c *gin.Context) {
 	}
 
 	// Log admin post deletion
-	utils.LogAuditEvent(c, models.ActionAdminPostDelete, models.TargetTypePost, fmt.Sprintf("%d", post.ID), models.AuditMetadata{
+	utils.LogAuditEvent(c, models.ActionAdminPostDelete, models.TargetTypePost, post.ID.String(), models.AuditMetadata{
 		"satellite_name": post.SatelliteName,
 		"station_id":     post.StationID,
 	})
@@ -739,7 +739,8 @@ func AdminDeletePost(c *gin.Context) {
 
 // AdminHidePost handles hiding or unhiding a post (admin only)
 func AdminHidePost(c *gin.Context) {
-	postID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	postIDStr := c.Param("id")
+	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
 		return
@@ -757,7 +758,7 @@ func AdminHidePost(c *gin.Context) {
 
 	// Find post to verify it exists
 	var post models.Post
-	if err := db.First(&post, uint(postID)).Error; err != nil {
+	if err := db.First(&post, postID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found")
 			return
@@ -779,7 +780,7 @@ func AdminHidePost(c *gin.Context) {
 	if !req.Hidden {
 		action = "unhidden"
 	}
-	utils.LogAuditEvent(c, models.ActionAdminPostHide, models.TargetTypePost, fmt.Sprintf("%d", post.ID), models.AuditMetadata{
+	utils.LogAuditEvent(c, models.ActionAdminPostHide, models.TargetTypePost, post.ID.String(), models.AuditMetadata{
 		"satellite_name": post.SatelliteName,
 		"station_id":     post.StationID,
 		"old_hidden":     oldHidden,
@@ -1141,7 +1142,7 @@ type ClearProfilePictureRequest struct {
 
 // AdminPostResponse represents post data for admin management
 type AdminPostResponse struct {
-	ID            uint   `json:"id"`
+	ID            string `json:"id"`
 	UUID          string `json:"uuid"` // Post ID as string for future UUID compatibility
 	OwnerUUID     string `json:"owner_uuid"`
 	OwnerUsername string `json:"owner_username"`
@@ -1221,7 +1222,7 @@ func GetAllPosts(c *gin.Context) {
 
 	// Get paginated posts
 	var posts []struct {
-		ID            uint   `json:"id"`
+		ID            string `json:"id"`
 		StationID     string `json:"station_id"`
 		SatelliteName string `json:"satellite_name"`
 		Hidden        bool   `json:"hidden"`
@@ -1244,7 +1245,7 @@ func GetAllPosts(c *gin.Context) {
 	for _, post := range posts {
 		postResponse := AdminPostResponse{
 			ID:            post.ID,
-			UUID:          fmt.Sprintf("%d", post.ID), // Use ID as string for now, will be UUID later
+			UUID:          post.ID, // Use ID as string for UUID compatibility
 			OwnerUUID:     post.OwnerUUID,
 			OwnerUsername: post.OwnerUsername,
 			StationID:     post.StationID,
