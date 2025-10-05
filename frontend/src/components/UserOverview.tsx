@@ -101,14 +101,19 @@ const UserOverview: React.FC = () => {
 
       try {
         setLoading(true);
-        const [postsData, stationsData, likedPostsData, activitiesData, achievementsData] =
-          await Promise.all([
-            getUserPosts(id),
-            getUserStations(id),
-            getUserLikedPosts(id, 1, 20),
-            getUserActivities(id),
-            getUserAchievementsByID(id),
-          ]);
+        const [
+          postsData,
+          stationsData,
+          likedPostsData,
+          activitiesData,
+          achievementsData,
+        ] = await Promise.all([
+          getUserPosts(id),
+          getUserStations(id),
+          getUserLikedPosts(id, 1, 20),
+          getUserActivities(id),
+          getUserAchievementsByID(id),
+        ]);
 
         setPosts(postsData);
         setStations(stationsData);
@@ -375,14 +380,16 @@ const UserOverview: React.FC = () => {
                           cursor:
                             activity.data?.post_id ||
                             activity.data?.station_id ||
-                            (activity.data?.comment_id && activity.data?.post_id)
+                            (activity.data?.comment_id &&
+                              activity.data?.post_id)
                               ? "pointer"
                               : "default",
                           transition: "all 0.2s ease",
                           "&:hover":
                             activity.data?.post_id ||
                             activity.data?.station_id ||
-                            (activity.data?.comment_id && activity.data?.post_id)
+                            (activity.data?.comment_id &&
+                              activity.data?.post_id)
                               ? {
                                   backgroundColor: "neutral.softHoverBg",
                                   borderColor: "neutral.outlinedHoverBorder",
@@ -391,8 +398,13 @@ const UserOverview: React.FC = () => {
                               : {},
                         }}
                         onClick={() => {
-                          if (activity.data?.comment_id && activity.data?.post_id) {
-                            navigate(`/post/${activity.data.post_id}#comment-${activity.data.comment_id}`);
+                          if (
+                            activity.data?.comment_id &&
+                            activity.data?.post_id
+                          ) {
+                            navigate(
+                              `/post/${activity.data.post_id}#comment-${activity.data.comment_id}`
+                            );
                           } else if (activity.data?.post_id) {
                             navigate(`/post/${activity.data.post_id}`);
                           } else if (activity.data?.station_id) {

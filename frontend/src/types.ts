@@ -155,7 +155,13 @@ export interface NotificationResponse {
 
 export interface UserActivity {
   id: string;
-  type: "liked_post" | "liked_comment" | "commented" | "posted" | "achievement" | "station";
+  type:
+    | "liked_post"
+    | "liked_comment"
+    | "commented"
+    | "posted"
+    | "achievement"
+    | "station";
   timestamp: string;
   data: {
     post_id?: string;
