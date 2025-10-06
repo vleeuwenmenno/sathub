@@ -581,9 +581,7 @@ const GroundTrackMap = ({
     hasSignal: boolean;
   }
 
-  const createTrackSegments = (
-    points: GroundTrackPoint[]
-  ): TrackSegment[] => {
+  const createTrackSegments = (points: GroundTrackPoint[]): TrackSegment[] => {
     const segments: TrackSegment[] = [];
     let currentSegment: { coords: [number, number][]; hasSignal: boolean } = {
       coords: [],
@@ -604,7 +602,7 @@ const GroundTrackMap = ({
       if (i > 0 && currentSegment.hasSignal !== hasSignal) {
         // Add the current point to the old segment for continuity
         currentSegment.coords.push(coord);
-        
+
         if (currentSegment.coords.length >= 2) {
           segments.push({
             coordinates: currentSegment.coords,
