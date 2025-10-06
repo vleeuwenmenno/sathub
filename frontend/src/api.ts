@@ -428,6 +428,27 @@ export const adminDeletePost = async (postId: string): Promise<void> => {
   await api.delete(`/admin/posts/${postId}`);
 };
 
+// Share token types
+export interface ShareToken {
+  token: string;
+  expires_at: string | null;
+  share_url: string;
+}
+
+export const createShareToken = async (postId: string): Promise<ShareToken> => {
+  const res = await api.post(`/posts/${postId}/share-token`);
+  return res.data.data;
+};
+
+export const getShareToken = async (postId: string): Promise<ShareToken> => {
+  const res = await api.get(`/posts/${postId}/share-token`);
+  return res.data.data;
+};
+
+export const deleteShareToken = async (postId: string): Promise<void> => {
+  await api.delete(`/posts/${postId}/share-token`);
+};
+
 export const adminHidePost = async (
   postId: string,
   hidden: boolean
@@ -452,10 +473,13 @@ export const getProfilePictureUrl = (profilePictureUrl: string): string => {
 
 export const getPostImageBlob = async (
   postId: string,
-  imageId: number
+  imageId: number,
+  shareToken?: string
 ): Promise<string> => {
+  const params = shareToken ? { t: shareToken } : {};
   const res = await api.get(`/posts/${postId}/images/${imageId}`, {
     responseType: "blob",
+    params,
   });
   return URL.createObjectURL(res.data);
 };

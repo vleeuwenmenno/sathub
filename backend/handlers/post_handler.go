@@ -292,7 +292,7 @@ func UploadPostImage(c *gin.Context) {
 		return
 	}
 
-	postIDStr := c.Param("postId")
+	postIDStr := c.Param("id")
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
@@ -399,7 +399,7 @@ func UploadPostCBOR(c *gin.Context) {
 		return
 	}
 
-	postIDStr := c.Param("postId")
+	postIDStr := c.Param("id")
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")
@@ -493,7 +493,7 @@ func UploadPostCADU(c *gin.Context) {
 		return
 	}
 
-	postIDStr := c.Param("postId")
+	postIDStr := c.Param("id")
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
 		utils.ValidationErrorResponse(c, "Invalid post ID")

@@ -41,6 +41,7 @@ import {
 import LikeButton from "./LikeButton";
 import CommentSection from "./CommentSection";
 import ImageViewer from "./ImageViewer";
+import ShareButton from "./ShareButton";
 import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString: string): string => {
@@ -150,6 +151,7 @@ const Detail: React.FC = () => {
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedImageInCategory, setSelectedImageInCategory] =
     useState<number>(0);
@@ -184,6 +186,13 @@ const Detail: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+
+    // Check for share token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("t");
+    if (token) {
+      setShareToken(token);
+    }
 
     const fetchPostDetail = async () => {
       try {
@@ -276,7 +285,11 @@ const Detail: React.FC = () => {
     // Clear any previous error for this image
     setImageErrors((prev) => ({ ...prev, [imageId]: false }));
     try {
-      const blobUrl = await getPostImageBlob(detail.id, imageId);
+      const blobUrl = await getPostImageBlob(
+        detail.id,
+        imageId,
+        shareToken || undefined
+      );
       setImageBlobs((prev) => ({ ...prev, [imageId]: blobUrl }));
     } catch (error) {
       console.error("Failed to load image:", imageId, error);
@@ -854,6 +867,7 @@ const Detail: React.FC = () => {
                   initialIsLiked={detail.is_liked}
                 />
               }
+              shareButton={<ShareButton postId={detail.id} size="sm" />}
               canDelete={
                 user?.id === detail.station_user?.id || user?.role === "admin"
               }

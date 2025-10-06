@@ -259,10 +259,11 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			publicPosts.GET("/user/:userId", handlers.GetUserPosts)
 			publicPosts.GET("/station/:stationId", middleware.OptionalAuth(), handlers.GetStationPosts)
 			publicPosts.GET("/:id", middleware.OptionalAuth(), handlers.GetDatabasePostDetail)
-			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImage)
+			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImageWithShare)
 			publicPosts.GET("/:id/cbor", middleware.OptionalAuth(), handlers.GetPostCBOR)
 			publicPosts.GET("/:id/cadu", middleware.OptionalAuth(), handlers.GetPostCADU)
 			publicPosts.GET("/:id/ground-track", middleware.OptionalAuth(), handlers.GetPostGroundTrack)
+			publicPosts.GET("/:id/share-token", middleware.OptionalAuth(), handlers.GetShareToken)
 		}
 
 		// Protected post routes (user authentication required)
@@ -270,6 +271,8 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		protectedPosts.Use(middleware.AuthRequired())
 		{
 			protectedPosts.DELETE("/:id", handlers.DeletePost)
+			protectedPosts.POST("/:id/share-token", handlers.CreateShareToken)
+			protectedPosts.DELETE("/:id/share-token", handlers.DeleteShareToken)
 		}
 
 		// Report routes (user authentication required)
@@ -284,9 +287,9 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		stationPosts.Use(middleware.StationTokenAuth())
 		{
 			stationPosts.POST("", handlers.CreatePost)
-			stationPosts.POST("/:postId/images", handlers.UploadPostImage)
-			stationPosts.POST("/:postId/cbor", handlers.UploadPostCBOR)
-			stationPosts.POST("/:postId/cadu", handlers.UploadPostCADU)
+			stationPosts.POST("/:id/images", handlers.UploadPostImage)
+			stationPosts.POST("/:id/cbor", handlers.UploadPostCBOR)
+			stationPosts.POST("/:id/cadu", handlers.UploadPostCADU)
 		}
 
 		// Like routes (user authentication required)
@@ -374,6 +377,12 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 		{
 			public.GET("/settings/registration", handlers.GetRegistrationSettings)
 			public.GET("/translations", handlers.GetTranslations)
+		}
+
+		// Share routes (public, no authentication required)
+		share := api.Group("/share")
+		{
+			share.GET("/:id", handlers.GetSharedPost)
 		}
 	}
 

@@ -51,6 +51,7 @@ interface GroundTrackMapProps {
   createdAt: string;
   imageCount: number;
   likeButton?: React.ReactNode;
+  shareButton?: React.ReactNode;
   onDelete?: () => void;
   onReport?: () => void;
   canDelete?: boolean; // Whether user can delete (owner or admin)
@@ -82,6 +83,7 @@ const GroundTrackMap = ({
   createdAt,
   imageCount,
   likeButton,
+  shareButton,
   onDelete,
   onReport,
   canDelete,
@@ -293,6 +295,7 @@ const GroundTrackMap = ({
             <Typography level="h3">Satellite Pass Information</Typography>
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               {likeButton}
+              {shareButton}
               {(canDelete || onReport) && (
                 <Dropdown>
                   <MenuButton
@@ -443,6 +446,7 @@ const GroundTrackMap = ({
             <Typography level="h3">Satellite Pass Information</Typography>
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               {likeButton}
+              {shareButton}
               {(canDelete || onReport) && (
                 <Dropdown>
                   <MenuButton
@@ -711,6 +715,7 @@ const GroundTrackMap = ({
           <Typography level="h3">Satellite Pass Information</Typography>
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             {likeButton}
+            {shareButton}
             {(canDelete || onReport) && (
               <Dropdown>
                 <MenuButton
