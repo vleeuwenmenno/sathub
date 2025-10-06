@@ -262,6 +262,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			publicPosts.GET("/:id/images/:imageId", middleware.OptionalAuth(), handlers.GetPostImage)
 			publicPosts.GET("/:id/cbor", middleware.OptionalAuth(), handlers.GetPostCBOR)
 			publicPosts.GET("/:id/cadu", middleware.OptionalAuth(), handlers.GetPostCADU)
+			publicPosts.GET("/:id/ground-track", middleware.OptionalAuth(), handlers.GetPostGroundTrack)
 		}
 
 		// Protected post routes (user authentication required)
@@ -401,6 +402,10 @@ func runWorkers(cmd *cobra.Command, args []string) {
 	// Start achievement checker
 	achievementChecker := worker.NewAchievementChecker(config.GetDB())
 	achievementChecker.Start()
+
+	// Start ground track processor
+	groundTrackProcessor := worker.NewGroundTrackProcessor(config.GetDB())
+	groundTrackProcessor.Start()
 
 	utils.Logger.Info().Msg("All background workers started successfully")
 

@@ -11,11 +11,22 @@ import {
   Alert,
   IconButton,
   Chip,
+  Button,
+  Modal,
+  ModalDialog,
+  ModalClose,
+  DialogTitle,
+  DialogContent,
+  Input,
+  Textarea,
 } from "@mui/joy";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import InfoIcon from "@mui/icons-material/Info";
 import type { DatabasePostDetail } from "../types";
 import type { Station } from "../api";
+import GroundTrackMap from "./GroundTrackMap";
 import {
   getDatabasePostDetail,
   getPostImageBlob,
@@ -23,10 +34,11 @@ import {
   getStationPictureBlob,
   getProfilePictureUrl,
   getPostCBOR,
+  deletePost,
+  adminDeletePost,
+  createReport,
 } from "../api";
 import LikeButton from "./LikeButton";
-import DeletePostButton from "./DeletePostButton";
-import ReportButton from "./ReportButton";
 import CommentSection from "./CommentSection";
 import ImageViewer from "./ImageViewer";
 import { useAuth } from "../contexts/AuthContext";
@@ -158,6 +170,17 @@ const Detail: React.FC = () => {
     alt: string;
     filename: string;
   } | null>(null);
+  const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
+  const [cborDialogOpen, setCborDialogOpen] = useState(false);
+  const [triggerDelete, setTriggerDelete] = useState(false);
+  const [triggerReport, setTriggerReport] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [reportTitle, setReportTitle] = useState("");
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [reportSuccess, setReportSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -312,24 +335,7 @@ const Detail: React.FC = () => {
     loadStationPicture();
   }, [station]);
 
-  useEffect(() => {
-    if (!detail?.id) return;
-
-    const loadCBOR = async () => {
-      setLoadingCBOR(true);
-      try {
-        const cborJson = await getPostCBOR(detail.id);
-        setCborData(cborJson);
-      } catch (error) {
-        console.error("Failed to load CBOR data:", error);
-        // CBOR might not exist for this post, which is fine
-      } finally {
-        setLoadingCBOR(false);
-      }
-    };
-
-    loadCBOR();
-  }, [detail?.id]);
+  // CBOR data is now loaded on-demand when user clicks the button
 
   // Handle hash-based scrolling to specific comment
   useEffect(() => {
@@ -376,8 +382,72 @@ const Detail: React.FC = () => {
     }
   }, []);
 
-  const handleDeletePost = () => {
-    navigate("/");
+  const handleDeletePost = async () => {
+    if (!detail) return;
+
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      if (user?.role === "admin") {
+        await adminDeletePost(detail.id);
+      } else {
+        await deletePost(detail.id);
+      }
+      setTriggerDelete(false);
+      navigate("/");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete post"
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!detail) return;
+
+    if (!reportTitle.trim() || !reportMessage.trim()) {
+      setReportError("Please fill in both title and message");
+      return;
+    }
+
+    if (!user) {
+      setReportError("You must be logged in to report content");
+      return;
+    }
+
+    setReportLoading(true);
+    setReportError(null);
+
+    try {
+      await createReport({
+        target_type: "post",
+        target_id: detail.id,
+        title: reportTitle.trim(),
+        message: reportMessage.trim(),
+      });
+
+      setReportSuccess(true);
+      setReportTitle("");
+      setReportMessage("");
+    } catch (err) {
+      setReportError(
+        err instanceof Error ? err.message : "Failed to submit report"
+      );
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleCloseReport = () => {
+    setTriggerReport(false);
+    setReportTitle("");
+    setReportMessage("");
+    setReportError(null);
+    setReportSuccess(false);
   };
 
   const handleImageClick = (imageId: number, filename: string) => {
@@ -767,8 +837,42 @@ const Detail: React.FC = () => {
         {/* Station and Owner Info on the right */}
         <Grid xs={12} lg={4}>
           <Stack spacing={2}>
-            {/* Station Information */}
-            <Card>
+            {/* Satellite Pass Information */}
+            <GroundTrackMap
+              postId={detail.id}
+              satelliteName={detail.satellite_name}
+              timestamp={detail.timestamp}
+              createdAt={detail.created_at}
+              imageCount={detail.images.length}
+              stationName={station?.name || detail.station_name}
+              stationLatitude={station?.latitude}
+              stationLongitude={station?.longitude}
+              likeButton={
+                <LikeButton
+                  postId={detail.id}
+                  initialLikesCount={detail.likes_count}
+                  initialIsLiked={detail.is_liked}
+                />
+              }
+              canDelete={
+                user?.id === detail.station_user?.id || user?.role === "admin"
+              }
+              onDelete={() => setTriggerDelete(true)}
+              onReport={() => setTriggerReport(true)}
+            />
+
+            {/* Station & Owner Information (Merged) */}
+            <Card
+              onClick={() => navigate(`/station/${detail.station_id}`)}
+              sx={{
+                cursor: "pointer",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "lg",
+                },
+              }}
+            >
               <CardContent>
                 <Typography level="h3" sx={{ mb: 2 }}>
                   Station: {detail.station_name}
@@ -799,7 +903,7 @@ const Detail: React.FC = () => {
                   </Box>
                 )}
 
-                <Stack spacing={1}>
+                <Stack spacing={1} sx={{ mb: 3 }}>
                   <Typography level="body-md" startDecorator={<span>📍</span>}>
                     Location: {detail.station_name}
                   </Typography>
@@ -812,199 +916,124 @@ const Detail: React.FC = () => {
                     </Typography>
                   )}
                 </Stack>
-              </CardContent>
-            </Card>
 
-            {/* Station Owner */}
-            {detail.station_user && (
-              <Card
-                onClick={() => navigate(`/user/${detail.station_user!.id}`)}
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "lg",
-                  },
-                }}
-              >
-                <CardContent>
-                  <Typography level="title-md" sx={{ mb: 2 }}>
-                    Station Owner
-                  </Typography>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        bgcolor: "neutral.softBg",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {detail.station_user.has_profile_picture &&
-                      detail.station_user.profile_picture_url ? (
-                        <img
-                          src={getProfilePictureUrl(
-                            detail.station_user.profile_picture_url
-                          )}
-                          alt={`${detail.station_user.username}'s profile`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <Typography level="h3" color="neutral">
-                          {detail.station_user.username.charAt(0).toUpperCase()}
-                        </Typography>
-                      )}
-                    </Box>
-                    <Box>
-                      <Typography level="body-lg" fontWeight="bold">
-                        {detail.station_user.display_name ||
-                          detail.station_user.username}
-                      </Typography>
-                      {detail.station_user.display_name && (
-                        <Typography level="body-sm" color="neutral">
-                          @{detail.station_user.username}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Post Info */}
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    mb: 2,
-                  }}
-                >
-                  <Typography level="h3">Post Details</Typography>
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <DeletePostButton
-                      postId={detail.id}
-                      postName={detail.satellite_name}
-                      isOwner={user?.id === detail.station_user?.id}
-                      isAdmin={user?.role === "admin"}
-                      onDelete={handleDeletePost}
-                    />
-                    <LikeButton
-                      postId={detail.id}
-                      initialLikesCount={detail.likes_count}
-                      initialIsLiked={detail.is_liked}
-                    />
-                    <ReportButton targetType="post" targetId={detail.id} />
-                  </Box>
-                </Box>
-                <Stack spacing={1}>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
-                      Satellite:
-                    </Typography>
-                    <Typography level="body-sm">
-                      {detail.satellite_name}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
-                      Created:
-                    </Typography>
-                    <Typography level="body-sm">
-                      {formatDate(detail.created_at)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
-                      Images:
-                    </Typography>
-                    <Typography level="body-sm">
-                      {detail.images.length}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-
-            {/* Metadata */}
-            {detail.metadata && (
-              <Card>
-                <CardContent>
-                  <Typography level="h3" sx={{ mb: 2 }}>
-                    Metadata
-                  </Typography>
+                {/* Station Owner Section */}
+                {detail.station_user && (
                   <Box
                     sx={{
-                      maxHeight: "200px",
-                      overflow: "auto",
-                      bgcolor: "neutral.softBg",
-                      p: 1,
-                      borderRadius: "sm",
+                      pt: 2,
+                      borderTop: "1px solid",
+                      borderColor: "divider",
                     }}
                   >
-                    <pre
-                      style={{
-                        fontSize: "0.7rem",
-                        margin: 0,
-                        whiteSpace: "pre-wrap",
+                    <Typography level="title-md" sx={{ mb: 2 }}>
+                      Station Owner
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/user/${detail.station_user!.id}`);
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        p: 1,
+                        borderRadius: "sm",
+                        transition: "background 0.2s",
+                        "&:hover": {
+                          bgcolor: "neutral.softBg",
+                        },
                       }}
                     >
-                      {detail.metadata}
-                    </pre>
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          bgcolor: "neutral.softBg",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {detail.station_user.has_profile_picture &&
+                        detail.station_user.profile_picture_url ? (
+                          <img
+                            src={getProfilePictureUrl(
+                              detail.station_user.profile_picture_url
+                            )}
+                            alt={`${detail.station_user.username}'s profile`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <Typography level="h3" color="neutral">
+                            {detail.station_user.username
+                              .charAt(0)
+                              .toUpperCase()}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography level="body-lg" fontWeight="bold">
+                          {detail.station_user.display_name ||
+                            detail.station_user.username}
+                        </Typography>
+                        {detail.station_user.display_name && (
+                          <Typography level="body-sm" color="neutral">
+                            @{detail.station_user.username}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
                   </Box>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
-            {/* CBOR Data */}
+            {/* Raw Data Access Buttons */}
             <Card>
               <CardContent>
                 <Typography level="h3" sx={{ mb: 2 }}>
-                  CBOR Data
+                  Raw Data
                 </Typography>
-                {loadingCBOR ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                    <CircularProgress size="sm" />
-                  </Box>
-                ) : cborData ? (
-                  <Box
-                    sx={{
-                      maxHeight: "300px",
-                      overflow: "auto",
-                      bgcolor: "neutral.softBg",
-                      p: 1,
-                      borderRadius: "sm",
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  {detail.metadata && (
+                    <Button
+                      variant="outlined"
+                      color="neutral"
+                      startDecorator={<InfoIcon />}
+                      onClick={() => setMetadataDialogOpen(true)}
+                    >
+                      View Metadata
+                    </Button>
+                  )}
+                  <Button
+                    variant="outlined"
+                    color="neutral"
+                    startDecorator={<DataObjectIcon />}
+                    onClick={() => {
+                      setCborDialogOpen(true);
+                      if (!cborData && !loadingCBOR) {
+                        setLoadingCBOR(true);
+                        getPostCBOR(detail.id)
+                          .then((data) => setCborData(data))
+                          .catch((err) =>
+                            console.error("Failed to load CBOR:", err)
+                          )
+                          .finally(() => setLoadingCBOR(false));
+                      }
                     }}
                   >
-                    <pre
-                      style={{
-                        fontSize: "0.7rem",
-                        margin: 0,
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      {JSON.stringify(cborData, null, 2)}
-                    </pre>
-                  </Box>
-                ) : (
-                  <Typography level="body-sm" color="neutral">
-                    No CBOR data available for this post
-                  </Typography>
-                )}
+                    View CBOR Data
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Stack>
@@ -1026,6 +1055,193 @@ const Detail: React.FC = () => {
           filename={selectedImageForViewer.filename}
         />
       )}
+
+      {/* Metadata Dialog */}
+      <Modal
+        open={metadataDialogOpen}
+        onClose={() => setMetadataDialogOpen(false)}
+      >
+        <ModalDialog sx={{ maxWidth: 800, width: "90%" }}>
+          <ModalClose />
+          <DialogTitle>Metadata</DialogTitle>
+          <DialogContent>
+            <Box
+              sx={{
+                maxHeight: "60vh",
+                overflow: "auto",
+                bgcolor: "neutral.softBg",
+                p: 2,
+                borderRadius: "sm",
+              }}
+            >
+              <pre
+                style={{
+                  fontSize: "0.75rem",
+                  margin: 0,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {detail?.metadata}
+              </pre>
+            </Box>
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
+
+      {/* CBOR Data Dialog */}
+      <Modal open={cborDialogOpen} onClose={() => setCborDialogOpen(false)}>
+        <ModalDialog sx={{ maxWidth: 800, width: "90%" }}>
+          <ModalClose />
+          <DialogTitle>CBOR Data</DialogTitle>
+          <DialogContent>
+            {loadingCBOR ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : cborData ? (
+              <Box
+                sx={{
+                  maxHeight: "60vh",
+                  overflow: "auto",
+                  bgcolor: "neutral.softBg",
+                  p: 2,
+                  borderRadius: "sm",
+                }}
+              >
+                <pre
+                  style={{
+                    fontSize: "0.75rem",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {JSON.stringify(cborData, null, 2)}
+                </pre>
+              </Box>
+            ) : (
+              <Typography level="body-sm" color="neutral" sx={{ p: 2 }}>
+                No CBOR data available for this post
+              </Typography>
+            )}
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
+
+      {/* Delete Post Modal */}
+      <Modal open={triggerDelete} onClose={() => setTriggerDelete(false)}>
+        <ModalDialog variant="outlined" role="alertdialog">
+          <DialogTitle>Delete Post</DialogTitle>
+          <ModalClose />
+          <DialogContent>
+            <Stack spacing={2}>
+              <Typography>
+                Are you sure you want to delete the post{" "}
+                <strong>{detail.satellite_name}</strong>?
+              </Typography>
+              {user?.role === "admin" && (
+                <Alert color="warning" size="sm">
+                  You are deleting this post as an admin.
+                </Alert>
+              )}
+              {deleteError && (
+                <Alert color="danger" size="sm">
+                  {deleteError}
+                </Alert>
+              )}
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{ justifyContent: "flex-end" }}
+              >
+                <Button
+                  variant="plain"
+                  color="neutral"
+                  onClick={() => setTriggerDelete(false)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color={user?.role === "admin" ? "warning" : "danger"}
+                  onClick={handleDeletePost}
+                  loading={deleteLoading}
+                >
+                  Delete
+                </Button>
+              </Stack>
+            </Stack>
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
+
+      {/* Report Post Modal */}
+      <Modal open={triggerReport} onClose={handleCloseReport}>
+        <ModalDialog>
+          <DialogTitle>Report Post</DialogTitle>
+          <ModalClose />
+          <DialogContent>
+            {reportSuccess ? (
+              <Stack spacing={2}>
+                <Alert color="success">
+                  Report submitted successfully! Our moderators will review it
+                  soon.
+                </Alert>
+                <Button onClick={handleCloseReport}>Close</Button>
+              </Stack>
+            ) : (
+              <form onSubmit={handleSubmitReport}>
+                <Stack spacing={2}>
+                  <Typography level="body-sm">
+                    Please provide details about why you are reporting this
+                    post.
+                  </Typography>
+                  <Input
+                    placeholder="Report title"
+                    value={reportTitle}
+                    onChange={(e) => setReportTitle(e.target.value)}
+                    required
+                  />
+                  <Textarea
+                    placeholder="Describe the issue in detail..."
+                    value={reportMessage}
+                    onChange={(e) => setReportMessage(e.target.value)}
+                    minRows={4}
+                    required
+                  />
+                  {reportError && (
+                    <Alert color="danger" size="sm">
+                      {reportError}
+                    </Alert>
+                  )}
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ justifyContent: "flex-end" }}
+                  >
+                    <Button
+                      variant="plain"
+                      color="neutral"
+                      onClick={handleCloseReport}
+                      disabled={reportLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      color="warning"
+                      loading={reportLoading}
+                    >
+                      Submit Report
+                    </Button>
+                  </Stack>
+                </Stack>
+              </form>
+            )}
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
     </Box>
   );
 };

@@ -11,6 +11,7 @@ import type {
   UserAchievement,
   NotificationResponse,
   UserActivity,
+  GroundTrack,
 } from "./types";
 import { getApiBaseUrl } from "./config";
 
@@ -462,6 +463,13 @@ export const getPostImageBlob = async (
 export const getPostCBOR = async (postId: string): Promise<any> => {
   const res = await api.get(`/posts/${postId}/cbor?format=json`);
   return res.data;
+};
+
+export const getPostGroundTrack = async (
+  postId: string
+): Promise<GroundTrack> => {
+  const res = await api.get(`/posts/${postId}/ground-track`);
+  return res.data.data;
 };
 
 export const getDatabasePostDetail = async (
@@ -1059,7 +1067,8 @@ export const getReports = async (
   if (filters.target_type) params.set("target_type", filters.target_type);
   if (filters.target_id) params.set("target_id", filters.target_id);
   if (filters.user_id) params.set("user_id", filters.user_id);
-  if (filters.reporter_username) params.set("reporter_username", filters.reporter_username);
+  if (filters.reporter_username)
+    params.set("reporter_username", filters.reporter_username);
 
   const res = await api.get(`/admin/reports?${params}`);
   return res.data.data;

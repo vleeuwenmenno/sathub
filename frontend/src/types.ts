@@ -180,3 +180,21 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
 }
+
+export interface GroundTrackPoint {
+  lat: number;
+  lon: number;
+  alt: number;
+  time: number;
+}
+
+export interface GroundTrack {
+  post_id: string;
+  track_points: GroundTrackPoint[];
+  start_lat: number;
+  start_lon: number;
+  end_lat: number;
+  end_lon: number;
+  processed_at: string;
+  point_count: number;
+}
