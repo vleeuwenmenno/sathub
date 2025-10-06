@@ -169,8 +169,9 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 	sat := satellite.TLEToSat(line1, line2, satellite.GravityWGS84)
 
 	var trackPoints []models.GroundTrackPoint
+	var lastValidPoint *models.GroundTrackPoint
 
-	for _, ts := range timestamps {
+	for i, ts := range timestamps {
 		var unixTime float64
 
 		// Handle different timestamp formats
@@ -185,8 +186,73 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 			continue
 		}
 
-		// Skip invalid timestamps (-1 indicates missing data)
+		// Handle invalid timestamps (-1 indicates signal loss)
 		if unixTime < 0 {
+			// For signal loss, we need to estimate the position
+			// Try to interpolate between last valid point and next valid point
+			if lastValidPoint != nil {
+				// Look ahead to find the next valid timestamp
+				var nextValidTime float64
+				var nextValidIndex int = -1
+				for j := i + 1; j < len(timestamps); j++ {
+					var nextTime float64
+					switch v := timestamps[j].(type) {
+					case float64:
+						nextTime = v
+					case int64:
+						nextTime = float64(v)
+					case int:
+						nextTime = float64(v)
+					default:
+						continue
+					}
+					if nextTime >= 0 {
+						nextValidTime = nextTime
+						nextValidIndex = j
+						break
+					}
+				}
+
+				// Calculate estimated time for this point
+				var estimatedTime float64
+				if nextValidIndex > 0 {
+					// Interpolate between last and next valid timestamp
+					fraction := float64(i-len(trackPoints)+1) / float64(nextValidIndex-len(trackPoints)+2)
+					estimatedTime = lastValidPoint.Timestamp + (nextValidTime-lastValidPoint.Timestamp)*fraction
+				} else {
+					// No next valid point, extrapolate from last valid point
+					// Assume scan line spacing based on previous interval
+					if len(trackPoints) >= 2 {
+						timeDiff := trackPoints[len(trackPoints)-1].Timestamp - trackPoints[len(trackPoints)-2].Timestamp
+						estimatedTime = lastValidPoint.Timestamp + timeDiff*float64(i-len(trackPoints)+1)
+					} else {
+						// Fallback: use last valid time + 1 second per scan line
+						estimatedTime = lastValidPoint.Timestamp + float64(i-len(trackPoints)+1)
+					}
+				}
+
+				// Calculate position using estimated time
+				t := time.Unix(int64(estimatedTime), int64((estimatedTime-math.Floor(estimatedTime))*1e9))
+				position, _ := satellite.Propagate(sat, t.Year(), int(t.Month()), t.Day(),
+					t.Hour(), t.Minute(), t.Second())
+
+				// Check for propagation errors
+				if !math.IsNaN(position.X) && !math.IsNaN(position.Y) && !math.IsNaN(position.Z) {
+					gmst := satellite.GSTimeFromDate(t.Year(), int(t.Month()), t.Day(),
+						t.Hour(), t.Minute(), t.Second())
+					altitude, _, latLong := satellite.ECIToLLA(position, gmst)
+					lat := latLong.Latitude * (180.0 / math.Pi)
+					lon := latLong.Longitude * (180.0 / math.Pi)
+
+					// Add point with -1 timestamp to indicate signal loss
+					trackPoints = append(trackPoints, models.GroundTrackPoint{
+						Latitude:  lat,
+						Longitude: lon,
+						Altitude:  altitude,
+						Timestamp: -1, // Mark as signal loss
+					})
+				}
+			}
 			continue
 		}
 
@@ -212,12 +278,15 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 		lat := latLong.Latitude * (180.0 / math.Pi)
 		lon := latLong.Longitude * (180.0 / math.Pi)
 
-		trackPoints = append(trackPoints, models.GroundTrackPoint{
+		point := models.GroundTrackPoint{
 			Latitude:  lat,
 			Longitude: lon,
 			Altitude:  altitude, // km
 			Timestamp: unixTime,
-		})
+		}
+
+		trackPoints = append(trackPoints, point)
+		lastValidPoint = &point
 	}
 
 	return trackPoints, nil

@@ -18,7 +18,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FlagIcon from "@mui/icons-material/Flag";
 import { getPostGroundTrackStatus, type GroundTrackStatus } from "../api";
-import type { GroundTrack } from "../types";
+import type { GroundTrack, GroundTrackPoint } from "../types";
 import ThemeAwareTileLayer from "./ThemeAwareTileLayer";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -575,6 +575,65 @@ const GroundTrackMap = ({
     });
   };
 
+  // Split track into segments based on signal loss (time === -1)
+  interface TrackSegment {
+    coordinates: [number, number][];
+    hasSignal: boolean;
+  }
+
+  const createTrackSegments = (
+    points: GroundTrackPoint[]
+  ): TrackSegment[] => {
+    const segments: TrackSegment[] = [];
+    let currentSegment: { coords: [number, number][]; hasSignal: boolean } = {
+      coords: [],
+      hasSignal: true,
+    };
+
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      const hasSignal = point.time !== -1;
+
+      // Normalize coordinates
+      let normalizedLon = point.lon;
+      while (normalizedLon > 180) normalizedLon -= 360;
+      while (normalizedLon < -180) normalizedLon += 360;
+      const coord: [number, number] = [point.lat, normalizedLon];
+
+      // If signal status changes, start a new segment
+      if (i > 0 && currentSegment.hasSignal !== hasSignal) {
+        // Add the current point to the old segment for continuity
+        currentSegment.coords.push(coord);
+        
+        if (currentSegment.coords.length >= 2) {
+          segments.push({
+            coordinates: currentSegment.coords,
+            hasSignal: currentSegment.hasSignal,
+          });
+        }
+
+        // Start new segment with this point
+        currentSegment = {
+          coords: [coord],
+          hasSignal: hasSignal,
+        };
+      } else {
+        currentSegment.coords.push(coord);
+      }
+    }
+
+    // Add the last segment
+    if (currentSegment.coords.length >= 2) {
+      segments.push({
+        coordinates: currentSegment.coords,
+        hasSignal: currentSegment.hasSignal,
+      });
+    }
+
+    return segments;
+  };
+
+  const trackSegments = createTrackSegments(groundTrack.track_points);
   const trackCoordinates = normalizeCoordinates(groundTrack.track_points);
   const startPoint = trackCoordinates[0];
   const endPoint = trackCoordinates[trackCoordinates.length - 1];
@@ -964,6 +1023,43 @@ const GroundTrackMap = ({
           </Typography>
         </Box>
 
+        {/* Track legend */}
+        <Box
+          sx={{
+            mb: 2,
+            p: 1.5,
+            bgcolor: "background.level1",
+            borderRadius: "sm",
+            display: "flex",
+            gap: 3,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 30,
+                height: 3,
+                bgcolor: "#4caf50",
+                borderRadius: "sm",
+              }}
+            />
+            <Typography level="body-xs">Active Signal</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 30,
+                height: 3,
+                bgcolor: "#f44336",
+                borderRadius: "sm",
+              }}
+            />
+            <Typography level="body-xs">Signal Loss</Typography>
+          </Box>
+        </Box>
+
         <Box
           sx={{
             height: 400,
@@ -979,13 +1075,16 @@ const GroundTrackMap = ({
           >
             <ThemeAwareTileLayer />
 
-            {/* Satellite ground track */}
-            <Polyline
-              positions={trackCoordinates as [number, number][]}
-              color="#ff5722"
-              weight={3}
-              opacity={0.8}
-            />
+            {/* Satellite ground track - split into segments by signal status */}
+            {trackSegments.map((segment, index) => (
+              <Polyline
+                key={index}
+                positions={segment.coordinates}
+                color={segment.hasSignal ? "#4caf50" : "#f44336"}
+                weight={3}
+                opacity={0.8}
+              />
+            ))}
 
             {/* Start marker */}
             <Marker position={startPoint as [number, number]}>
