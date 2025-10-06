@@ -131,11 +131,6 @@ const GroundTrackMap = ({
           const cborData = await cborResponse.json();
 
           if (cborData.tle && cborData.tle.line2) {
-            // Calculate semi-major axis using Kepler's third law and mean motion from TLE
-            // a = (GM / (n * 2π / 86400)^2)^(1/3), where n is mean motion in revs/day
-            const n = meanMotion; // revs per day
-            const GM = 398600.4418; // km^3/s^2
-            const semiMajorAxis = Math.cbrt(GM / Math.pow((n * 2 * Math.PI) / 86400, 2));
             // Format: 2 NNNNN III.IIII RRR.RRRR EEEEEEE AAA.AAAA MMM.MMMM MM.MMMMMMMM RRRRR
             const line2 = cborData.tle.line2;
             const inclination = parseFloat(line2.substring(8, 16).trim());
@@ -638,15 +633,15 @@ const GroundTrackMap = ({
 
         <Box sx={{ mb: 2 }}>
           <Typography level="body-sm" sx={{ mb: 0.5 }}>
-            <strong>Start:</strong> {startPoint[0].toFixed(2)}°N,{" "}
-            {startPoint[1].toFixed(2)}°E
+            <strong>Start:</strong> {Math.abs(startPoint[0]).toFixed(2)}°{startPoint[0] >= 0 ? 'N' : 'S'},{" "}
+            {Math.abs(startPoint[1]).toFixed(2)}°{startPoint[1] >= 0 ? 'E' : 'W'}
             {startTimestamp && (
               <span> at {formatTimestamp(startTimestamp)}</span>
             )}
           </Typography>
           <Typography level="body-sm">
-            <strong>End:</strong> {endPoint[0].toFixed(2)}°N,{" "}
-            {endPoint[1].toFixed(2)}°E
+            <strong>End:</strong> {Math.abs(endPoint[0]).toFixed(2)}°{endPoint[0] >= 0 ? 'N' : 'S'},{" "}
+            {Math.abs(endPoint[1]).toFixed(2)}°{endPoint[1] >= 0 ? 'E' : 'W'}
             {endTimestamp && <span> at {formatTimestamp(endTimestamp)}</span>}
           </Typography>
         </Box>
@@ -679,9 +674,9 @@ const GroundTrackMap = ({
               <Popup>
                 <strong>Pass Start</strong>
                 <br />
-                Lat: {startPoint[0].toFixed(4)}°
+                Lat: {Math.abs(startPoint[0]).toFixed(4)}°{startPoint[0] >= 0 ? 'N' : 'S'}
                 <br />
-                Lon: {startPoint[1].toFixed(4)}°
+                Lon: {Math.abs(startPoint[1]).toFixed(4)}°{startPoint[1] >= 0 ? 'E' : 'W'}
                 {startTimestamp && (
                   <>
                     <br />
@@ -696,9 +691,9 @@ const GroundTrackMap = ({
               <Popup>
                 <strong>Pass End</strong>
                 <br />
-                Lat: {endPoint[0].toFixed(4)}°
+                Lat: {Math.abs(endPoint[0]).toFixed(4)}°{endPoint[0] >= 0 ? 'N' : 'S'}
                 <br />
-                Lon: {endPoint[1].toFixed(4)}°
+                Lon: {Math.abs(endPoint[1]).toFixed(4)}°{endPoint[1] >= 0 ? 'E' : 'W'}
                 {endTimestamp && (
                   <>
                     <br />
@@ -717,9 +712,9 @@ const GroundTrackMap = ({
                 <Popup>
                   <strong>Station: {stationName || "Ground Station"}</strong>
                   <br />
-                  Lat: {stationLatitude.toFixed(4)}°
+                  Lat: {Math.abs(stationLatitude).toFixed(4)}°{stationLatitude >= 0 ? 'N' : 'S'}
                   <br />
-                  Lon: {stationLongitude.toFixed(4)}°
+                  Lon: {Math.abs(stationLongitude).toFixed(4)}°{stationLongitude >= 0 ? 'E' : 'W'}
                 </Popup>
               </Marker>
             )}
