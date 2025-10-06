@@ -114,7 +114,9 @@ const GroundTrackMap = ({
         const passDuration = Math.max(...timestamps) - Math.min(...timestamps);
 
         // Calculate actual pass start time from ground track data
-        const passStartTime = new Date(Math.min(...timestamps) * 1000).toISOString();
+        const passStartTime = new Date(
+          Math.min(...timestamps) * 1000
+        ).toISOString();
 
         // Call callback to update pass time if provided
         if (onPassTimeUpdate) {
@@ -194,9 +196,11 @@ const GroundTrackMap = ({
     if (groundTrack && groundTrack.track_points.length > 0) {
       // Calculate actual pass start time from ground track data
       const timestamps = groundTrack.track_points.map((p) => p.time);
-      const passStartTime = new Date(Math.min(...timestamps) * 1000).toISOString();
+      const passStartTime = new Date(
+        Math.min(...timestamps) * 1000
+      ).toISOString();
       setActualPassTime(passStartTime);
-      
+
       // Call callback to update parent component if provided
       if (onPassTimeUpdate) {
         onPassTimeUpdate(passStartTime);
@@ -239,7 +243,8 @@ const GroundTrackMap = ({
 
   // Extract timestamps for markers
   const startTimestamp = groundTrack.track_points[0]?.time;
-  const endTimestamp = groundTrack.track_points[groundTrack.track_points.length - 1]?.time;
+  const endTimestamp =
+    groundTrack.track_points[groundTrack.track_points.length - 1]?.time;
 
   // Calculate bounds for the map
   const bounds = L.latLngBounds(trackCoordinates as [number, number][]);
@@ -316,7 +321,8 @@ const GroundTrackMap = ({
 
   // Use the actual pass time from ground track data if available
   const displayedPassTime =
-    actualPassTime || (groundTrack.track_points.length > 0
+    actualPassTime ||
+    (groundTrack.track_points.length > 0
       ? new Date(groundTrack.track_points[0].time * 1000).toISOString()
       : null);
 
@@ -404,7 +410,9 @@ const GroundTrackMap = ({
                 Pass Time
               </Typography>
               <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
-                {displayedPassTime ? formatDate(displayedPassTime) : formatDate(timestamp)}
+                {displayedPassTime
+                  ? formatDate(displayedPassTime)
+                  : formatDate(timestamp)}
               </Typography>
             </Box>
 
@@ -635,9 +643,7 @@ const GroundTrackMap = ({
           <Typography level="body-sm">
             <strong>End:</strong> {endPoint[0].toFixed(2)}°N,{" "}
             {endPoint[1].toFixed(2)}°E
-            {endTimestamp && (
-              <span> at {formatTimestamp(endTimestamp)}</span>
-            )}
+            {endTimestamp && <span> at {formatTimestamp(endTimestamp)}</span>}
           </Typography>
         </Box>
 
