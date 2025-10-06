@@ -163,6 +163,39 @@ func (p *GroundTrackProcessor) processPost(post *models.Post) error {
 	return nil
 }
 
+// isValidCoordinate checks if a coordinate point is valid and reasonable
+func isValidCoordinate(lat, lon, altitude float64, lastPoint *models.GroundTrackPoint, timeDiff float64) bool {
+	// Check if coordinates are within valid ranges
+	// Latitude: -90 to 90, Longitude: -180 to 180
+	if lat < -90 || lat > 90 || lon < -180 || lon > 180 {
+		return false
+	}
+
+	// Check for unreasonable altitude (LEO satellites: 200-2000 km)
+	if altitude < 200 || altitude > 2000 {
+		return false
+	}
+
+	// Check for unreasonable jumps from last valid point (teleportation detection)
+	if lastPoint != nil && timeDiff > 0 {
+		// Calculate angular distance between points
+		latDiff := math.Abs(lat - lastPoint.Latitude)
+		lonDiff := math.Abs(lon - lastPoint.Longitude)
+
+		// LEO satellites move ~7-8 km/s, so in 1-2 seconds they can move ~15 km
+		// At equator, 1 degree ≈ 111 km, so reasonable max jump is ~0.5 degrees per second
+		// This allows for ~55 km/s which is way more than any LEO satellite
+		maxDegreesPerSecond := 0.5
+		maxJump := maxDegreesPerSecond * timeDiff
+
+		if latDiff > maxJump || lonDiff > maxJump {
+			return false
+		}
+	}
+
+	return true
+}
+
 // calculateGroundTrack uses TLE and timestamps to calculate satellite positions
 func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timestamps []interface{}) ([]models.GroundTrackPoint, error) {
 	// Parse TLE
@@ -244,13 +277,24 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 					lat := latLong.Latitude * (180.0 / math.Pi)
 					lon := latLong.Longitude * (180.0 / math.Pi)
 
-					// Add point with -1 timestamp to indicate signal loss
-					trackPoints = append(trackPoints, models.GroundTrackPoint{
-						Latitude:  lat,
-						Longitude: lon,
-						Altitude:  altitude,
-						Timestamp: -1, // Mark as signal loss
-					})
+					// Validate coordinates before adding
+					timeDiff := estimatedTime - lastValidPoint.Timestamp
+					if isValidCoordinate(lat, lon, altitude, lastValidPoint, timeDiff) {
+						// Add point with -1 timestamp to indicate signal loss
+						trackPoints = append(trackPoints, models.GroundTrackPoint{
+							Latitude:  lat,
+							Longitude: lon,
+							Altitude:  altitude,
+							Timestamp: -1, // Mark as signal loss
+						})
+					} else {
+						utils.Logger.Warn().
+							Float64("lat", lat).
+							Float64("lon", lon).
+							Float64("alt", altitude).
+							Float64("estimated_time", estimatedTime).
+							Msg("Invalid interpolated coordinates detected during signal loss, skipping point")
+					}
 				}
 			}
 			continue
@@ -277,6 +321,24 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 		// LatLong contains latitude and longitude in radians, convert to degrees
 		lat := latLong.Latitude * (180.0 / math.Pi)
 		lon := latLong.Longitude * (180.0 / math.Pi)
+
+		// Calculate time difference for validation
+		var timeDiff float64
+		if lastValidPoint != nil {
+			timeDiff = unixTime - lastValidPoint.Timestamp
+		}
+
+		// Validate coordinates before adding
+		if !isValidCoordinate(lat, lon, altitude, lastValidPoint, timeDiff) {
+			utils.Logger.Warn().
+				Float64("lat", lat).
+				Float64("lon", lon).
+				Float64("alt", altitude).
+				Float64("timestamp", unixTime).
+				Float64("time_diff", timeDiff).
+				Msg("Invalid ground track point detected (out of bounds or teleportation), skipping")
+			continue
+		}
 
 		point := models.GroundTrackPoint{
 			Latitude:  lat,
