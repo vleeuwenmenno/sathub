@@ -215,6 +215,52 @@ const GroundTrackMap = ({
   // Calculate bounds for the map
   const bounds = L.latLngBounds(trackCoordinates as [number, number][]);
 
+  // Calculate distances from station to satellite if station coordinates are available
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+    alt: number
+  ): number => {
+    // Haversine formula for great circle distance
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const groundDistance = R * c;
+
+    // Calculate slant distance (3D distance including altitude)
+    // Using Pythagorean theorem: slant_distance = sqrt(ground_distance^2 + altitude^2)
+    const slantDistance = Math.sqrt(
+      groundDistance * groundDistance + alt * alt
+    );
+    return slantDistance;
+  };
+
+  let stationDistances: { min: number; max: number } | null = null;
+  if (stationLatitude !== undefined && stationLongitude !== undefined) {
+    const distances = groundTrack.track_points.map((point) =>
+      calculateDistance(
+        stationLatitude,
+        stationLongitude,
+        point.lat,
+        point.lon,
+        point.alt
+      )
+    );
+    stationDistances = {
+      min: Math.min(...distances),
+      max: Math.max(...distances),
+    };
+  }
+
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -509,6 +555,28 @@ const GroundTrackMap = ({
                   {groundTrack.point_count} scan lines
                 </Typography>
               </Box>
+
+              {stationDistances && (
+                <>
+                  <Box>
+                    <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                      Closest Approach
+                    </Typography>
+                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                      {stationDistances.min.toFixed(1)} km
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                      Furthest Distance
+                    </Typography>
+                    <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                      {stationDistances.max.toFixed(1)} km
+                    </Typography>
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
         )}
