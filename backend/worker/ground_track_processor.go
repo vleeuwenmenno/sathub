@@ -164,16 +164,32 @@ func (p *GroundTrackProcessor) processPost(post *models.Post) error {
 }
 
 // isValidCoordinate checks if a coordinate point is valid and reasonable
-func isValidCoordinate(lat, lon, altitude float64, lastPoint *models.GroundTrackPoint, timeDiff float64) bool {
+// normalizeLongitude ensures longitude is in the range -180 to 180
+func normalizeLongitude(lon float64) float64 {
+	// Wrap longitude to -180 to 180 range
+	for lon > 180 {
+		lon -= 360
+	}
+	for lon < -180 {
+		lon += 360
+	}
+	return lon
+}
+
+// getInvalidReason returns the reason why coordinates are invalid, or empty string if valid
+func getInvalidReason(lat, lon, altitude float64, lastPoint *models.GroundTrackPoint, timeDiff float64) string {
 	// Check if coordinates are within valid ranges
 	// Latitude: -90 to 90, Longitude: -180 to 180
-	if lat < -90 || lat > 90 || lon < -180 || lon > 180 {
-		return false
+	if lat < -90 || lat > 90 {
+		return fmt.Sprintf("latitude out of range: %.2f (must be -90 to 90)", lat)
+	}
+	if lon < -180 || lon > 180 {
+		return fmt.Sprintf("longitude out of range: %.2f (must be -180 to 180)", lon)
 	}
 
 	// Check for unreasonable altitude (LEO satellites: 200-2000 km)
 	if altitude < 200 || altitude > 2000 {
-		return false
+		return fmt.Sprintf("altitude out of range: %.2f km (must be 200-2000 for LEO)", altitude)
 	}
 
 	// Check for unreasonable jumps from last valid point (teleportation detection)
@@ -189,11 +205,16 @@ func isValidCoordinate(lat, lon, altitude float64, lastPoint *models.GroundTrack
 		maxJump := maxDegreesPerSecond * timeDiff
 
 		if latDiff > maxJump || lonDiff > maxJump {
-			return false
+			return fmt.Sprintf("teleportation detected: lat_diff=%.2f lon_diff=%.2f max_allowed=%.2f (time_diff=%.2fs)",
+				latDiff, lonDiff, maxJump, timeDiff)
 		}
 	}
 
-	return true
+	return ""
+}
+
+func isValidCoordinate(lat, lon, altitude float64, lastPoint *models.GroundTrackPoint, timeDiff float64) bool {
+	return getInvalidReason(lat, lon, altitude, lastPoint, timeDiff) == ""
 }
 
 // calculateGroundTrack uses TLE and timestamps to calculate satellite positions
@@ -203,6 +224,8 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 
 	var trackPoints []models.GroundTrackPoint
 	var lastValidPoint *models.GroundTrackPoint
+	var rejectedCount int
+	var totalValidTimestamps int
 
 	for i, ts := range timestamps {
 		var unixTime float64
@@ -312,6 +335,8 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 			continue
 		}
 
+		totalValidTimestamps++
+
 		// Convert position to latitude/longitude/altitude
 		gmst := satellite.GSTimeFromDate(t.Year(), int(t.Month()), t.Day(),
 			t.Hour(), t.Minute(), t.Second())
@@ -322,6 +347,9 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 		lat := latLong.Latitude * (180.0 / math.Pi)
 		lon := latLong.Longitude * (180.0 / math.Pi)
 
+		// Normalize longitude to -180 to 180 range
+		lon = normalizeLongitude(lon)
+
 		// Calculate time difference for validation
 		var timeDiff float64
 		if lastValidPoint != nil {
@@ -329,14 +357,17 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 		}
 
 		// Validate coordinates before adding
-		if !isValidCoordinate(lat, lon, altitude, lastValidPoint, timeDiff) {
+		reason := getInvalidReason(lat, lon, altitude, lastValidPoint, timeDiff)
+		if reason != "" {
+			rejectedCount++
 			utils.Logger.Warn().
 				Float64("lat", lat).
 				Float64("lon", lon).
 				Float64("alt", altitude).
 				Float64("timestamp", unixTime).
 				Float64("time_diff", timeDiff).
-				Msg("Invalid ground track point detected (out of bounds or teleportation), skipping")
+				Str("reason", reason).
+				Msg("Invalid ground track point detected, skipping")
 			continue
 		}
 
@@ -349,6 +380,22 @@ func (p *GroundTrackProcessor) calculateGroundTrack(line1, line2 string, timesta
 
 		trackPoints = append(trackPoints, point)
 		lastValidPoint = &point
+	}
+
+	// Log summary statistics
+	utils.Logger.Debug().
+		Int("total_timestamps", len(timestamps)).
+		Int("valid_timestamps", totalValidTimestamps).
+		Int("track_points", len(trackPoints)).
+		Int("rejected_points", rejectedCount).
+		Msg("Ground track calculation complete")
+
+	// If all points were rejected, log a warning
+	if totalValidTimestamps > 0 && len(trackPoints) == 0 {
+		utils.Logger.Warn().
+			Int("total_valid_timestamps", totalValidTimestamps).
+			Int("rejected_count", rejectedCount).
+			Msg("All valid timestamps were rejected during validation")
 	}
 
 	return trackPoints, nil
