@@ -196,6 +196,10 @@ func meetsCriteria(userID uuid.UUID, criteria AchievementCriteria) bool {
 	case "station_uptime_percent":
 		return checkStationUptimeCriteria(userID, criteria)
 
+	case "manual":
+		// Manual achievements cannot be auto-unlocked
+		return false
+
 	default:
 		Logger.Warn().Str("criteria_type", criteria.Type).Msg("Unknown achievement criteria type")
 		return false

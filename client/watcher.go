@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/rs/zerolog"
 )
 
@@ -257,6 +258,42 @@ func (fw *FileWatcher) parseJSONFile(filePath string) (*SatelliteData, error) {
 	return data, nil
 }
 
+// parseCBORTimestamps parses CBOR file and extracts the earliest valid timestamp
+func (fw *FileWatcher) parseCBORTimestamps(cborPath string) (time.Time, error) {
+	file, err := os.Open(cborPath)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to open CBOR file: %w", err)
+	}
+	defer file.Close()
+
+	var product SatDumpProduct
+	if err := cbor.NewDecoder(file).Decode(&product); err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse CBOR data: %w", err)
+	}
+
+	if len(product.Timestamps) == 0 {
+		return time.Time{}, fmt.Errorf("no timestamps found in CBOR")
+	}
+
+	// Find the earliest valid timestamp (skip -1 values which indicate missing data)
+	var earliestTime *time.Time
+	for _, ts := range product.Timestamps {
+		if timestamp, ok := ts.(float64); ok && timestamp != -1 {
+			t := time.Unix(int64(timestamp), 0)
+			if earliestTime == nil || t.Before(*earliestTime) {
+				earliestTime = &t
+			}
+		}
+	}
+
+	if earliestTime == nil {
+		return time.Time{}, fmt.Errorf("no valid timestamps found in CBOR")
+	}
+
+	fw.logger.Debug().Time("earliest_timestamp", *earliestTime).Int("total_timestamps", len(product.Timestamps)).Msg("Extracted earliest timestamp from CBOR")
+	return *earliestTime, nil
+}
+
 // isCompleteSatellitePass checks if a directory contains a complete satellite pass
 func (fw *FileWatcher) isCompleteSatellitePass(dirPath string) bool {
 	// Check for dataset.json (main metadata file)
@@ -364,9 +401,21 @@ func (fw *FileWatcher) processSatellitePass(dirPath string) error {
 		fw.logger.Info().Int("cadu_files", len(caduPaths)).Msg("Processing CADU files")
 	}
 
+	// Determine the timestamp to use for the post
+	// Prefer CBOR timestamps over dataset.json processing timestamp
+	postTimestamp := dataset.Timestamp
+	if cborPath != "" {
+		if cborTimestamp, err := fw.parseCBORTimestamps(cborPath); err != nil {
+			fw.logger.Warn().Err(err).Str("cbor", cborPath).Msg("Failed to parse CBOR timestamps, falling back to dataset.json timestamp")
+		} else {
+			postTimestamp = cborTimestamp
+			fw.logger.Info().Time("cbor_timestamp", cborTimestamp).Time("dataset_timestamp", dataset.Timestamp).Msg("Using CBOR timestamp instead of dataset.json timestamp")
+		}
+	}
+
 	// Create post with metadata
 	postReq := PostRequest{
-		Timestamp:     dataset.Timestamp.Format(time.RFC3339),
+		Timestamp:     postTimestamp.Format(time.RFC3339),
 		SatelliteName: dataset.SatelliteName,
 		Metadata:      fw.mapToJSON(dataset.Metadata),
 	}
@@ -432,4 +481,23 @@ func (fw *FileWatcher) mapToJSON(data map[string]interface{}) string {
 		return string(jsonData)
 	}
 	return "{}"
+}
+
+// SatDumpProduct represents the structure of a SatDump CBOR product file
+type SatDumpProduct struct {
+	Instrument string                 `cbor:"instrument" json:"instrument"`
+	Type       string                 `cbor:"type" json:"type"`
+	TLE        map[string]interface{} `cbor:"tle,omitempty" json:"tle,omitempty"`
+	// Image product specific fields
+	BitDepth         interface{}            `cbor:"bit_depth,omitempty" json:"bit_depth,omitempty"`
+	NeedsCorrelation interface{}            `cbor:"needs_correlation,omitempty" json:"needs_correlation,omitempty"`
+	SaveAsMatrix     interface{}            `cbor:"save_as_matrix,omitempty" json:"save_as_matrix,omitempty"`
+	Images           []interface{}          `cbor:"images,omitempty" json:"images,omitempty"`
+	HasTimestamps    interface{}            `cbor:"has_timestamps,omitempty" json:"has_timestamps,omitempty"`
+	TimestampsType   interface{}            `cbor:"timestamps_type,omitempty" json:"timestamps_type,omitempty"`
+	Timestamps       []interface{}          `cbor:"timestamps,omitempty" json:"timestamps,omitempty"`
+	ProjectionCfg    map[string]interface{} `cbor:"projection_cfg,omitempty" json:"projection_cfg,omitempty"`
+	Calibration      map[string]interface{} `cbor:"calibration,omitempty" json:"calibration,omitempty"`
+	// Allow additional unknown fields
+	AdditionalFields map[string]interface{} `cbor:",toarray"`
 }
