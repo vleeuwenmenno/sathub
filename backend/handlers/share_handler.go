@@ -130,14 +130,14 @@ func GetSharedPost(c *gin.Context) {
 
 	// Build image URL for preview (use FULL UUID for image access)
 	fullUUID := post.ID.String()
-	
+
 	// Construct API URL from the request
 	scheme := "https"
 	if c.Request.TLS == nil {
 		scheme = "http"
 	}
 	apiURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
-	
+
 	var imageURL string
 	if firstImage.ID != 0 {
 		imageURL = fmt.Sprintf("%s/api/posts/%s/images/%d?t=%s", apiURL, fullUUID, firstImage.ID, token)
@@ -266,7 +266,7 @@ func generateShareURL(c *gin.Context, postID, token string) string {
 		scheme = "http"
 	}
 	apiURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
-	
+
 	// Use first 8 chars of UUID for shorter URLs
 	shortID := postID
 	if len(postID) >= 8 {
