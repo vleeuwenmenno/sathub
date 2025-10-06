@@ -56,7 +56,7 @@ func CreateShareToken(c *gin.Context) {
 		utils.SuccessResponse(c, http.StatusOK, "Share token retrieved", gin.H{
 			"token":      existingToken.Token,
 			"expires_at": existingToken.ExpiresAt,
-			"share_url":  generateShareURL(postID, existingToken.Token),
+			"share_url":  generateShareURL(c, postID, existingToken.Token),
 		})
 		return
 	}
@@ -83,7 +83,7 @@ func CreateShareToken(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, "Share token created", gin.H{
 		"token":      shareToken.Token,
 		"expires_at": shareToken.ExpiresAt,
-		"share_url":  generateShareURL(postID, shareToken.Token),
+		"share_url":  generateShareURL(c, postID, shareToken.Token),
 	})
 }
 
@@ -130,12 +130,16 @@ func GetSharedPost(c *gin.Context) {
 
 	// Build image URL for preview (use FULL UUID for image access)
 	fullUUID := post.ID.String()
+	
+	// Construct API URL from the request
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	apiURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+	
 	var imageURL string
 	if firstImage.ID != 0 {
-		apiURL := os.Getenv("API_URL")
-		if apiURL == "" {
-			apiURL = "https://api.sathub.local:9999"
-		}
 		imageURL = fmt.Sprintf("%s/api/posts/%s/images/%d?t=%s", apiURL, fullUUID, firstImage.ID, token)
 	}
 
@@ -153,7 +157,7 @@ func GetSharedPost(c *gin.Context) {
 
 	if isCrawler {
 		// Serve minimal HTML with meta tags for crawlers (use short ID for share link only)
-		serveMetaTags(c, post, station, imageURL, frontendURL, fullUUID, shortID, token)
+		serveMetaTags(c, post, station, imageURL, frontendURL, fullUUID, shortID, token, apiURL)
 	} else {
 		// Redirect regular browsers to the frontend post page (no token needed - they'll login)
 		redirectURL := fmt.Sprintf("%s/post/%s", frontendURL, fullUUID)
@@ -162,16 +166,10 @@ func GetSharedPost(c *gin.Context) {
 }
 
 // serveMetaTags generates HTML with Open Graph and Twitter Card meta tags
-func serveMetaTags(c *gin.Context, post models.Post, station models.Station, imageURL, frontendURL, fullUUID, shortID, token string) {
+func serveMetaTags(c *gin.Context, post models.Post, station models.Station, imageURL, frontendURL, fullUUID, shortID, token, apiURL string) {
 	title := fmt.Sprintf("%s - Satellite Pass", post.SatelliteName)
 	description := fmt.Sprintf("Satellite pass captured by %s station on %s",
 		station.Name, post.Timestamp.Format("Jan 2, 2006 15:04"))
-
-	// Get API URL for share endpoint
-	apiURL := os.Getenv("API_URL")
-	if apiURL == "" {
-		apiURL = "https://api.sathub.local:9999"
-	}
 
 	// Use short ID for the shareable API URL (what bots see and share)
 	shareURL := fmt.Sprintf("%s/api/share/%s?t=%s", apiURL, shortID, token)
@@ -261,11 +259,14 @@ func GetPostImageWithShare(c *gin.Context) {
 }
 
 // generateShareURL creates the shareable URL with shortened IDs
-func generateShareURL(postID, token string) string {
-	apiURL := os.Getenv("API_URL")
-	if apiURL == "" {
-		apiURL = "https://api.sathub.local:9999"
+func generateShareURL(c *gin.Context, postID, token string) string {
+	// Construct API URL from the request
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
 	}
+	apiURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+	
 	// Use first 8 chars of UUID for shorter URLs
 	shortID := postID
 	if len(postID) >= 8 {
@@ -354,6 +355,6 @@ func GetShareToken(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Share token retrieved", gin.H{
 		"token":      shareToken.Token,
 		"expires_at": shareToken.ExpiresAt,
-		"share_url":  generateShareURL(postID, shareToken.Token),
+		"share_url":  generateShareURL(c, postID, shareToken.Token),
 	})
 }
