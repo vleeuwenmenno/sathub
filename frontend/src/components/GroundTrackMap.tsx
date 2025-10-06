@@ -58,7 +58,6 @@ interface GroundTrackMapProps {
   stationName?: string;
   stationLatitude?: number;
   stationLongitude?: number;
-  onPassTimeUpdate?: (passStartTime: string) => void; // Callback to update pass time
 }
 
 interface OrbitalData {
@@ -90,18 +89,26 @@ const GroundTrackMap = ({
   stationName,
   stationLatitude,
   stationLongitude,
-  onPassTimeUpdate,
 }: GroundTrackMapProps) => {
   const [groundTrack, setGroundTrack] = useState<GroundTrack | null>(null);
   const [orbitalData, setOrbitalData] = useState<OrbitalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actualPassTime, setActualPassTime] = useState<string | null>(null);
   const [status, setStatus] = useState<GroundTrackStatus | null>(null);
 
   // Helper functions moved to top to avoid "used before declaration" errors
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
+
+    // Validate the date - check if it's valid and within reasonable range
+    if (
+      isNaN(date.getTime()) ||
+      date.getFullYear() < 1970 ||
+      date.getFullYear() > 2100
+    ) {
+      return "Invalid date";
+    }
+
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
@@ -146,17 +153,37 @@ const GroundTrackMap = ({
 
           // Calculate pass duration
           const timestamps = data.track_points.map((p: any) => p.time);
-          const passDuration =
-            Math.max(...timestamps) - Math.min(...timestamps);
 
-          // Calculate actual pass start time from ground track data
-          const passStartTime = new Date(
-            Math.min(...timestamps) * 1000
-          ).toISOString();
+          // Validate timestamps - filter out invalid values (0, negative, or unreasonably far in past/future)
+          const validTimestamps = timestamps.filter((t: number) => {
+            // Unix epoch is 1970-01-01, satellite era starts around 1957
+            // Reasonable range: 1970 to 2100 (timestamps 0 to ~4102444800)
+            return t > 0 && t < 4102444800;
+          });
 
-          // Call callback to update pass time if provided
-          if (onPassTimeUpdate) {
-            onPassTimeUpdate(passStartTime);
+          let passDuration = 0;
+
+          if (validTimestamps.length >= 2) {
+            // Only calculate pass duration from ground track data
+            const minTime = Math.min(...validTimestamps);
+            const maxTime = Math.max(...validTimestamps);
+            passDuration = maxTime - minTime;
+
+            // Sanity check: typical satellite passes are 5-20 minutes
+            // If duration is > 30 minutes or < 1 minute, something might be wrong
+            if (passDuration < 60 || passDuration > 1800) {
+              console.warn(
+                "Unusual pass duration detected:",
+                passDuration,
+                "seconds"
+              );
+            }
+
+            // NOTE: We don't update passStartTime here - the database timestamp
+            // from the Post model is the authoritative source (extracted from CBOR by the client)
+            // Ground track timestamps are only used for duration calculation
+          } else {
+            console.warn("Insufficient valid timestamps in ground track data");
           }
 
           // Fetch CBOR data for TLE information
@@ -227,22 +254,6 @@ const GroundTrackMap = ({
 
     fetchGroundTrack();
   }, [postId]);
-
-  useEffect(() => {
-    if (groundTrack && groundTrack.track_points.length > 0) {
-      // Calculate actual pass start time from ground track data
-      const timestamps = groundTrack.track_points.map((p) => p.time);
-      const passStartTime = new Date(
-        Math.min(...timestamps) * 1000
-      ).toISOString();
-      setActualPassTime(passStartTime);
-
-      // Call callback to update parent component if provided
-      if (onPassTimeUpdate) {
-        onPassTimeUpdate(passStartTime);
-      }
-    }
-  }, [groundTrack, onPassTimeUpdate]);
 
   if (loading) {
     return (
@@ -694,12 +705,9 @@ const GroundTrackMap = ({
     };
   }
 
-  // Use the actual pass time from ground track data if available
-  const displayedPassTime =
-    actualPassTime ||
-    (groundTrack.track_points.length > 0
-      ? new Date(groundTrack.track_points[0].time * 1000).toISOString()
-      : null);
+  // NOTE: We always use the database timestamp (from the Post model) as the authoritative source
+  // The client extracts this from CBOR data when creating the post, so it's the most accurate
+  // Ground track timestamps are only used for calculating pass duration
 
   return (
     <Card>
@@ -786,9 +794,7 @@ const GroundTrackMap = ({
                 Pass Time
               </Typography>
               <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
-                {displayedPassTime
-                  ? formatDate(displayedPassTime)
-                  : formatDate(timestamp)}
+                {formatDate(timestamp)}
               </Typography>
             </Box>
 
