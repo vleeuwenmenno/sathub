@@ -5,11 +5,13 @@ This script helps you clone your production database to your local development e
 ## Prerequisites
 
 1. **Production database proxy** running on port `5555`:
+
    ```bash
    ssh -L 5555:localhost:5432 your-prod-server
    ```
 
 2. **Development database** running on port `5432`:
+
    ```bash
    docker compose up -d postgres
    ```
@@ -27,9 +29,10 @@ This script helps you clone your production database to your local development e
 ```
 
 The script will:
+
 1. ✅ Check connections to both databases
 2. 📦 Create a backup from production (port 5555)
-3. 🗑️  Drop and recreate the development database (port 5432)
+3. 🗑️ Drop and recreate the development database (port 5432)
 4. 📥 Restore the backup to development
 5. ✅ Verify the data was copied correctly
 6. 🧹 Clean up temporary files
@@ -43,6 +46,7 @@ PGPASSWORD="your_password" ./scripts/clone-prod-db.sh
 ```
 
 Or create a `.pgpass` file in your home directory:
+
 ```bash
 echo "localhost:5555:sathub:sathub:your_password" >> ~/.pgpass
 echo "localhost:5432:sathub:sathub:your_password" >> ~/.pgpass
@@ -61,7 +65,7 @@ chmod 600 ~/.pgpass
 ## Safety Features
 
 - ✅ Checks database connectivity before proceeding
-- ⚠️  Displays a warning and requires explicit confirmation
+- ⚠️ Displays a warning and requires explicit confirmation
 - 📊 Shows verification statistics after restore
 - 🧹 Automatically cleans up temporary files
 
@@ -70,11 +74,13 @@ chmod 600 ~/.pgpass
 After the database is cloned, you may want to:
 
 1. **Restart backend services** to pick up the new data:
+
    ```bash
    docker compose restart backend worker
    ```
 
 2. **Reprocess ground tracks** if needed:
+
    ```bash
    # The worker will automatically process posts without ground tracks
    docker compose logs -f worker
@@ -108,19 +114,23 @@ DEV_USER="sathub"
 ## Troubleshooting
 
 ### "Cannot connect to production database"
+
 - Make sure your SSH tunnel is active: `ssh -L 5555:localhost:5432 your-server`
 - Check if the port is correct: `psql -h localhost -p 5555 -U sathub -d sathub`
 
 ### "Cannot connect to development database"
+
 - Make sure Docker containers are running: `docker compose up -d`
 - Check if PostgreSQL is ready: `docker compose logs postgres`
 
 ### "Backup failed"
+
 - Check disk space: `df -h /tmp`
 - Verify production database connectivity
 - Check permissions for `/tmp` directory
 
 ### "Restore failed"
+
 - The script will show detailed error messages
 - Check if the development database was created: `psql -h localhost -p 5432 -U sathub -l`
 - Look for schema conflicts or version mismatches
@@ -128,6 +138,7 @@ DEV_USER="sathub"
 ## Warning ⚠️
 
 This script **WILL DELETE ALL DATA** in your development database. Make sure you:
+
 - ✅ Are targeting the correct database
 - ✅ Have no important local test data you want to keep
 - ✅ Understand the consequences
