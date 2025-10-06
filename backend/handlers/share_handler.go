@@ -172,10 +172,10 @@ func serveMetaTags(c *gin.Context, post models.Post, station models.Station, ima
 	if apiURL == "" {
 		apiURL = "https://api.sathub.local:9999"
 	}
-	
+
 	// Use short ID for the shareable API URL (what bots see and share)
 	shareURL := fmt.Sprintf("%s/api/share/%s?t=%s", apiURL, shortID, token)
-	
+
 	// Use full UUID for the frontend redirect URL (where humans go - no token needed)
 	redirectURL := fmt.Sprintf("%s/post/%s", frontendURL, fullUUID)
 

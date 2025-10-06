@@ -29,10 +29,7 @@ interface ShareButtonProps {
   size?: "sm" | "md" | "lg";
 }
 
-const ShareButton: React.FC<ShareButtonProps> = ({
-  postId,
-  size = "md",
-}) => {
+const ShareButton: React.FC<ShareButtonProps> = ({ postId, size = "md" }) => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [shareToken, setShareToken] = useState<ShareToken | null>(null);
@@ -64,7 +61,10 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       const token = await createShareToken(postId);
       setShareToken(token);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || "Failed to create share link";
+      const errorMessage =
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to create share link";
       setError(errorMessage);
     } finally {
       setLoading(false);
