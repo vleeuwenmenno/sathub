@@ -34,6 +34,7 @@ import {
   getStationPictureBlob,
   getProfilePictureUrl,
   getPostCBOR,
+  getPostGroundTrackStatus,
   deletePost,
   adminDeletePost,
   createReport,
@@ -166,6 +167,8 @@ const Detail: React.FC = () => {
   >(null);
   const [cborData, setCborData] = useState<any>(null);
   const [loadingCBOR, setLoadingCBOR] = useState(false);
+  const [groundTrackData, setGroundTrackData] = useState<any>(null);
+  const [loadingGroundTrack, setLoadingGroundTrack] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<{
     url: string;
@@ -174,6 +177,7 @@ const Detail: React.FC = () => {
   } | null>(null);
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
   const [cborDialogOpen, setCborDialogOpen] = useState(false);
+  const [groundTrackDialogOpen, setGroundTrackDialogOpen] = useState(false);
   const [triggerDelete, setTriggerDelete] = useState(false);
   const [triggerReport, setTriggerReport] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -1047,6 +1051,29 @@ const Detail: React.FC = () => {
                   >
                     View CBOR Data
                   </Button>
+                  <Button
+                    variant="outlined"
+                    color="neutral"
+                    startDecorator={<DataObjectIcon />}
+                    onClick={() => {
+                      setGroundTrackDialogOpen(true);
+                      if (!groundTrackData && !loadingGroundTrack) {
+                        setLoadingGroundTrack(true);
+                        getPostGroundTrackStatus(detail.id)
+                          .then((status) => {
+                            if (status.data) {
+                              setGroundTrackData(status.data);
+                            }
+                          })
+                          .catch((err) =>
+                            console.error("Failed to load ground track:", err)
+                          )
+                          .finally(() => setLoadingGroundTrack(false));
+                      }
+                    }}
+                  >
+                    View Ground Track Data
+                  </Button>
                 </Box>
               </CardContent>
             </Card>
@@ -1137,6 +1164,49 @@ const Detail: React.FC = () => {
             ) : (
               <Typography level="body-sm" color="neutral" sx={{ p: 2 }}>
                 No CBOR data available for this post
+              </Typography>
+            )}
+          </DialogContent>
+        </ModalDialog>
+      </Modal>
+
+      {/* Ground Track Data Dialog */}
+      <Modal
+        open={groundTrackDialogOpen}
+        onClose={() => setGroundTrackDialogOpen(false)}
+      >
+        <ModalDialog sx={{ maxWidth: 800, width: "90%" }}>
+          <ModalClose />
+          <DialogTitle>Ground Track Data</DialogTitle>
+          <DialogContent>
+            {loadingGroundTrack ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : groundTrackData ? (
+              <Box
+                sx={{
+                  maxHeight: "60vh",
+                  overflow: "auto",
+                  bgcolor: "neutral.softBg",
+                  p: 2,
+                  borderRadius: "sm",
+                }}
+              >
+                <pre
+                  style={{
+                    fontSize: "0.75rem",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {JSON.stringify(groundTrackData, null, 2)}
+                </pre>
+              </Box>
+            ) : (
+              <Typography level="body-sm" color="neutral" sx={{ p: 2 }}>
+                No ground track data available for this post
               </Typography>
             )}
           </DialogContent>
