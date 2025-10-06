@@ -131,7 +131,11 @@ const GroundTrackMap = ({
           const cborData = await cborResponse.json();
 
           if (cborData.tle && cborData.tle.line2) {
-            // Parse TLE line 2 for orbital elements
+            // Calculate semi-major axis using Kepler's third law and mean motion from TLE
+            // a = (GM / (n * 2π / 86400)^2)^(1/3), where n is mean motion in revs/day
+            const n = meanMotion; // revs per day
+            const GM = 398600.4418; // km^3/s^2
+            const semiMajorAxis = Math.cbrt(GM / Math.pow((n * 2 * Math.PI) / 86400, 2));
             // Format: 2 NNNNN III.IIII RRR.RRRR EEEEEEE AAA.AAAA MMM.MMMM MM.MMMMMMMM RRRRR
             const line2 = cborData.tle.line2;
             const inclination = parseFloat(line2.substring(8, 16).trim());
