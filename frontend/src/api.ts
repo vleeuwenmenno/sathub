@@ -479,6 +479,24 @@ export const getDatabasePostDetail = async (
   return res.data.data;
 };
 
+// Ground track status types
+export interface GroundTrackStatus {
+  status: "available" | "processing" | "unavailable";
+  message: string;
+  post_age: "fresh" | "old";
+  has_cbor: boolean;
+  has_ground_track: boolean;
+  created_at: string;
+  data?: GroundTrack;
+}
+
+export const getPostGroundTrackStatus = async (
+  postId: string
+): Promise<GroundTrackStatus> => {
+  const res = await api.get(`/posts/${postId}/ground-track`);
+  return res.data.data;
+};
+
 export const getStationDetails = async (
   stationId: string
 ): Promise<Station> => {

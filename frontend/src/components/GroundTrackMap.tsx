@@ -12,11 +12,12 @@ import {
   Dropdown,
   MenuButton,
   ListItemDecorator,
+  Alert,
 } from "@mui/joy";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FlagIcon from "@mui/icons-material/Flag";
-import { getPostGroundTrack } from "../api";
+import { getPostGroundTrackStatus, type GroundTrackStatus } from "../api";
 import type { GroundTrack } from "../types";
 import ThemeAwareTileLayer from "./ThemeAwareTileLayer";
 import "leaflet/dist/leaflet.css";
@@ -94,95 +95,129 @@ const GroundTrackMap = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actualPassTime, setActualPassTime] = useState<string | null>(null);
+  const [status, setStatus] = useState<GroundTrackStatus | null>(null);
+
+  // Helper functions moved to top to avoid "used before declaration" errors
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  const formatTimestamp = (timestamp: number): string => {
+    const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}m ${secs}s`;
+  };
 
   useEffect(() => {
     const fetchGroundTrack = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await getPostGroundTrack(postId);
-        setGroundTrack(data);
+        const statusData = await getPostGroundTrackStatus(postId);
+        setStatus(statusData);
 
-        // Calculate orbital statistics from track data
-        const altitudes = data.track_points.map((p) => p.alt);
-        const minAlt = Math.min(...altitudes);
-        const maxAlt = Math.max(...altitudes);
-        const avgAlt = altitudes.reduce((a, b) => a + b, 0) / altitudes.length;
+        if (statusData.status === "available" && statusData.data) {
+          setGroundTrack(statusData.data);
+          const data = statusData.data;
 
-        // Calculate pass duration
-        const timestamps = data.track_points.map((p) => p.time);
-        const passDuration = Math.max(...timestamps) - Math.min(...timestamps);
+          // Calculate orbital statistics from track data
+          const altitudes = data.track_points.map((p: any) => p.alt);
+          const minAlt = Math.min(...altitudes);
+          const maxAlt = Math.max(...altitudes);
+          const avgAlt =
+            altitudes.reduce((a: number, b: number) => a + b, 0) /
+            altitudes.length;
 
-        // Calculate actual pass start time from ground track data
-        const passStartTime = new Date(
-          Math.min(...timestamps) * 1000
-        ).toISOString();
+          // Calculate pass duration
+          const timestamps = data.track_points.map((p: any) => p.time);
+          const passDuration =
+            Math.max(...timestamps) - Math.min(...timestamps);
 
-        // Call callback to update pass time if provided
-        if (onPassTimeUpdate) {
-          onPassTimeUpdate(passStartTime);
-        }
+          // Calculate actual pass start time from ground track data
+          const passStartTime = new Date(
+            Math.min(...timestamps) * 1000
+          ).toISOString();
 
-        // Fetch CBOR data for TLE information
-        try {
-          const cborResponse = await fetch(
-            `${window.location.origin}/api/posts/${postId}/cbor?format=json`
-          );
-          const cborData = await cborResponse.json();
+          // Call callback to update pass time if provided
+          if (onPassTimeUpdate) {
+            onPassTimeUpdate(passStartTime);
+          }
 
-          if (cborData.tle && cborData.tle.line2) {
-            // Format: 2 NNNNN III.IIII RRR.RRRR EEEEEEE AAA.AAAA MMM.MMMM MM.MMMMMMMM RRRRR
-            const line2 = cborData.tle.line2;
-            const inclination = parseFloat(line2.substring(8, 16).trim());
-            const eccentricity = parseFloat(
-              "0." + line2.substring(26, 33).trim()
+          // Fetch CBOR data for TLE information
+          try {
+            const cborResponse = await fetch(
+              `${window.location.origin}/api/posts/${postId}/cbor?format=json`
             );
-            const meanMotion = parseFloat(line2.substring(52, 63).trim());
-            const orbitalPeriod = 1440 / meanMotion; // minutes
+            const cborData = await cborResponse.json();
 
-            // Calculate apogee and perigee
-            // Earth radius = 6371 km
-            const earthRadius = 6371;
-            const semiMajorAxis = avgAlt + earthRadius; // approximate
-            const apogee = semiMajorAxis * (1 + eccentricity) - earthRadius;
-            const perigee = semiMajorAxis * (1 - eccentricity) - earthRadius;
+            if (cborData.tle && cborData.tle.line2) {
+              // Format: 2 NNNNN III.IIII RRR.RRRR EEEEEEE AAA.AAAA MMM.MMMM MM.MMMMMMMM RRRRR
+              const line2 = cborData.tle.line2;
+              const inclination = parseFloat(line2.substring(8, 16).trim());
+              const eccentricity = parseFloat(
+                "0." + line2.substring(26, 33).trim()
+              );
+              const meanMotion = parseFloat(line2.substring(52, 63).trim());
+              const orbitalPeriod = 1440 / meanMotion; // minutes
 
-            // Calculate orbital velocity at average altitude
-            // v = sqrt(GM / r) where GM = 398600.4418 km³/s² (Earth's standard gravitational parameter)
-            const GM = 398600.4418;
-            const velocity = Math.sqrt(GM / (avgAlt + earthRadius));
+              // Calculate apogee and perigee
+              // Earth radius = 6371 km
+              const earthRadius = 6371;
+              const semiMajorAxis = avgAlt + earthRadius; // approximate
+              const apogee = semiMajorAxis * (1 + eccentricity) - earthRadius;
+              const perigee = semiMajorAxis * (1 - eccentricity) - earthRadius;
 
+              // Calculate orbital velocity at average altitude
+              // v = sqrt(GM / r) where GM = 398600.4418 km³/s² (Earth's standard gravitational parameter)
+              const GM = 398600.4418;
+              const velocity = Math.sqrt(GM / (avgAlt + earthRadius));
+
+              setOrbitalData({
+                inclination,
+                eccentricity,
+                meanMotion,
+                orbitalPeriod,
+                noradId: cborData.tle.norad,
+                altitude: { min: minAlt, max: maxAlt, avg: avgAlt },
+                apogee,
+                perigee,
+                velocity,
+                swathWidth: cborData.projection_cfg?.corr_swath,
+                scanAngle: cborData.projection_cfg?.scan_angle,
+                passDuration,
+              });
+            }
+          } catch (err) {
+            console.warn("Could not fetch CBOR data for orbital info", err);
+            // Still show basic altitude info even without TLE
             setOrbitalData({
-              inclination,
-              eccentricity,
-              meanMotion,
-              orbitalPeriod,
-              noradId: cborData.tle.norad,
+              inclination: 0,
+              eccentricity: 0,
+              meanMotion: 0,
+              orbitalPeriod: 0,
+              noradId: 0,
               altitude: { min: minAlt, max: maxAlt, avg: avgAlt },
-              apogee,
-              perigee,
-              velocity,
-              swathWidth: cborData.projection_cfg?.corr_swath,
-              scanAngle: cborData.projection_cfg?.scan_angle,
               passDuration,
             });
           }
-        } catch (err) {
-          console.warn("Could not fetch CBOR data for orbital info", err);
-          // Still show basic altitude info even without TLE
-          setOrbitalData({
-            inclination: 0,
-            eccentricity: 0,
-            meanMotion: 0,
-            orbitalPeriod: 0,
-            noradId: 0,
-            altitude: { min: minAlt, max: maxAlt, avg: avgAlt },
-            passDuration,
-          });
         }
       } catch (err) {
-        console.error("Failed to fetch ground track:", err);
-        setError("Ground track data not available for this post");
+        console.error("Failed to fetch ground track status:", err);
+        setError("Failed to check ground track status");
       } finally {
         setLoading(false);
       }
@@ -219,8 +254,312 @@ const GroundTrackMap = ({
     );
   }
 
-  if (error || !groundTrack) {
-    return null; // Don't show anything if no ground track available
+  if (error) {
+    return (
+      <Card>
+        <CardContent>
+          <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+            <Alert color="danger">{error}</Alert>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle processing state
+  if (status?.status === "processing") {
+    const getProcessingMessage = () => {
+      if (status.post_age === "fresh" && !status.has_cbor) {
+        return "Post is fresh and CBOR data is still being uploaded";
+      } else if (status.post_age === "fresh" && status.has_cbor) {
+        return "Post is fresh and ground track processing will begin shortly";
+      } else if (status.post_age === "old" && status.has_cbor) {
+        return "Ground track is still processing. Please check back later";
+      }
+      return status.message;
+    };
+
+    return (
+      <Card>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              mb: 2,
+            }}
+          >
+            <Typography level="h3">Satellite Pass Information</Typography>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              {likeButton}
+              {(canDelete || onReport) && (
+                <Dropdown>
+                  <MenuButton
+                    slots={{ root: IconButton }}
+                    slotProps={{
+                      root: { variant: "plain", color: "neutral", size: "sm" },
+                    }}
+                  >
+                    <MoreVertIcon />
+                  </MenuButton>
+                  <Menu placement="bottom-end">
+                    {canDelete && onDelete && (
+                      <MenuItem onClick={onDelete} color="danger">
+                        <ListItemDecorator>
+                          <DeleteIcon />
+                        </ListItemDecorator>
+                        Delete Post
+                      </MenuItem>
+                    )}
+                    {onReport && (
+                      <MenuItem onClick={onReport}>
+                        <ListItemDecorator>
+                          <FlagIcon />
+                        </ListItemDecorator>
+                        Report Post
+                      </MenuItem>
+                    )}
+                  </Menu>
+                </Dropdown>
+              )}
+            </Box>
+          </Box>
+
+          {/* General Information */}
+          <Box
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "background.level1",
+              borderRadius: "sm",
+            }}
+          >
+            <Typography level="title-md" sx={{ mb: 1.5, fontWeight: "bold" }}>
+              General Information
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  md: "1fr 1fr 1fr 1fr",
+                },
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Satellite
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {satelliteName}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Pass Time
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {formatDate(timestamp)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Uploaded
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {formatDate(createdAt)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Images
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {imageCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Processing Status */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 4,
+              bgcolor: "neutral.softBg",
+              borderRadius: "sm",
+              textAlign: "center",
+            }}
+          >
+            <CircularProgress size="lg" sx={{ mb: 2 }} />
+            <Typography level="h4" sx={{ mb: 1 }}>
+              Processing Ground Track Data
+            </Typography>
+            <Typography level="body-sm" color="neutral">
+              {getProcessingMessage()}
+            </Typography>
+            <Typography level="body-xs" color="neutral" sx={{ mt: 1 }}>
+              Ground track data is processed every 5 minutes
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle unavailable state
+  if (status?.status === "unavailable" || !groundTrack) {
+    const getUnavailableMessage = () => {
+      if (status?.post_age === "fresh" && !status?.has_cbor) {
+        return "Post is fresh and CBOR data is still being uploaded";
+      } else if (status?.post_age === "old" && !status?.has_cbor) {
+        return "Ground track data is not available for this post";
+      }
+      return (
+        status?.message || "Ground track data is not available for this post."
+      );
+    };
+
+    return (
+      <Card>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              mb: 2,
+            }}
+          >
+            <Typography level="h3">Satellite Pass Information</Typography>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              {likeButton}
+              {(canDelete || onReport) && (
+                <Dropdown>
+                  <MenuButton
+                    slots={{ root: IconButton }}
+                    slotProps={{
+                      root: { variant: "plain", color: "neutral", size: "sm" },
+                    }}
+                  >
+                    <MoreVertIcon />
+                  </MenuButton>
+                  <Menu placement="bottom-end">
+                    {canDelete && onDelete && (
+                      <MenuItem onClick={onDelete} color="danger">
+                        <ListItemDecorator>
+                          <DeleteIcon />
+                        </ListItemDecorator>
+                        Delete Post
+                      </MenuItem>
+                    )}
+                    {onReport && (
+                      <MenuItem onClick={onReport}>
+                        <ListItemDecorator>
+                          <FlagIcon />
+                        </ListItemDecorator>
+                        Report Post
+                      </MenuItem>
+                    )}
+                  </Menu>
+                </Dropdown>
+              )}
+            </Box>
+          </Box>
+
+          {/* General Information */}
+          <Box
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "background.level1",
+              borderRadius: "sm",
+            }}
+          >
+            <Typography level="title-md" sx={{ mb: 1.5, fontWeight: "bold" }}>
+              General Information
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  md: "1fr 1fr 1fr 1fr",
+                },
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Satellite
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {satelliteName}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Pass Time
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {formatDate(timestamp)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Uploaded
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {formatDate(createdAt)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  Images
+                </Typography>
+                <Typography level="body-sm" sx={{ fontWeight: "bold" }}>
+                  {imageCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Unavailable Status */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 4,
+              bgcolor: "neutral.softBg",
+              borderRadius: "sm",
+              textAlign: "center",
+            }}
+          >
+            <Typography level="h4" sx={{ mb: 1 }}>
+              Ground Track Data Not Available
+            </Typography>
+            <Typography level="body-sm" color="neutral">
+              {getUnavailableMessage()}
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    );
   }
 
   // Normalize longitudes to -180 to 180 range for proper map display
@@ -293,30 +632,6 @@ const GroundTrackMap = ({
       max: Math.max(...distances),
     };
   }
-
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}m ${secs}s`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
-  const formatTimestamp = (timestamp: number): string => {
-    const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const seconds = date.getSeconds().toString().padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
-  };
 
   // Use the actual pass time from ground track data if available
   const displayedPassTime =
@@ -633,15 +948,18 @@ const GroundTrackMap = ({
 
         <Box sx={{ mb: 2 }}>
           <Typography level="body-sm" sx={{ mb: 0.5 }}>
-            <strong>Start:</strong> {Math.abs(startPoint[0]).toFixed(2)}°{startPoint[0] >= 0 ? 'N' : 'S'},{" "}
-            {Math.abs(startPoint[1]).toFixed(2)}°{startPoint[1] >= 0 ? 'E' : 'W'}
+            <strong>Start:</strong> {Math.abs(startPoint[0]).toFixed(2)}°
+            {startPoint[0] >= 0 ? "N" : "S"},{" "}
+            {Math.abs(startPoint[1]).toFixed(2)}°
+            {startPoint[1] >= 0 ? "E" : "W"}
             {startTimestamp && (
               <span> at {formatTimestamp(startTimestamp)}</span>
             )}
           </Typography>
           <Typography level="body-sm">
-            <strong>End:</strong> {Math.abs(endPoint[0]).toFixed(2)}°{endPoint[0] >= 0 ? 'N' : 'S'},{" "}
-            {Math.abs(endPoint[1]).toFixed(2)}°{endPoint[1] >= 0 ? 'E' : 'W'}
+            <strong>End:</strong> {Math.abs(endPoint[0]).toFixed(2)}°
+            {endPoint[0] >= 0 ? "N" : "S"}, {Math.abs(endPoint[1]).toFixed(2)}°
+            {endPoint[1] >= 0 ? "E" : "W"}
             {endTimestamp && <span> at {formatTimestamp(endTimestamp)}</span>}
           </Typography>
         </Box>
@@ -674,9 +992,11 @@ const GroundTrackMap = ({
               <Popup>
                 <strong>Pass Start</strong>
                 <br />
-                Lat: {Math.abs(startPoint[0]).toFixed(4)}°{startPoint[0] >= 0 ? 'N' : 'S'}
+                Lat: {Math.abs(startPoint[0]).toFixed(4)}°
+                {startPoint[0] >= 0 ? "N" : "S"}
                 <br />
-                Lon: {Math.abs(startPoint[1]).toFixed(4)}°{startPoint[1] >= 0 ? 'E' : 'W'}
+                Lon: {Math.abs(startPoint[1]).toFixed(4)}°
+                {startPoint[1] >= 0 ? "E" : "W"}
                 {startTimestamp && (
                   <>
                     <br />
@@ -691,9 +1011,11 @@ const GroundTrackMap = ({
               <Popup>
                 <strong>Pass End</strong>
                 <br />
-                Lat: {Math.abs(endPoint[0]).toFixed(4)}°{endPoint[0] >= 0 ? 'N' : 'S'}
+                Lat: {Math.abs(endPoint[0]).toFixed(4)}°
+                {endPoint[0] >= 0 ? "N" : "S"}
                 <br />
-                Lon: {Math.abs(endPoint[1]).toFixed(4)}°{endPoint[1] >= 0 ? 'E' : 'W'}
+                Lon: {Math.abs(endPoint[1]).toFixed(4)}°
+                {endPoint[1] >= 0 ? "E" : "W"}
                 {endTimestamp && (
                   <>
                     <br />
@@ -712,9 +1034,11 @@ const GroundTrackMap = ({
                 <Popup>
                   <strong>Station: {stationName || "Ground Station"}</strong>
                   <br />
-                  Lat: {Math.abs(stationLatitude).toFixed(4)}°{stationLatitude >= 0 ? 'N' : 'S'}
+                  Lat: {Math.abs(stationLatitude).toFixed(4)}°
+                  {stationLatitude >= 0 ? "N" : "S"}
                   <br />
-                  Lon: {Math.abs(stationLongitude).toFixed(4)}°{stationLongitude >= 0 ? 'E' : 'W'}
+                  Lon: {Math.abs(stationLongitude).toFixed(4)}°
+                  {stationLongitude >= 0 ? "E" : "W"}
                 </Popup>
               </Marker>
             )}
