@@ -278,7 +278,7 @@ const Register: React.FC = () => {
                       sx={{ mt: 0.5 }}
                     />
                     <Typography level="body-sm" sx={{ flex: 1 }}>
-                      I agree to the{" "}
+                      {t("auth.register.agreeToTermsTemplate")}{" "}
                       <Link
                         to="/terms-of-service"
                         target="_blank"

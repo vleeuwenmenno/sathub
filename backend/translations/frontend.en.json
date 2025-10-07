@@ -134,6 +134,7 @@
       "confirmPasswordPlaceholder": "Confirm password",
       "captchaPlaceholder": "Enter the text shown above",
       "agreeToTerms": "I agree to the Terms of Service and Privacy Policy",
+      "agreeToTermsTemplate": "I agree to the",
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
       "acceptTerms": "I accept the Terms of Service and Privacy Policy",
