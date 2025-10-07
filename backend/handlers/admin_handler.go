@@ -678,7 +678,7 @@ func AdminDeletePost(c *gin.Context) {
 
 	// Find post to verify it exists
 	var post models.Post
-if err := db.First(&post, postID).Error; err != nil {
+	if err := db.First(&post, postID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found")
 			return
@@ -1665,15 +1665,15 @@ func GetAdminStations(c *gin.Context) {
 
 	// Get paginated stations
 	var stations []struct {
-		ID              string  `json:"id"`
-		Name            string  `json:"name"`
-		Location        string  `json:"location"`
+		ID              string   `json:"id"`
+		Name            string   `json:"name"`
+		Location        string   `json:"location"`
 		Latitude        *float64 `json:"latitude"`
 		Longitude       *float64 `json:"longitude"`
-		Equipment       string  `json:"equipment"`
-		IsPublic        bool    `json:"is_public"`
-		Hidden          bool    `json:"hidden"`
-		OnlineThreshold int     `json:"online_threshold"`
+		Equipment       string   `json:"equipment"`
+		IsPublic        bool     `json:"is_public"`
+		Hidden          bool     `json:"hidden"`
+		OnlineThreshold int      `json:"online_threshold"`
 		CreatedAt       time.Time
 		UpdatedAt       time.Time
 		OwnerUUID       string `json:"owner_uuid"`
