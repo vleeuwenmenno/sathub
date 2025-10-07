@@ -91,6 +91,13 @@
     "light": "Light",
     "auto": "Auto"
   },
+  "footer": {
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "nav": {
+    "home": "Home"
+  },
   "auth": {
     "login": {
       "title": "Sign In",
@@ -126,6 +133,9 @@
       "passwordPlaceholder": "Enter password",
       "confirmPasswordPlaceholder": "Confirm password",
       "captchaPlaceholder": "Enter the text shown above",
+      "agreeToTerms": "I agree to the Terms of Service and Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy",
       "acceptTerms": "I accept the Terms of Service and Privacy Policy",
       "submit": "Create Account",
       "haveAccount": "Already have an account?",
@@ -136,7 +146,7 @@
         "usernameExists": "This username is already taken",
         "passwordMismatch": "Passwords do not match",
         "weakPassword": "Password must be at least 8 characters long",
-        "termsRequired": "You must accept the terms and conditions",
+        "termsRequired": "You must agree to the terms and conditions",
         "captchaRequired": "Please complete the captcha",
         "registrationFailed": "Registration failed"
       }

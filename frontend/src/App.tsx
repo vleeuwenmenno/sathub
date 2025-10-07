@@ -32,6 +32,8 @@ import AdminAuditLogs from "./components/AdminAuditLogs";
 import AdminReports from "./components/AdminReports";
 import AdminStationsMap from "./components/AdminStationsMap";
 import AdminDebug from "./components/AdminDebug";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsOfService from "./components/TermsOfService";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { isDebugMode } from "./utils/debug";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -71,6 +73,8 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/verify-2fa" element={<TwoFactorVerify />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/confirm-email" element={<ConfirmEmail />} />
           <Route
             path="/confirm-email-change"
@@ -154,10 +158,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/two-factor-verify"
-            element={<TwoFactorVerify />}
-          />
+          <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
           <Route
             path="/confirm-disable-2fa"
             element={<ConfirmDisableTwoFactor />}

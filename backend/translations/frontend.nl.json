@@ -91,6 +91,10 @@
     "light": "Licht",
     "auto": "Auto"
   },
+  "footer": {
+    "termsOfService": "Gebruiksvoorwaarden",
+    "privacyPolicy": "Privacybeleid"
+  },
   "auth": {
     "login": {
       "title": "Inloggen",

@@ -91,6 +91,10 @@
     "light": "Hell",
     "auto": "Auto"
   },
+  "footer": {
+    "termsOfService": "Nutzungsbedingungen",
+    "privacyPolicy": "Datenschutzrichtlinie"
+  },
   "auth": {
     "login": {
       "title": "Anmelden",
