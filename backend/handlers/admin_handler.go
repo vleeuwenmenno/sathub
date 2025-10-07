@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"sathub-ui-backend/config"
 	"sathub-ui-backend/middleware"
@@ -1513,4 +1514,46 @@ func SendTestEmail(c *gin.Context) {
 
 	utils.Logger.Info().Str("email_type", req.EmailType).Str("admin_email", user.Email.String).Str("language", emailLanguage).Msg("Test email sent successfully")
 	utils.SuccessResponse(c, http.StatusOK, "Test email sent successfully", nil)
+}
+
+// GetIPInfo proxies requests to the external IP information service
+func GetIPInfo(c *gin.Context) {
+	ip := c.Query("ip")
+	if ip == "" {
+		utils.ValidationErrorResponse(c, "IP address is required")
+		return
+	}
+
+	// Build the external API URL
+	var url string
+	if ip != "" {
+		url = fmt.Sprintf("https://ip.mvl.sh/json?ip=%s", ip)
+	} else {
+		url = "https://ip.mvl.sh/json"
+	}
+
+	// Make request to external API
+	resp, err := http.Get(url)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to fetch IP information")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check if the response is successful
+	if resp.StatusCode != http.StatusOK {
+		utils.InternalErrorResponse(c, "External API returned an error")
+		return
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		utils.InternalErrorResponse(c, "Failed to read response from external API")
+		return
+	}
+
+	// Set the content type and return the raw JSON response
+	c.Header("Content-Type", "application/json")
+	c.Data(http.StatusOK, "application/json", body)
 }

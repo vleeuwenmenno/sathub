@@ -1171,3 +1171,33 @@ export const getTranslations = async (
   });
   return res.data.data;
 };
+
+// IP Information API functions (admin authentication required)
+export interface IPInfo {
+  ip: string;
+  ip_decimal: number;
+  country: string;
+  country_iso: string;
+  country_eu: boolean;
+  region_name: string;
+  region_code: string;
+  zip_code: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  time_zone: string;
+  asn: string;
+  asn_org: string;
+  hostname: string;
+  user_agent: {
+    product: string;
+    version: string;
+    comment: string;
+    raw_value: string;
+  };
+}
+
+export const getIPInfo = async (ip: string): Promise<IPInfo> => {
+  const res = await api.get(`/admin/ip-info?ip=${ip}`);
+  return res.data;
+};

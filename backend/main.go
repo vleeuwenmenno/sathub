@@ -363,6 +363,7 @@ func runAPIServer(cmd *cobra.Command, args []string) {
 			admin.GET("/settings/approval", handlers.GetApprovalSettings)
 			admin.PUT("/settings/approval", handlers.UpdateApprovalSettings)
 			admin.GET("/audit-logs", handlers.GetAuditLogs)
+			admin.GET("/ip-info", handlers.GetIPInfo)
 
 			// Debug endpoints (only available in debug mode)
 			debug := admin.Group("")
