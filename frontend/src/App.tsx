@@ -31,6 +31,7 @@ import Notifications from "./components/Notifications";
 import AdminAuditLogs from "./components/AdminAuditLogs";
 import AdminReports from "./components/AdminReports";
 import AdminStationsMap from "./components/AdminStationsMap";
+import AdminStationDetail from "./components/AdminStationDetail";
 import AdminDebug from "./components/AdminDebug";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import TermsOfService from "./components/TermsOfService";
@@ -224,6 +225,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AdminStationsMap />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/stations/:id"
+            element={
+              <ProtectedRoute>
+                <AdminStationDetail />
               </ProtectedRoute>
             }
           />

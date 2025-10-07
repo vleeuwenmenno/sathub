@@ -22,6 +22,7 @@ type Station struct {
 	PictureType     string    `gorm:"size:50" json:"-"`
 	Equipment       string    `gorm:"type:text" json:"equipment"`
 	IsPublic        bool      `gorm:"column:is_public;default:true" json:"is_public"`
+	Hidden          bool      `gorm:"default:false" json:"hidden"`
 	Token           string    `gorm:"uniqueIndex;not null" json:"-"`
 	OnlineThreshold int       `gorm:"default:5" json:"online_threshold"` // minutes
 	CreatedAt       time.Time `json:"created_at"`

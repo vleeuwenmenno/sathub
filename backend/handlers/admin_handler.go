@@ -1516,6 +1516,229 @@ func SendTestEmail(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "Test email sent successfully", nil)
 }
 
+// AdminHideStation handles hiding or unhiding a station (admin only)
+func AdminHideStation(c *gin.Context) {
+	stationIDStr := c.Param("id")
+	if stationIDStr == "" {
+		utils.ValidationErrorResponse(c, "Station ID is required")
+		return
+	}
+
+	var req struct {
+		Hidden bool `json:"hidden"`
+	}
+	if err := c.Bind(&req); err != nil {
+		utils.ValidationErrorResponse(c, "Invalid request body")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find station to verify it exists
+	var station models.Station
+	if err := db.First(&station, stationIDStr).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Station not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch station")
+		return
+	}
+
+	// Update hidden status
+	oldHidden := station.Hidden
+	station.Hidden = req.Hidden
+	if err := db.Save(&station).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to update station visibility")
+		return
+	}
+
+	// Log hide/unhide action
+	action := "unhidden"
+	if req.Hidden {
+		action = "hidden"
+	}
+	utils.LogAuditEvent(c, models.ActionAdminStationHide, models.TargetTypeStation, stationIDStr, models.AuditMetadata{
+		"station_name": station.Name,
+		"owner_id":     station.UserID.String(),
+		"old_hidden":   oldHidden,
+		"new_hidden":   req.Hidden,
+	})
+
+	utils.SuccessResponse(c, http.StatusOK, fmt.Sprintf("Station %s successfully", action), nil)
+}
+
+// AdminDeleteStation handles deleting any station (admin only)
+func AdminDeleteStation(c *gin.Context) {
+	stationIDStr := c.Param("id")
+	if stationIDStr == "" {
+		utils.ValidationErrorResponse(c, "Station ID is required")
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find station to verify it exists
+	var station models.Station
+	if err := db.First(&station, stationIDStr).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.NotFoundResponse(c, "Station not found")
+			return
+		}
+		utils.InternalErrorResponse(c, "Failed to fetch station")
+		return
+	}
+
+	// Delete associated station uptimes
+	if err := db.Where("station_id = ?", stationIDStr).Delete(&models.StationUptime{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete station uptimes")
+		return
+	}
+
+	// Delete associated station notification settings
+	if err := db.Where("station_id = ?", stationIDStr).Delete(&models.StationNotificationSettings{}).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete station notification settings")
+		return
+	}
+
+	// Delete the station
+	if err := db.Delete(&station).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to delete station")
+		return
+	}
+
+	// Log admin station deletion
+	utils.LogAuditEvent(c, models.ActionAdminStationDelete, models.TargetTypeStation, stationIDStr, models.AuditMetadata{
+		"station_name": station.Name,
+		"owner_id":     station.UserID.String(),
+		"was_public":   station.IsPublic,
+	})
+
+	utils.SuccessResponse(c, http.StatusOK, "Station deleted successfully", nil)
+}
+
+// GetAdminStations returns a paginated list of all stations for admin management
+func GetAdminStations(c *gin.Context) {
+	db := config.GetDB()
+
+	// Parse query parameters
+	page := 1
+	limit := 20
+	search := c.Query("search")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := fmt.Sscanf(pageStr, "%d", &page); err != nil || p != 1 {
+			page = 1
+		}
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || l != 1 {
+			limit = 20
+		}
+		// Cap limit at 100
+		if limit > 100 {
+			limit = 100
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	// Build query with joins to get user info
+	query := db.Model(&models.Station{}).
+		Select("stations.id, stations.name, stations.location, stations.latitude, stations.longitude, stations.equipment, stations.is_public, stations.hidden, stations.online_threshold, stations.created_at, stations.updated_at, users.id as owner_uuid, users.username as owner_username").
+		Joins("LEFT JOIN users ON stations.user_id = users.id")
+
+	// Add search filter if provided
+	if search != "" {
+		searchTerm := "%" + search + "%"
+		query = query.Where("stations.name ILIKE ? OR stations.location ILIKE ? OR users.username ILIKE ?",
+			searchTerm, searchTerm, searchTerm)
+	}
+
+	// Get total count for pagination
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to count stations")
+		return
+	}
+
+	// Get paginated stations
+	var stations []struct {
+		ID              string  `json:"id"`
+		Name            string  `json:"name"`
+		Location        string  `json:"location"`
+		Latitude        *float64 `json:"latitude"`
+		Longitude       *float64 `json:"longitude"`
+		Equipment       string  `json:"equipment"`
+		IsPublic        bool    `json:"is_public"`
+		Hidden          bool    `json:"hidden"`
+		OnlineThreshold int     `json:"online_threshold"`
+		CreatedAt       time.Time
+		UpdatedAt       time.Time
+		OwnerUUID       string `json:"owner_uuid"`
+		OwnerUsername   string `json:"owner_username"`
+	}
+
+	if err := query.Order("stations.created_at DESC").Limit(limit).Offset(offset).Scan(&stations).Error; err != nil {
+		utils.InternalErrorResponse(c, "Failed to retrieve stations")
+		return
+	}
+
+	// Calculate total pages
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	var stationResponses []gin.H
+	for _, station := range stations {
+		// Get last seen time from uptime records
+		var lastUptime models.StationUptime
+		var lastSeen *string
+		if err := db.Where("station_id = ?", station.ID).Order("timestamp DESC").First(&lastUptime).Error; err == nil {
+			formatted := lastUptime.Timestamp.Format("2006-01-02T15:04:05Z07:00")
+			lastSeen = &formatted
+		}
+
+		// Determine if station is online
+		isOnline := false
+		if lastSeen != nil {
+			if lastSeenTime, err := time.Parse("2006-01-02T15:04:05Z07:00", *lastSeen); err == nil {
+				isOnline = time.Since(lastSeenTime) <= time.Duration(station.OnlineThreshold)*time.Minute
+			}
+		}
+
+		stationResponse := gin.H{
+			"id":               station.ID,
+			"name":             station.Name,
+			"location":         station.Location,
+			"latitude":         station.Latitude,
+			"longitude":        station.Longitude,
+			"equipment":        station.Equipment,
+			"is_public":        station.IsPublic,
+			"hidden":           station.Hidden,
+			"is_online":        isOnline,
+			"online_threshold": station.OnlineThreshold,
+			"last_seen":        lastSeen,
+			"owner_uuid":       station.OwnerUUID,
+			"owner_username":   station.OwnerUsername,
+			"created_at":       station.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			"updated_at":       station.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+		stationResponses = append(stationResponses, stationResponse)
+	}
+
+	response := gin.H{
+		"stations": stationResponses,
+		"pagination": PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: int(total),
+			Pages: totalPages,
+		},
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Stations retrieved successfully", response)
+}
+
 // GetIPInfo proxies requests to the external IP information service
 func GetIPInfo(c *gin.Context) {
 	ip := c.Query("ip")

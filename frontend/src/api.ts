@@ -206,6 +206,7 @@ export interface Station {
   has_picture?: boolean;
   equipment: string;
   is_public: boolean;
+  hidden: boolean;
   last_seen?: string;
   is_online: boolean;
   online_threshold: number;
@@ -893,6 +894,56 @@ export const getAdminPosts = async (
   }
   const res = await api.get(`/admin/posts?${params}`);
   return res.data.data;
+};
+
+export interface AdminStationsResponse {
+  stations: AdminStation[];
+  pagination: PaginationMeta;
+}
+
+export interface AdminStation {
+  id: string;
+  name: string;
+  location: string;
+  latitude?: number;
+  longitude?: number;
+  equipment: string;
+  is_public: boolean;
+  hidden: boolean;
+  is_online: boolean;
+  online_threshold: number;
+  last_seen?: string;
+  owner_uuid: string;
+  owner_username: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const getAdminStations = async (
+  page: number = 1,
+  limit: number = 20,
+  search: string = ""
+): Promise<AdminStationsResponse> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+  const res = await api.get(`/admin/stations?${params}`);
+  return res.data.data;
+};
+
+export const adminHideStation = async (
+  stationId: string,
+  hidden: boolean
+): Promise<void> => {
+  await api.put(`/admin/stations/${stationId}/hide`, { hidden });
+};
+
+export const adminDeleteStation = async (stationId: string): Promise<void> => {
+  await api.delete(`/admin/stations/${stationId}`);
 };
 
 // Achievement API functions
