@@ -77,6 +77,11 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
   };
 
   const t: TranslationFunction = (key, params) => {
+    // If translations are not loaded yet, return the key without warning
+    if (!translations || Object.keys(translations).length === 0) {
+      return key;
+    }
+
     const keys = key.split(".");
     let value: any = translations;
 
