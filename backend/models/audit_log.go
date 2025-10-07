@@ -52,6 +52,8 @@ const (
 	ActionStationDelete        AuditAction = "station_delete"
 	ActionStationTokenRegen    AuditAction = "station_token_regenerate"
 	ActionStationPictureUpload AuditAction = "station_picture_upload"
+	ActionAdminStationHide     AuditAction = "admin_station_hide"
+	ActionAdminStationDelete   AuditAction = "admin_station_delete"
 
 	// Post actions
 	ActionPostCreate      AuditAction = "post_create"

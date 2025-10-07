@@ -678,7 +678,7 @@ func AdminDeletePost(c *gin.Context) {
 
 	// Find post to verify it exists
 	var post models.Post
-	if err := db.First(&post, postID).Error; err != nil {
+if err := db.First(&post, postID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Post not found")
 			return
@@ -1536,7 +1536,7 @@ func AdminHideStation(c *gin.Context) {
 
 	// Find station to verify it exists
 	var station models.Station
-	if err := db.First(&station, stationIDStr).Error; err != nil {
+	if err := db.Where("id = ?", stationIDStr).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
@@ -1580,7 +1580,7 @@ func AdminDeleteStation(c *gin.Context) {
 
 	// Find station to verify it exists
 	var station models.Station
-	if err := db.First(&station, stationIDStr).Error; err != nil {
+	if err := db.Where("id = ?", stationIDStr).First(&station).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.NotFoundResponse(c, "Station not found")
 			return
