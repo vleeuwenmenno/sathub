@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -14,7 +14,8 @@ import {
   IconButton,
   Divider,
   Chip,
-} from '@mui/joy';
+  Checkbox,
+} from "@mui/joy";
 import {
   PersonAdd as RegisterIcon,
   Email as EmailIcon,
@@ -22,20 +23,21 @@ import {
   Person as PersonIcon,
   Key as KeyIcon,
   Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { register as apiRegister, getCaptcha } from '../api';
-import { useTranslation } from '../contexts/TranslationContext';
-import logo from '../assets/logo.svg';
+} from "@mui/icons-material";
+import { register as apiRegister, getCaptcha } from "../api";
+import { useTranslation } from "../contexts/TranslationContext";
+import logo from "../assets/logo.svg";
 
 const Register: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [captchaId, setCaptchaId] = useState('');
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, language } = useTranslation();
   const navigate = useNavigate();
@@ -44,9 +46,9 @@ const Register: React.FC = () => {
     try {
       const res = await getCaptcha();
       setCaptchaId(res.captcha_id);
-      setCaptchaAnswer('');
+      setCaptchaAnswer("");
     } catch (err) {
-      console.error('Failed to load captcha', err);
+      console.error("Failed to load captcha", err);
     }
   };
 
@@ -56,27 +58,42 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (password !== confirmPassword) {
-      setError(t('auth.register.errors.passwordMismatch'));
+      setError(t("auth.register.errors.passwordMismatch"));
       return;
     }
 
     if (!captchaAnswer) {
-      setError(t('auth.register.errors.captchaRequired'));
+      setError(t("auth.register.errors.captchaRequired"));
+      return;
+    }
+
+    if (!agreeToTerms) {
+      setError(t("auth.register.errors.termsRequired"));
       return;
     }
 
     setLoading(true);
 
     try {
-      await apiRegister(email, username, password, captchaId, captchaAnswer, language);
-      setSuccess(t('auth.register.successMessage'));
-      setTimeout(() => navigate('/login'), 5000);
+      await apiRegister(
+        email,
+        username,
+        password,
+        captchaId,
+        captchaAnswer,
+        language
+      );
+      setSuccess(t("auth.register.successMessage"));
+      setTimeout(() => navigate("/login"), 5000);
     } catch (err: any) {
-      setError(err.response?.data?.error || t('auth.register.errors.registrationFailed'));
+      setError(
+        err.response?.data?.error ||
+          t("auth.register.errors.registrationFailed")
+      );
     } finally {
       setLoading(false);
     }
@@ -85,31 +102,31 @@ const Register: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '80vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: "80vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         p: 2,
       }}
     >
       <Card
         sx={{
-          width: '100%',
+          width: "100%",
           maxWidth: 420,
-          boxShadow: 'lg',
-          borderRadius: 'xl',
-          overflow: 'hidden',
+          boxShadow: "lg",
+          borderRadius: "xl",
+          overflow: "hidden",
         }}
         variant="outlined"
       >
         {/* Header */}
         <Box
           sx={{
-            bgcolor: 'primary.main',
+            bgcolor: "primary.main",
             p: 3,
-            textAlign: 'center',
-            color: 'white',
+            textAlign: "center",
+            color: "white",
           }}
         >
           <Box
@@ -121,11 +138,11 @@ const Register: React.FC = () => {
               mb: 1,
             }}
           />
-          <Typography level="h2" sx={{ mb: 1, fontWeight: 'bold' }}>
+          <Typography level="h2" sx={{ mb: 1, fontWeight: "bold" }}>
             SatHub
           </Typography>
           <Typography level="body-sm" sx={{ opacity: 0.9 }}>
-            {t('auth.register.title')}
+            {t("auth.register.title")}
           </Typography>
         </Box>
 
@@ -135,96 +152,158 @@ const Register: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <Stack spacing={3}>
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 'bold' }}>
-                    <PersonIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {t('auth.register.username')}
+                  <FormLabel sx={{ fontWeight: "bold" }}>
+                    <PersonIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                    {t("auth.register.username")}
                   </FormLabel>
                   <Input
                     value={username}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setUsername(e.target.value)
+                    }
                     required
                     fullWidth
                     size="lg"
-                    placeholder={t('auth.register.usernamePlaceholder')}
-                    sx={{ borderRadius: 'lg' }}
+                    placeholder={t("auth.register.usernamePlaceholder")}
+                    sx={{ borderRadius: "lg" }}
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 'bold' }}>
-                    <EmailIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {t('auth.register.email')}
+                  <FormLabel sx={{ fontWeight: "bold" }}>
+                    <EmailIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                    {t("auth.register.email")}
                   </FormLabel>
                   <Input
                     type="email"
                     value={email}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setEmail(e.target.value)
+                    }
                     required
                     fullWidth
                     size="lg"
-                    placeholder={t('auth.register.emailPlaceholder')}
-                    sx={{ borderRadius: 'lg' }}
+                    placeholder={t("auth.register.emailPlaceholder")}
+                    sx={{ borderRadius: "lg" }}
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 'bold' }}>
-                    <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {t('auth.register.password')}
+                  <FormLabel sx={{ fontWeight: "bold" }}>
+                    <LockIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                    {t("auth.register.password")}
                   </FormLabel>
                   <Input
                     type="password"
                     value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPassword(e.target.value)
+                    }
                     required
                     fullWidth
                     size="lg"
-                    placeholder={t('auth.register.passwordPlaceholder')}
-                    sx={{ borderRadius: 'lg' }}
+                    placeholder={t("auth.register.passwordPlaceholder")}
+                    sx={{ borderRadius: "lg" }}
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 'bold' }}>
-                    <LockIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {t('auth.register.confirmPassword')}
+                  <FormLabel sx={{ fontWeight: "bold" }}>
+                    <LockIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                    {t("auth.register.confirmPassword")}
                   </FormLabel>
                   <Input
                     type="password"
                     value={confirmPassword}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfirmPassword(e.target.value)
+                    }
                     required
                     fullWidth
                     size="lg"
-                    placeholder={t('auth.register.confirmPasswordPlaceholder')}
-                    sx={{ borderRadius: 'lg' }}
+                    placeholder={t("auth.register.confirmPasswordPlaceholder")}
+                    sx={{ borderRadius: "lg" }}
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel sx={{ fontWeight: 'bold' }}>
-                    <KeyIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {t('auth.register.captcha')}
+                  <FormLabel sx={{ fontWeight: "bold" }}>
+                    <KeyIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                    {t("auth.register.captcha")}
                   </FormLabel>
                   {captchaId && (
-                    <Box sx={{ mb: 1, p: 2, bgcolor: 'background.surface', borderRadius: 'lg', border: '1px solid', borderColor: 'divider', position: 'relative' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Box
+                      sx={{
+                        mb: 1,
+                        p: 2,
+                        bgcolor: "background.surface",
+                        borderRadius: "lg",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        position: "relative",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "center" }}>
                         <img src={`/captcha/${captchaId}.png`} alt="Captcha" />
                       </Box>
-                      <IconButton onClick={fetchCaptcha} size="sm" sx={{ position: 'absolute', top: 8, right: 8 }}>
+                      <IconButton
+                        onClick={fetchCaptcha}
+                        size="sm"
+                        sx={{ position: "absolute", top: 8, right: 8 }}
+                      >
                         <RefreshIcon />
                       </IconButton>
                     </Box>
                   )}
                   <Input
                     value={captchaAnswer}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCaptchaAnswer(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setCaptchaAnswer(e.target.value)
+                    }
                     required
                     fullWidth
                     size="lg"
-                    placeholder={t('auth.register.captchaPlaceholder')}
-                    sx={{ borderRadius: 'lg' }}
+                    placeholder={t("auth.register.captchaPlaceholder")}
+                    sx={{ borderRadius: "lg" }}
                   />
+                </FormControl>
+
+                <FormControl sx={{ mb: 2 }}>
+                  <Box
+                    sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+                  >
+                    <Checkbox
+                      checked={agreeToTerms}
+                      onChange={(e) => setAgreeToTerms(e.target.checked)}
+                      sx={{ mt: 0.5 }}
+                    />
+                    <Typography level="body-sm" sx={{ flex: 1 }}>
+                      {t("auth.register.agreeToTermsTemplate")}{" "}
+                      <Link
+                        to="/terms-of-service"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "var(--joy-palette-primary-main)",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {t("auth.register.termsOfService")}
+                      </Link>
+                      {" and "}
+                      <Link
+                        to="/privacy-policy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "var(--joy-palette-primary-main)",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {t("auth.register.privacyPolicy")}
+                      </Link>
+                    </Typography>
+                  </Box>
                 </FormControl>
 
                 <Button
@@ -235,53 +314,53 @@ const Register: React.FC = () => {
                   size="lg"
                   startDecorator={<RegisterIcon />}
                   sx={{
-                    borderRadius: 'lg',
+                    borderRadius: "lg",
                     py: 1.5,
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    bgcolor: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    bgcolor: "primary.main",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
                     },
                   }}
                 >
-                  {loading ? t('common.loading') : t('auth.register.submit')}
+                  {loading ? t("common.loading") : t("auth.register.submit")}
                 </Button>
               </Stack>
             </form>
-            
+
             {/* Error/Success Alerts */}
             {error && (
-              <Alert color="danger" variant="soft" sx={{ borderRadius: 'lg' }}>
+              <Alert color="danger" variant="soft" sx={{ borderRadius: "lg" }}>
                 {error}
               </Alert>
             )}
 
             {success && (
-              <Alert color="success" variant="soft" sx={{ borderRadius: 'lg' }}>
+              <Alert color="success" variant="soft" sx={{ borderRadius: "lg" }}>
                 {success}
               </Alert>
             )}
 
             <Divider sx={{ my: 1 }}>
               <Chip variant="soft" size="sm">
-                {t('common.or')}
+                {t("common.or")}
               </Chip>
             </Divider>
 
             {/* Login Link */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
-                {t('auth.register.haveAccount')}{' '}
+            <Box sx={{ textAlign: "center" }}>
+              <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
+                {t("auth.register.haveAccount")}{" "}
                 <Link
                   to="/login"
                   style={{
-                    color: 'var(--joy-palette-primary-main)',
-                    textDecoration: 'none',
-                    fontWeight: 'bold',
+                    color: "var(--joy-palette-primary-main)",
+                    textDecoration: "none",
+                    fontWeight: "bold",
                   }}
                 >
-                  {t('auth.register.signIn')}
+                  {t("auth.register.signIn")}
                 </Link>
               </Typography>
             </Box>
