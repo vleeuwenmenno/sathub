@@ -1,0 +1,134 @@
+name: development-sathub
+services:
+  migrate:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+    command: ["go", "run", ".", "auto-migrate"]
+    depends_on:
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_started
+    restart: "no"
+
+  backend:
+    build: ./backend
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./backend:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+      - FRONTEND_URL=https://sathub.local:9999
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_EXTERNAL_URL=https://obj.sathub.local:9999
+    command: ["air", "-c", ".air.toml", "--", "api"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=sathub
+      - DB_PASSWORD=sathub_password
+      - DB_NAME=sathub
+      - FRONTEND_URL=https://sathub.local:9999
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_EXTERNAL_URL=https://obj.sathub.local:9999
+    command: ["air", "-c", ".air.toml", "--", "worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=sathub
+      - POSTGRES_PASSWORD=sathub_password
+      - POSTGRES_DB=sathub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_ALLOWED_HOSTS=sathub.local,localhost,127.0.0.1
+      - VITE_API_BASE_URL=https://api.sathub.local:9999
+    depends_on:
+      - backend
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    volumes:
+      - mailpit_data:/data
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address :9001
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./docker/Caddyfile.dev:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - minio
+      - frontend
+
+volumes:
+  postgres_data:
+  mailpit_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

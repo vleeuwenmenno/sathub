@@ -1,0 +1,12 @@
+[submodule "client"]
+	path = client
+	url = git@github.com:vleeuwenmenno/sathub-client.git
+	branch = main
+[submodule "backend"]
+	path = backend
+	url = git@github.com:vleeuwenmenno/sathub-backend.git
+	branch = main
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:vleeuwenmenno/sathub-frontend.git
+	branch = main

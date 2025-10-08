@@ -1,0 +1,176 @@
+services:
+  # Migration service - runs once on stack startup
+  migrate:
+    image: ghcr.io/vleeuwenmenno/sathub-backend/backend:latest
+    container_name: sathub-migrate
+    restart: "no"
+    command: ["./main", "auto-migrate"]
+    environment:
+      - GIN_MODE=release
+
+      # Database settings
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sathub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-sathub}
+
+      # MinIO settings
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_EXTERNAL_URL=https://obj.sathub.de
+    networks:
+      - sathub
+    depends_on:
+      - postgres
+
+  backend:
+    image: ghcr.io/vleeuwenmenno/sathub-backend/backend:latest
+    container_name: sathub-backend
+    restart: unless-stopped
+    command: ["./main", "api"]
+    environment:
+      - GIN_MODE=release
+      - FRONTEND_URL=${FRONTEND_URL:-https://sathub.de}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://sathub.de}
+
+      # Database settings
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sathub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-sathub}
+
+      # Security settings
+      - JWT_SECRET=${JWT_SECRET}
+      - TWO_FA_ENCRYPTION_KEY=${TWO_FA_ENCRYPTION_KEY}
+
+      # SMTP settings
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+
+      # MinIO settings
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_EXTERNAL_URL=https://obj.sathub.de
+    networks:
+      - sathub
+      - caddy_network
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+
+  worker:
+    image: ghcr.io/vleeuwenmenno/sathub-backend/backend:latest
+    container_name: sathub-worker
+    restart: unless-stopped
+    command: ["./main", "worker"]
+    environment:
+      - GIN_MODE=release
+
+      # Database settings
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sathub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-sathub}
+
+      # SMTP settings (needed for notifications)
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+
+      # MinIO settings
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_BUCKET=sathub-images
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_EXTERNAL_URL=https://obj.sathub.de
+    networks:
+      - sathub
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: sathub-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER:-sathub}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-sathub}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sathub
+
+  frontend:
+    image: ghcr.io/vleeuwenmenno/sathub-frontend/frontend:latest
+    container_name: sathub-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.sathub.de}
+      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-sathub.de,sathub.nl}
+    networks:
+      - sathub
+      - caddy_network
+
+  minio:
+    image: minio/minio
+    container_name: sathub-minio
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address :9001
+    networks:
+      - sathub
+    depends_on:
+      - postgres
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: sathub-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - REPO_USER=${REPO_USER}
+      - REPO_PASS=${REPO_PASS}
+    command: --interval 30 --cleanup --include-stopped=false sathub-backend sathub-worker sathub-frontend
+    networks:
+      - sathub
+
+volumes:
+  minio_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  sathub:
+    driver: bridge
+
+  # We assume you're running a Caddy instance in a separate compose file with this network
+  # If not, you can remove this network and the related depends_on in the services above
+  # But the stack is designed to run behind a Caddy reverse proxy for SSL termination and routing
+  caddy_network:
+    external: true
+    name: caddy_default
