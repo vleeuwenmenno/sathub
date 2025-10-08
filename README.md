@@ -2,9 +2,9 @@
 
 A community platform for satellite enthusiasts to share and explore satellite data from ground stations worldwide.
 
-[![Release Images](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/release.yml)
 [![Client Binaries](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml)
-[![Service Status](https://updown.io/p/itf3y/status.svg)](https://updown.io/p/itf3y)
+
+Service Status can be found on : <a href="https://updown.io/p/itf3y"><img src="https://updown.io/assets/logo-a91cdb1cc5f67a0f1c176b39a69b8efd81af95d067c2ac09107dd1e296f8f49f.png" alt="Service Status" height="20"></a>
 
 ## What is SatHub?
 
