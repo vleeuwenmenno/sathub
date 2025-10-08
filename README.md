@@ -60,7 +60,7 @@ The client will monitor the specified directory and automatically upload new sat
 
 ### Client Documentation
 
-For detailed client setup, configuration options, and troubleshooting, see the [client README](client/README.md).
+For detailed client setup, configuration options, and troubleshooting, see the [client README](https://github.com/vleeuwenmenno/sathub-client/blob/main/README.md).
 
 ## For Developers
 
