@@ -23,7 +23,7 @@ The SatHub client allows you to automatically upload your satellite captures to 
 
 ### Download
 
-Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathub/releases) page:
+Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathub-client/releases) page:
 
 - **Linux (x86_64)**: `sathub-client-linux-amd64`
 - **Linux (ARM64)**: `sathub-client-linux-arm64` (Raspberry Pi and other ARM devices)
@@ -45,7 +45,7 @@ curl -sSL https://api.sathub.de/install | sudo bash
 
 **Manual Download:**
 
-Download the client for your platform from [Releases](https://github.com/vleeuwenmenno/sathub/releases) and run:
+Download the client for your platform from [Releases](https://github.com/vleeuwenmenno/sathub-client/releases) and run:
 
 ```bash
 # Linux/macOS - make executable first
