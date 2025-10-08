@@ -66,7 +66,7 @@ For detailed client setup, configuration options, and troubleshooting, see the [
 
 If you're interested in contributing to SatHub or setting up your own instance:
 
-- **Technical documentation**: [TECHNICAL.md](TECHNICAL.md)
+- **Technical documentation**: [docs/TECHNICAL.md](TECHNICAL.md)
 - **Getting started guide**: [docs/getting_started.md](docs/getting_started.md)
 
 ## License
