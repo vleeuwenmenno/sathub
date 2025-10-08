@@ -209,6 +209,12 @@ setup_service() {
         return
     fi
 
+    # Check if running in interactive mode
+    if ! [ -t 0 ]; then
+        log_info "Non-interactive mode detected, skipping service setup"
+        return
+    fi
+
     echo
     echo -e "${YELLOW}Service Setup${NC}"
     
