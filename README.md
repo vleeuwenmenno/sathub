@@ -71,13 +71,6 @@ The client will monitor the specified directory and automatically upload new sat
 
 For detailed client setup, configuration options, and troubleshooting, see the [client README](https://github.com/vleeuwenmenno/sathub-client/blob/main/README.md).
 
-## For Developers
-
-If you're interested in contributing to SatHub or setting up your own instance:
-
-- **Technical documentation**: [docs/TECHNICAL.md](TECHNICAL.md)
-- **Getting started guide**: [docs/getting_started.md](docs/getting_started.md)
-
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
