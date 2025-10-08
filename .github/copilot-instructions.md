@@ -2,7 +2,7 @@
 
 ## Project Architecture
 
-SatHub is a full-stack satellite ground station management platform with a **Go Gin backend** (`backend/`), **React/TypeScript frontend** (`frontend/`), and **standalone Go client** (`client/`). The architecture features:
+SatHub is a full-stack satellite ground station management platform organized as a monorepo with git submodules. It consists of a **Go Gin backend** (submodule: `backend/`), **React/TypeScript frontend** (submodule: `frontend/`), and **standalone Go client** (submodule: `client/`). The architecture features:
 
 - **Backend**: RESTful JSON API with JWT auth, GORM ORM, **PostgreSQL database** (SQLite supported for dev)
 - **Frontend**: React 19 + Vite + Material-UI Joy with TypeScript
