@@ -1,10 +1,19 @@
-# SatHub
+# SatHub (BETA)
 
 A community platform for satellite enthusiasts to share and explore satellite data from ground stations worldwide.
 
 [![Client Binaries](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml/badge.svg)](https://github.com/vleeuwenmenno/sathub/actions/workflows/build-client.yml)
 
 Service Status can be found on : <a href="https://updown.io/p/itf3y"><img src="https://updown.io/assets/logo-a91cdb1cc5f67a0f1c176b39a69b8efd81af95d067c2ac09107dd1e296f8f49f.png" alt="Service Status" height="20"></a>
+
+## Beta Notice
+
+SatHub is currently in **BETA**. This means:
+
+- The platform is functional but may still have bugs, missing and/or incomplete features.
+- Features and APIs may change as we refine the platform.
+- Use at your own risk; we may have to wipe parts of the database during development if major changes are made. (Obviously we will try to avoid this as much as possible)
+- We welcome feedback from users to help improve the platform.
 
 ## What is SatHub?
 
