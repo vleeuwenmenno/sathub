@@ -2,186 +2,208 @@
 
 ## Project Architecture
 
-SatHub is a full-stack satellite ground station management platform organized as a monorepo with git submodules. It consists of a **Go Gin backend** (submodule: `backend/`), **React/TypeScript frontend** (submodule: `frontend/`), and **standalone Go client** (submodule: `client/`). The architecture features:
+SatHub is a satellite ground station management platform organized as a monorepo with git submodules:
 
-- **Backend**: RESTful JSON API with JWT auth, GORM ORM, **PostgreSQL database** (SQLite supported for dev)
-- **Frontend**: React 19 + Vite + Material-UI Joy with TypeScript
-- **Client**: Standalone Go binary for automated satellite data uploads
-- **Worker**: Background job processor for health monitoring and achievements
-- **Storage**: MinIO object storage for images (S3-compatible)
-- **Data Model**: Users → Stations → Posts (with satellite data/images)
-- **Authentication**: JWT access tokens + refresh tokens, station-specific API tokens
+- **Backend** (`backend/`): Go + Gin REST API with PostgreSQL, GORM, MinIO storage
+- **Frontend** (`frontend/`): React 19 + TypeScript + Vite + Material-UI Joy
+- **Client** (`client/`): Standalone Go binary for automated satellite data uploads
+- **Worker**: Background service (same codebase, different command) for health monitoring and achievements
 
-## Key Patterns & Conventions
+**Data flow**: Users → Stations → Posts (satellite captures + images). Dual authentication: JWT tokens for users, station-specific API tokens for automated uploads.
 
-### Database & Models
+## Critical Workflows
 
-- **GORM Auto-migration**: Models in `backend/models/` define both Go structs and DB schema
-- **Station Tokens**: Each station gets a unique API token for external data uploads (`Station.GenerateToken()`)
-- **Image Storage**: Images stored in MinIO object storage, URLs in PostgreSQL (`PostImage.ImageURL`)
-- **CBOR Storage**: Binary satellite data stored in separate `PostCBOR` table
-- **ID Strategy**: Users have `uint` IDs, Stations use UUID strings, Posts use UUID
+### Development Environment (Docker Required)
 
-### Authentication Patterns
-
-- **Dual Auth**: User JWT tokens (`middleware.AuthRequired()`) vs Station tokens (`middleware.StationTokenAuth()`)
-- **Optional Auth**: Some endpoints use `middleware.OptionalAuth()` for public/private content
-- **Frontend Auto-refresh**: `api.ts` interceptors handle token refresh on 401s
-
-### API Design
-
-- **Route Grouping**: Clear separation between public, user-protected, and station-protected endpoints
-- **Caddy Proxy**: All services routed through Caddy on port 9999 with HTTPS in development
-- **Response Format**: Consistent JSON structure via `utils/response.go` helpers
-
-## Development Workflows
-
-### Docker-First Development (Required)
-
-**Always use Docker** - the stack requires PostgreSQL, MinIO, Mailpit, and Caddy reverse proxy:
+All development uses Docker Compose. No local setup works without it (requires PostgreSQL, MinIO, Mailpit, Caddy).
 
 ```bash
-make up           # Start all services with hot reload
-make down         # Stop all services
-make logs-f       # Follow logs from all services
-make logs-backend-f  # Follow backend logs only
-make seed         # Reset and seed database
+# Essential commands
+make up              # Start all services (auto-rebuild, hot reload via Air/Vite)
+make seed            # Reset DB and create test user (test_user/password123)
+make cycle           # Nuclear option: wipe everything (DB, volumes) + rebuild + seed
+make logs-backend-f  # Follow backend logs
+make db-console      # PostgreSQL psql shell
+
+# Access points (add *.sathub.local to /etc/hosts first)
+# Frontend: https://sathub.local:9999
+# API: https://api.sathub.local:9999
+# MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
+# Mailpit: http://localhost:8025
 ```
 
-### Setup Requirements
+**First-time setup gotcha**: Accept self-signed cert by visiting API URL in browser once.
 
-1. **Add hostnames to `/etc/hosts`:**
-
-   ```
-   127.0.0.1 sathub.local
-   127.0.0.1 api.sathub.local
-   127.0.0.1 obj.sathub.local
-   ```
-
-2. **Access the application:**
-
-   - Frontend: https://sathub.local:9999
-   - API: https://api.sathub.local:9999
-   - MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
-   - Mailpit: http://localhost:8025
-
-3. **Accept self-signed certificate** by visiting the API URL once
-
-### Database Operations
-
+**Build process**:
 ```bash
-# Reset and seed database (removes existing data)
-make seed
+# Client builds (outside Docker)
+cd client && go build . -o bin/sathub-client
 
-# Connect to PostgreSQL database
-make db-console
-
-# Direct queries (shorthand)
-docker compose exec postgres psql -U sathub -d sathub -c "SELECT * FROM posts LIMIT 5"
-
-# List all tables
-docker compose exec postgres psql -U sathub -d sathub -c "\dt"
+# Backend/Frontend: NO manual builds needed!
+# Docker containers auto-reload on file changes via Air/Vite
+docker compose restart backend   # Force restart if needed
+docker compose restart frontend  # Force restart if needed
 ```
+**NEVER build from `tmp/`** - that's Air's hot reload working directory, not source code.
 
-**Important**: Database defaults to SQLite if `DB_TYPE` env var not set, but Docker uses PostgreSQL
+### Backend Architecture Patterns
 
-### File Structure Conventions
-
-- **Backend**:
-  - `handlers/` - API route handlers
-  - `middleware/` - Auth and request processing
-  - `models/` - Database models
-  - `worker/` - Background jobs (health monitoring, achievements)
-  - `cmd/seed/` - Database seeding
-  - `config/` - Configuration (database, storage, email)
-  - `utils/` - Helper functions (response, storage, email)
-- **Frontend**:
-
-  - `components/` - All React components (no separate pages directory)
-  - `contexts/` - React contexts (auth, theme)
-  - `api.ts` - Centralized API client
-  - `types.ts` - TypeScript type definitions
-  - `translations/` - i18n translation files
-
-- **Client**:
-  - `main.go` - CLI and watcher orchestration
-  - `watcher.go` - Directory monitoring and processing
-  - `api.go` - API client for uploads
-  - `config.go` - Configuration management
-
-## Critical Implementation Details
-
-### Station Token Authentication
-
-Station tokens enable external devices (like the SatHub client) to upload data without user accounts:
-
+**Command structure** (`backend/main.go`):
 ```go
-// Station creation automatically generates secure token
-station.GenerateToken()
-// Upload endpoint uses station middleware
-stationPosts.Use(middleware.StationTokenAuth())
+// Single binary, multiple modes via cobra commands
+rootCmd.AddCommand(apiCmd)    // HTTP API server
+rootCmd.AddCommand(workerCmd)  // Background jobs
+rootCmd.AddCommand(migrateCmd) // DB auto-migration
 ```
 
-### Image & Storage Handling
+**Dual authentication** (`backend/middleware/auth.go`):
+```go
+// User JWT: "Authorization: Bearer <token>"
+middleware.AuthRequired()       // Requires valid user JWT
+middleware.OptionalAuth()       // JWT optional, context populated if present
+middleware.RequireRole("admin") // Role-based access control
 
-Images stored in MinIO, served via backend API:
+// Station token: "Authorization: Station <token>"
+middleware.StationTokenAuth()   // For client uploads/health pings
+// Station tokens auto-generated on Station.BeforeCreate() via GenerateToken()
+```
 
-- **Upload**: Images uploaded to backend, stored in MinIO bucket `sathub-images/`
-- **Organization**: Folder structure `images/post-{uuid}/filename.ext`
-- **URLs**: Backend generates presigned URLs or proxies from MinIO
-- **Access**: `/api/posts/:id/images/:imageId` for post images
-- **Station Pictures**: `/api/stations/:id/picture`
+**Route organization** (`backend/main.go:280-400`):
+- Public routes: No auth (e.g., `/api/posts`, `/api/settings/registration`)
+- Protected routes: `middleware.AuthRequired()` (user endpoints)
+- Station routes: `middleware.StationTokenAuth()` (upload endpoints like `/api/posts`, `/api/stations/health`)
+- Admin routes: `middleware.AuthRequired() + middleware.RequireRole("admin")`
 
-### Frontend State Management
+**Model conventions** (`backend/models/`):
+- Users: `uuid.UUID` IDs (via `gorm:"type:uuid;default:gen_random_uuid()"`)
+- Stations: String UUIDs (custom generation in `BeforeCreate`)
+- Posts: `uuid.UUID` IDs (auto-generated)
+- Images: Stored in MinIO (`PostImage.ImageURL`), metadata in PostgreSQL
+- CBOR: Binary satellite data in separate `PostCBOR` table
 
-- **AuthContext**: Global user auth state with automatic token refresh
-- **API Client**: Centralized axios instance in `api.ts` with interceptors
-- **Material-UI Joy**: Consistent design system, avoid mixing with core MUI
-- **No routing**: All components loaded directly in `App.tsx`, no react-router pages
+**CRITICAL - PostgreSQL-specific types** (`backend/models/`):
+```go
+// ✅ CORRECT - Use PostgreSQL native types
+ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+Metadata   string    `gorm:"type:jsonb" json:"metadata"`  // JSONB for JSON data
+Data       []byte    `gorm:"type:bytea" json:"-"`         // Binary data
 
-### Backend Worker Service
+// ❌ WRONG - Don't simplify to generic types
+ID         uuid.UUID `gorm:"primaryKey" json:"id"`        // Missing type:uuid!
+Metadata   string    `gorm:"type:text" json:"metadata"`   // Should be jsonb
+```
+**Never remove PostgreSQL-specific type declarations**. We use native types (uuid, jsonb, bytea, decimal) for performance and data integrity.
 
-Separate worker process handles background jobs:
+### Frontend Patterns
 
-- **Station Health Monitor**: Checks station online/offline status, sends notifications
-- **Achievement Checker**: Awards achievements based on user activity
-- **Runs independently**: Same codebase, different command (`worker` vs `api`)
+**API client** (`frontend/src/api.ts`):
+```typescript
+// Axios interceptor auto-refreshes JWT on 401
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 && !error.config._retry) {
+      // Refresh token, retry request
+    }
+  }
+);
+```
 
-### Database Seeding Strategy
+**No routing**: All components in `components/`, loaded directly in `App.tsx`. No react-router.
 
-`make seed` (or `docker compose exec backend go run ./cmd/seed`) creates test data:
+**Material-UI Joy only**: Don't mix with core MUI components.
 
-- 2 users with known credentials (`password123`)
-- 1 station owned by test_user
-- 85%~ of health checks marked online for that station
+### Worker Service Details
 
-### SatHub Client
+Background jobs run via separate process: `docker compose up worker` (uses `command: ["air", "-c", ".air.toml", "--", "worker"]`).
 
-Standalone binary that monitors directories for satellite data from satdump:
+**Jobs** (`backend/worker/`):
+- `station_health_monitor.go`: Checks `StationUptime` records against `Station.OnlineThreshold`, sends notifications
+- `achievement_checker.go`: Awards achievements based on user activity
+- `ground_track_processor.go`: Processes satellite pass predictions
 
-- **Installation**: Built-in `install` and `install-service` commands
-- **Auto-upload**: Watches directories, processes complete satellite passes
-- **Format**: Expects `dataset.json` + product directories with CBOR and PNG files
-- **Health Pings**: Sends periodic health checks to keep station online
-- **Platforms**: Linux (x86_64, ARM64), Windows, macOS (Intel, Apple Silicon)
+Shares database/storage with API, but runs independently.
 
-## External Dependencies
+### Database & Storage
 
-- **Docker & Docker Compose**: Required for all development
-- **PostgreSQL**: Primary database (defaults to SQLite without `DB_TYPE`)
-- **MinIO**: S3-compatible object storage for images
-- **Mailpit**: Email testing service (port 8025 web UI, 1025 SMTP)
-- **Caddy**: Reverse proxy with automatic HTTPS for local development
-- **CBOR**: Binary satellite data format (github.com/fxamacker/cbor/v2)
+**GORM auto-migration**: Models define schema. Migration runs via `migrate` service on startup (`command: ["go", "run", ".", "auto-migrate"]`).
 
-## Common Gotchas
+**MinIO organization**:
+- Bucket: `sathub-images`
+- Path: `images/post-{uuid}/filename.ext`
+- Access: Backend proxies via `/api/posts/:id/images/:imageId`
 
-- **Docker Required**: No local development without Docker (needs PostgreSQL, MinIO, Mailpit, Caddy)
-- **Hosts File**: Must add `*.sathub.local` entries to `/etc/hosts` for Caddy routing
-- **Certificate**: Accept self-signed cert for `api.sathub.local` in browser first
-- **Seeding**: Run `make seed` to populate test data (requires backend container running)
-- **Station Tokens**: Sensitive - but can be regenerated in UI if compromised
-- **GORM Migrations**: Run automatically on startup via `migrate` container
-- **Hot Reload**: Backend uses Air, frontend uses Vite - both restart on file changes
-- **Worker Service**: Runs separately from API, handles background jobs
-- **MinIO Access**: Use MinIO console at localhost:9001 to browse uploaded images
+**Seeding** (`backend/seed/seed.go`):
+```bash
+make seed  # Creates test_user/password123, 1 station, 85% uptime records
+```
+
+### Client Integration
+
+**SatHub Client** (`client/`): Standalone binary that watches directories for satellite data from tools like SatDump.
+
+**Expected format**:
+- `dataset.json` + product directories with CBOR and PNG files
+- Uses station token: `Authorization: Station <token>`
+- Sends health pings to `/api/stations/health` (keeps station "online")
+
+**Installation**:
+```bash
+curl -sSL https://api.sathub.de/install | sudo bash
+sathub-client install-service  # Interactive setup
+```
+
+## Key Conventions
+
+### Code Patterns
+
+**Backend responses** (`backend/utils/response.go`):
+```go
+utils.SuccessResponse(c, http.StatusOK, "Message", data)
+utils.ErrorResponse(c, http.StatusBadRequest, "Error")
+utils.UnauthorizedResponse(c, "Unauthorized")
+```
+
+**Context helpers** (`backend/middleware/auth.go`):
+```go
+userID, exists := middleware.GetCurrentUserID(c)
+stationID, exists := middleware.GetCurrentStationID(c)
+```
+
+**Frontend types** (`frontend/src/types.ts`):
+- All API response types defined here
+- Match backend `handlers/*_handler.go` response structs
+
+### Environment Variables
+
+**Backend** (`.env.development`):
+- `DB_TYPE=postgres` (defaults to SQLite if unset)
+- `MINIO_ENDPOINT=http://minio:9000` (internal) vs `MINIO_EXTERNAL_URL=https://obj.sathub.local:9999` (public)
+- `FRONTEND_URL=https://sathub.local:9999` (CORS)
+
+**Frontend**:
+- `VITE_API_BASE_URL=https://api.sathub.local:9999`
+
+## Common Mistakes to Avoid
+
+1. **Don't bypass Docker**: Stack requires PostgreSQL, MinIO, Mailpit, Caddy. No "local" mode.
+2. **Station vs User auth**: Upload endpoints use `StationTokenAuth()`, not `AuthRequired()`
+3. **Worker jobs**: Don't add long-running tasks to API handlers. Use worker service.
+4. **Image URLs**: Never expose MinIO URLs directly. Use backend proxy endpoints.
+5. **Database queries**: Direct PostgreSQL access: `docker compose exec postgres psql -U sathub -d sathub`
+6. **Hot reload**: Backend uses Air (`.air.toml`), frontend uses Vite. Changes auto-restart.
+7. **Migrations**: GORM auto-migrates on `migrate` service startup. Don't run migrations manually.
+8. **Full reset needed**: Use `make cycle` to wipe DB/volumes and rebuild (preserves SSL certs for *.sathub.local).
+9. **PostgreSQL types**: ALWAYS preserve `type:uuid`, `type:jsonb`, `type:bytea` in GORM tags. Don't simplify to generic types.
+10. **Don't build from `tmp/`**: Air's working directory. Backend/frontend auto-reload in Docker. Client builds: `cd client && go build . -o bin/sathub-client`.
+
+## Key Files Reference
+
+- `backend/main.go` - Route definitions, command structure
+- `backend/middleware/auth.go` - Auth patterns (JWT vs Station tokens)
+- `backend/models/*.go` - Database schema (GORM models)
+- `backend/handlers/*_handler.go` - API endpoint logic
+- `backend/worker/*.go` - Background job implementations
+- `frontend/src/api.ts` - Centralized API client with auth interceptors
+- `docker-compose.yml` - Full stack definition (backend, worker, frontend, postgres, minio, mailpit, caddy)
+- `docker/Caddyfile.dev` - Reverse proxy config (HTTPS on port 9999)
