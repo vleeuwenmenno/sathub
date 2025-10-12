@@ -178,6 +178,38 @@ Shares database/storage with API, but runs independently.
 
 **GORM auto-migration**: Models define schema. Migration runs via `migrate` service on startup (`command: ["go", "run", ".", "auto-migrate"]`).
 
+**SQL Migrations** (`backend/migrations/`):
+
+- Migrations run **BEFORE** GORM auto-migration
+- Naming: `001_description.sql`, `002_description.sql` (sequential numbering)
+- **CRITICAL**: All migrations MUST be idempotent and skip gracefully if tables don't exist
+- Use `DO $$ BEGIN ... END $$;` blocks with existence checks
+- Check table existence: `IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'table_name')`
+- Check column type: `IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'table' AND column_name = 'col' AND data_type = 'text')`
+- Use `ALTER TABLE IF EXISTS` and `DROP CONSTRAINT IF EXISTS` for safety
+- Tracked in `schema_migrations` table (auto-created)
+
+**Migration Pattern Example**:
+
+```sql
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'mytable'
+    ) AND EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'mytable' AND column_name = 'mycolumn' AND data_type = 'text'
+    ) THEN
+        ALTER TABLE mytable ALTER COLUMN mycolumn TYPE uuid USING mycolumn::uuid;
+        RAISE NOTICE 'Migration applied';
+    ELSE
+        RAISE NOTICE 'Migration skipped: preconditions not met';
+    END IF;
+END $$;
+```
+
+**Why idempotent migrations matter**: Fresh databases (dev `make cycle`) have no tables when SQL migrations run. Migrations that assume tables exist will fail. GORM creates tables with correct types afterward.
+
 **MinIO organization**:
 
 - Bucket: `sathub-images`
@@ -251,10 +283,11 @@ stationID, exists := middleware.GetCurrentStationID(c)
 4. **Image URLs**: Never expose MinIO URLs directly. Use backend proxy endpoints.
 5. **Database queries**: Direct PostgreSQL access: `docker compose exec postgres psql -U sathub -d sathub`
 6. **Hot reload**: Backend uses Air (`.air.toml`), frontend uses Vite. Changes auto-restart.
-7. **Migrations**: GORM auto-migrates on `migrate` service startup. Don't run migrations manually.
-8. **Full reset needed**: Use `make cycle` to wipe DB/volumes and rebuild (preserves SSL certs for \*.sathub.local).
-9. **PostgreSQL types**: ALWAYS preserve `type:uuid`, `type:jsonb`, `type:bytea` in GORM tags. Don't simplify to generic types.
-10. **Don't build from `tmp/`**: Air's working directory. Backend/frontend auto-reload in Docker. Client builds: `cd client && go build . -o bin/sathub-client`.
+7. **Migrations**: GORM auto-migrates on `migrate` service startup. SQL migrations in `backend/migrations/` run first and MUST be idempotent (use `DO $$ BEGIN ... END $$;` with existence checks).
+8. **SQL migrations must be idempotent**: Always check if tables/columns exist before altering. Fresh development databases have no tables when SQL migrations run.
+9. **Full reset needed**: Use `make cycle` to wipe DB/volumes and rebuild (preserves SSL certs for \*.sathub.local).
+10. **PostgreSQL types**: ALWAYS preserve `type:uuid`, `type:jsonb`, `type:bytea` in GORM tags. Don't simplify to generic types.
+11. **Don't build from `tmp/`**: Air's working directory. Backend/frontend auto-reload in Docker. Client builds: `cd client && go build . -o bin/sathub-client`.
 
 ## Key Files Reference
 
