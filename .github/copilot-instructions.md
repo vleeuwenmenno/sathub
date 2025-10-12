@@ -1,5 +1,45 @@
 # SatHub - AI Coding Assistant Instructions
 
+## Working Modes (Kilo Code)
+
+When working with this codebase, operate in one of two distinct modes:
+
+### Architecture Mode
+
+**When to use**: Before implementing any feature or change, entering this mode first is MANDATORY.
+
+**Requirements**:
+
+1. Thoroughly analyze the existing codebase architecture
+2. Identify all files and components that need modification
+3. Understand data flow and dependencies
+4. Return a comprehensive implementation plan that includes:
+   - List of files to be created/modified
+   - Sequence of changes to avoid breaking existing functionality
+   - Potential impacts on other parts of the system
+   - Database schema changes (if applicable)
+   - API endpoint changes (if applicable)
+
+**Output**: A detailed, structured plan that serves as a blueprint for coding mode. Do NOT proceed to implementation until this plan is confirmed.
+
+### Coding Mode
+
+**When to use**: Only after Architecture Mode plan is confirmed and approved.
+
+**Requirements**:
+
+1. **No verbose comments**: Code should be self-documenting. Only add comments for complex business logic.
+2. **No explanations**: Let the code speak. Don't explain what you're doing unless asked.
+3. **Follow project style**:
+   - Go: Follow existing patterns in handlers, models, middleware
+   - React: Match existing component structure and naming conventions
+   - Maintain consistency with error handling patterns
+4. **If uncertain about style**: STOP and ask for clarification before proceeding.
+
+**Output**: Clean, production-ready code that integrates seamlessly with existing patterns.
+
+---
+
 ## Project Architecture
 
 SatHub is a satellite ground station management platform organized as a monorepo with git submodules:
@@ -226,3 +266,4 @@ stationID, exists := middleware.GetCurrentStationID(c)
 - `frontend/src/api.ts` - Centralized API client with auth interceptors
 - `docker-compose.yml` - Full stack definition (backend, worker, frontend, postgres, minio, mailpit, caddy)
 - `docker/Caddyfile.dev` - Reverse proxy config (HTTPS on port 9999)
+  I
