@@ -90,6 +90,10 @@ services:
       - NODE_ENV=development
       - VITE_ALLOWED_HOSTS=sathub.local,localhost,127.0.0.1
       - VITE_API_BASE_URL=https://api.sathub.local:9999
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       - backend
 
