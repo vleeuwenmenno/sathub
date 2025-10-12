@@ -203,7 +203,7 @@ make seed  # Creates test_user/password123, 1 station, 85% uptime records
 **Installation**:
 
 ```bash
-curl -sSL https://api.sathub.de/install | sudo bash
+curl -sSL https://api.sathub.de/install | bash
 sathub-client install-service  # Interactive setup
 ```
 
