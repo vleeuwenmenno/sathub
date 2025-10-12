@@ -46,23 +46,23 @@ Get the latest client from the [Releases](https://github.com/vleeuwenmenno/sathu
 2. Create a ground station and note your **Station API Token**
 3. Install the client:
 
-**Linux/macOS (Easiest - One-line install):**
+**Linux/macOS (One-line install):**
 
 ```bash
-curl -sSL https://api.sathub.de/install | sudo bash
+curl -sSL https://api.sathub.de/install | bash
 ```
 
-**Manual Download:**
-
-Download the client for your platform from [Releases](https://github.com/vleeuwenmenno/sathub-client/releases) and run:
+4. Configure and start the service:
 
 ```bash
-# Linux/macOS - make executable first
-chmod +x sathub-client-*
-./sathub-client-* --token YOUR_STATION_TOKEN --watch /path/to/your/images
+# Setup systemd user service (interactive configuration - no sudo needed!)
+sathub-client install-service
 
-# Windows
-sathub-client-windows-amd64.exe --token YOUR_STATION_TOKEN --watch C:\path\to\your\images
+# The installer will:
+# - Install the binary to ~/.local/bin/sathub-client
+# - Create configuration file at ~/.config/sathub-client/config.yaml
+# - Prompt for your station token and watch directory
+# - Enable and start the service automatically
 ```
 
 The client will monitor the specified directory and automatically upload new satellite captures to your SatHub station.
