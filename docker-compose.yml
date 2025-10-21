@@ -96,6 +96,7 @@ services:
         hard: 65536
     depends_on:
       - backend
+    command: sh -c "bun install && bun run dev"
 
   mailpit:
     image: axllent/mailpit
